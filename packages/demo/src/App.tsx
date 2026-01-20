@@ -21,7 +21,12 @@ interface UserForm {
 }
 
 function App() {
-  const [control] = useState(() => new FormController<UserForm>({}));
+  const [control] = useState(
+    () =>
+      new FormController<UserForm>({
+        initialData: {},
+      }),
+  );
 
   useEffect(() => {
     control.registerField("address");

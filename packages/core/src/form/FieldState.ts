@@ -37,7 +37,7 @@ export class FieldState<
   ) {
     if (opts?.shouldTouch == null || opts?.shouldTouch) this.touch();
 
-    const initialValue = getByPath(this.control._initialData, this.path);
+    const initialValue = getByPath(this.control.config.initialData, this.path);
 
     this.isDirty = !deepEquals(initialValue as any, value as any);
 

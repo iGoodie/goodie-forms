@@ -5,12 +5,17 @@ import { ExtractPaths, setByPath, ValueByPath } from "../utils/path.utils";
 
 export class FormController<TShape extends object = NativeFormObject> {
   _fields = new Map<ExtractPaths<TShape>, FieldState<TShape, any>>();
-  _initialData: TShape;
   _data: TShape;
 
-  constructor(initialData: TShape) {
-    this._initialData = initialData;
-    this._data = deepClone(initialData as any satisfies NativeFormObject);
+  constructor(
+    public readonly config: {
+      initialData: TShape;
+      validator?: any; // TODO <-- StandardSchema
+    },
+  ) {
+    this._data = deepClone(
+      config.initialData as any satisfies NativeFormObject,
+    );
   }
 
   registerField<TPath extends ExtractPaths<TShape>>(
@@ -21,7 +26,7 @@ export class FormController<TShape extends object = NativeFormObject> {
     this._fields.set(fieldPath, fieldState);
 
     if (defaultValue != null) {
-      setByPath(this._initialData, fieldPath, defaultValue);
+      setByPath(this.config.initialData, fieldPath, defaultValue);
       setByPath(this._data, fieldPath, defaultValue);
     }
   }
@@ -31,7 +36,7 @@ export class FormController<TShape extends object = NativeFormObject> {
   }
 
   reset() {
-    this._data = deepClone(this._initialData as any);
+    this._data = deepClone(this.config.initialData as any);
 
     for (const fieldState of this._fields.values()) {
       fieldState.reset();
