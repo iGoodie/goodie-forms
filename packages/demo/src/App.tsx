@@ -1,35 +1,78 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { FormController, type NativeFormObject } from "@goodie-forms/core";
+import { useEffect, useRef, useState } from "react";
+import { SimpleField } from "./SimpleField";
 
-function App() {
-  const [count, setCount] = useState(0)
+import "./App.css";
+import "./tailwind.css";
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+interface UserForm extends NativeFormObject {
+  name: string;
+  surname: string;
+  address: {
+    city: string;
+    street: string;
+  };
+  scores: string[];
+  friends: {
+    name: string;
+    friendshipPoints: string;
+  }[];
+  foo: {
+    bar: number[];
+  };
 }
 
-export default App
+function App() {
+  const [control] = useState(
+    () =>
+      new FormController<UserForm>({
+        name: "",
+        surname: "",
+        address: {
+          city: "",
+          street: "",
+        },
+        scores: [],
+        friends: [],
+        foo: { bar: [] },
+      }),
+  );
+
+  useEffect(() => {
+    control.getFieldState("name")?.touch();
+    control.getFieldState("name")?.update("John"); // isDirty = true
+    control.getFieldState("name")?.update(""); // isDirty = false
+
+    console.log(control);
+    control.getFieldState("name")?.focus();
+  }, []);
+
+  return (
+    <main>
+      <form className="flex flex-col gap-4">
+        <SimpleField
+          label="User Name"
+          render={() => (
+            <input
+              ref={(el) => {
+                console.log("Ref", el);
+                if (el) {
+                  control.registerField("name");
+                  control.getFieldState("name")?.bindElement(el);
+                }
+              }}
+              type="text"
+              placeholder="John"
+            />
+          )}
+        />
+        <SimpleField
+          label="User Lastname"
+          render={() => <input type="text" placeholder="Doe" />}
+        />
+      </form>
+    </main>
+  );
+}
+
+export default App;
