@@ -17,9 +17,7 @@ interface UserForm {
     name: string;
     friendshipPoints: string;
   }[];
-  foo: {
-    bar: number[];
-  };
+  foo: { bar: number[] };
 }
 
 function App() {
@@ -43,13 +41,19 @@ function App() {
     control.setValue("address", { city: "A", street: "B" });
 
     control.getFieldState("name")?.focus();
-    
+
     console.log(control);
   }, []);
 
   return (
     <main>
-      <form className="flex flex-col gap-4">
+      <form
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          console.log({ data: control._data });
+        }}
+      >
         <SimpleField
           label="User Name"
           render={() => (
@@ -76,6 +80,10 @@ function App() {
           label="User Lastname"
           render={() => <input type="text" placeholder="Doe" />}
         />
+        <button type="button" onClick={() => control.reset()}>
+          Reset
+        </button>
+        <button type="submit">Submit</button>
       </form>
     </main>
   );

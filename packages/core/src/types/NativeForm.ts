@@ -20,3 +20,5 @@ export type NativeFormValue =
   | NativeFormPrimitive
   | NativeFormObject
   | NativeFormArray;
+
+// TODO: Find a way to enforce NativeForm shape.

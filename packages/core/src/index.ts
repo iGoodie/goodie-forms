@@ -43,6 +43,11 @@ class FieldState<TShape extends object, TPath extends ExtractPaths<TShape>> {
     setByPath(this.control._data, this.path, value);
   }
 
+  reset() {
+    this.isTouched = false;
+    this.isDirty = false;
+  }
+
   touch() {
     this.isTouched = true;
   }
@@ -83,6 +88,14 @@ export class FormController<TShape extends object = NativeFormObject> {
 
   unregisterField(fieldPath: ExtractPaths<TShape>) {
     this._fields.delete(fieldPath);
+  }
+
+  reset() {
+    this._data = deepClone(this._initialData as any);
+
+    for (const fieldState of this._fields.values()) {
+      fieldState.reset();
+    }
   }
 
   getFieldState<TPath extends ExtractPaths<TShape>>(fieldPath: TPath) {
