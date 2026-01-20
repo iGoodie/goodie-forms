@@ -8,6 +8,12 @@
     "declarationMap": true,
     "sourceMap": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@goodie-forms/core": ["packages/core/src"],
+      "@goodie-forms/react": ["packages/react/src"]
+    }
   }
 }
