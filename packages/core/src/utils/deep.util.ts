@@ -3,7 +3,7 @@ import { NativeFormValue } from "../types/NativeForm";
 export function deepEquals<
   V1 extends NativeFormValue,
   V2 extends NativeFormValue,
->(value1: V1, value2: V2): boolean {
+>(value1: V1 | undefined, value2: V2 | undefined): boolean {
   if (Object.is(value1, value2)) {
     return true;
   }

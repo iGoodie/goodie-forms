@@ -13,10 +13,10 @@ export type NativeFormPrimitive =
 export type NativeFormArray = NativeFormValue[];
 
 export type NativeFormObject = {
-  [key: PropertyKey]: NativeFormValue;
+  [key: string]: NativeFormValue;
 };
 
 export type NativeFormValue =
   | NativeFormPrimitive
-  | NativeFormArray
-  | NativeFormObject;
+  | NativeFormObject
+  | NativeFormArray;

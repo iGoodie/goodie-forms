@@ -1,11 +1,11 @@
-import { FormController, type NativeFormObject } from "@goodie-forms/core";
-import { useEffect, useRef, useState } from "react";
+import { FormController } from "@goodie-forms/core";
+import { useEffect, useState } from "react";
 import { SimpleField } from "./SimpleField";
 
 import "./App.css";
 import "./tailwind.css";
 
-interface UserForm extends NativeFormObject {
+interface UserForm {
   name: string;
   surname: string;
   address: {
@@ -39,12 +39,12 @@ function App() {
   );
 
   useEffect(() => {
-    control.getFieldState("name")?.touch();
-    control.getFieldState("name")?.update("John"); // isDirty = true
-    control.getFieldState("name")?.update(""); // isDirty = false
+    control.registerField("address");
+    control.setValue("address", { city: "A", street: "B" });
 
-    console.log(control);
     control.getFieldState("name")?.focus();
+    
+    console.log(control);
   }, []);
 
   return (
@@ -54,12 +54,18 @@ function App() {
           label="User Name"
           render={() => (
             <input
+              defaultValue="foo"
               ref={(el) => {
-                console.log("Ref", el);
                 if (el) {
-                  control.registerField("name");
+                  control.registerField("name", el.value);
                   control.getFieldState("name")?.bindElement(el);
+                } else {
+                  control.unregisterField("name");
                 }
+              }}
+              onChange={(e) => {
+                control.getFieldState("name").setValue(e.target.value);
+                control.setValue("name", e.target.value);
               }}
               type="text"
               placeholder="John"
