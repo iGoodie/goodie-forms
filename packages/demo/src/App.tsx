@@ -6,35 +6,22 @@ import "./App.css";
 import "./tailwind.css";
 
 interface UserForm {
-  name: string;
-  surname: string;
-  address: {
+  name?: string;
+  surname?: string;
+  address?: {
     city: string;
     street: string;
   };
-  scores: string[];
-  friends: {
+  scores?: string[];
+  friends?: {
     name: string;
     friendshipPoints: string;
   }[];
-  foo: { bar: number[] };
+  foo?: { bar: number[] };
 }
 
 function App() {
-  const [control] = useState(
-    () =>
-      new FormController<UserForm>({
-        name: "",
-        surname: "",
-        address: {
-          city: "",
-          street: "",
-        },
-        scores: [],
-        friends: [],
-        foo: { bar: [] },
-      }),
-  );
+  const [control] = useState(() => new FormController<UserForm>({}));
 
   useEffect(() => {
     control.registerField("address");
