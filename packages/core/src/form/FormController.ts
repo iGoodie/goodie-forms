@@ -1,3 +1,4 @@
+import { StandardSchemaV1 } from "@standard-schema/spec";
 import { FieldState } from "../form/FieldState";
 import { NativeFormObject } from "../types/NativeForm";
 import { deepClone } from "../utils/deep.util";
@@ -6,11 +7,12 @@ import { ExtractPaths, setByPath, ValueByPath } from "../utils/path.utils";
 export class FormController<TShape extends object = NativeFormObject> {
   _fields = new Map<ExtractPaths<TShape>, FieldState<TShape, any>>();
   _data: TShape;
+  _issues: readonly StandardSchemaV1.Issue[] = [];
 
   constructor(
     public readonly config: {
       initialData: TShape;
-      validator?: any; // TODO <-- StandardSchema
+      validationSchema?: StandardSchemaV1<TShape, TShape>;
     },
   ) {
     this._data = deepClone(
@@ -29,6 +31,14 @@ export class FormController<TShape extends object = NativeFormObject> {
       setByPath(this.config.initialData, fieldPath, defaultValue);
       setByPath(this._data, fieldPath, defaultValue);
     }
+
+    const issues = this._issues.filter((issue) => {
+      if (issue.path == null) return false;
+      const issueFieldPath = issue.path.join(".");
+      return issueFieldPath === fieldPath;
+    });
+
+    fieldState.setIssues(issues);
   }
 
   unregisterField(fieldPath: ExtractPaths<TShape>) {
@@ -44,7 +54,7 @@ export class FormController<TShape extends object = NativeFormObject> {
   }
 
   getFieldState<TPath extends ExtractPaths<TShape>>(fieldPath: TPath) {
-    return this._fields.get(fieldPath) as FieldState<TShape, TPath>;
+    return this._fields.get(fieldPath) as FieldState<TShape, TPath> | undefined;
   }
 
   setValue<TPath extends ExtractPaths<TShape>>(
@@ -54,5 +64,28 @@ export class FormController<TShape extends object = NativeFormObject> {
     const fieldState = this.getFieldState(path);
     fieldState?.setValue(...args);
     return fieldState;
+  }
+
+  async triggerValidation() {
+    if (this.config.validationSchema == null) return;
+
+    const result = await this.config.validationSchema["~standard"].validate(
+      this._data,
+    );
+
+    if ("value" in result) {
+      this._issues = [];
+    } else {
+      this._issues = result.issues;
+    }
+
+    this._fields.forEach((fieldState, fieldPath) => {
+      const issues = this._issues.filter((issue) => {
+        if (issue.path == null) return false;
+        const issueFieldPath = issue.path.join(".");
+        return issueFieldPath === fieldPath;
+      });
+      fieldState.setIssues(issues);
+    });
   }
 }

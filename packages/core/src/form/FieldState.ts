@@ -1,3 +1,4 @@
+import { StandardSchemaV1 } from "@standard-schema/spec";
 import { FormController } from "../form/FormController";
 import { deepEquals } from "../utils/deep.util";
 import {
@@ -16,7 +17,7 @@ export class FieldState<
   protected isTouched = false;
   protected isDirty = false;
 
-  protected error?: string;
+  protected issues: StandardSchemaV1.Issue[] = [];
 
   constructor(
     protected control: FormController<TShape>,
@@ -42,6 +43,10 @@ export class FieldState<
     this.isDirty = !deepEquals(initialValue as any, value as any);
 
     setByPath(this.control._data, this.path, value);
+  }
+
+  setIssues(issues: StandardSchemaV1.Issue[]) {
+    this.issues = issues;
   }
 
   reset() {

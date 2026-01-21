@@ -4,27 +4,44 @@ import { SimpleField } from "./SimpleField";
 
 import "./App.css";
 import "./tailwind.css";
+import z from "zod";
 
-interface UserForm {
-  name?: string;
-  surname?: string;
-  address?: {
-    city: string;
-    street: string;
-  };
-  scores?: string[];
-  friends?: {
-    name: string;
-    friendshipPoints: string;
-  }[];
-  foo?: { bar: number[] };
-}
+// interface UserForm {
+//   name?: string;
+//   surname?: string;
+//   address?: {
+//     city: string;
+//     street: string;
+//   };
+//   scores?: string[];
+//   friends?: {
+//     name: string;
+//     friendshipPoints: string;
+//   }[];
+//   foo?: { bar: number[] };
+// }
+
+const UserSchema = z.object({
+  name: z.string().nonempty(),
+  surname: z.string().nonempty(),
+  address: z.object({
+    city: z.string(),
+    street: z.string(),
+  }),
+});
+
+type UserForm = z.infer<typeof UserSchema>;
 
 function App() {
   const [control] = useState(
     () =>
       new FormController<UserForm>({
-        initialData: {},
+        validationSchema: UserSchema,
+        initialData: {
+          name: "",
+          surname: "",
+          address: { city: "", street: "" },
+        },
       }),
   );
 
@@ -60,7 +77,7 @@ function App() {
                 }
               }}
               onChange={(e) => {
-                control.getFieldState("name").setValue(e.target.value);
+                control.getFieldState("name")!.setValue(e.target.value);
                 control.setValue("name", e.target.value);
               }}
               type="text"
@@ -70,10 +87,32 @@ function App() {
         />
         <SimpleField
           label="User Lastname"
-          render={() => <input type="text" placeholder="Doe" />}
+          render={() => (
+            <input
+              ref={(el) => {
+                if (el) {
+                  control.registerField("surname", el.value);
+                  control.getFieldState("surname")?.bindElement(el);
+                } else {
+                  control.unregisterField("surname");
+                }
+              }}
+              type="text"
+              placeholder="Doe"
+            />
+          )}
         />
         <button type="button" onClick={() => control.reset()}>
           Reset
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            control.triggerValidation();
+            console.log(control);
+          }}
+        >
+          Validate
         </button>
         <button type="submit">Submit</button>
       </form>
