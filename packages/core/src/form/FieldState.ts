@@ -130,7 +130,7 @@ export class FieldState<
 
     FieldState.ensureImmerability(currentValue);
 
-    const valueChanged = Field.deepEqual(initialValue, currentValue);
+    const valueChanged = !Field.deepEqual(initialValue, currentValue);
 
     this.control.events.emit(
       "valueChanged",
