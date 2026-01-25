@@ -52,9 +52,7 @@ export class FieldState<
   protected _setTouched(isTouched: boolean) {
     const changed = this._isTouched !== isTouched;
     this._isTouched = isTouched;
-    console.log("Setting", this.id, isTouched);
     if (changed) this.control.events.emit("fieldUpdated", this.path);
-    console.log(this.isTouched);
   }
 
   protected _setDirty(isDirty: boolean) {
@@ -132,8 +130,7 @@ export class FieldState<
 
     FieldState.ensureImmerability(currentValue);
 
-    // TODO: Won't work for address.city and address.street
-    const valueChanged = initialValue !== currentValue;
+    const valueChanged = Field.deepEqual(initialValue, currentValue);
 
     this.control.events.emit(
       "valueChanged",

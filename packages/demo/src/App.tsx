@@ -67,8 +67,6 @@ function FormDebug<TShape extends object>(props: {
 }) {
   const [renderNo, rerender] = useState(0);
 
-  console.log(props.form);
-
   useEffect(() => {
     const { events } = props.form;
 

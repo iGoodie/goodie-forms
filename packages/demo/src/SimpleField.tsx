@@ -85,7 +85,7 @@ export function SimpleField<
     }
 
     return () => {
-      console.log("Unbinding");
+      console.log("Unbinding", props.name);
       props.form.unbindField(props.name);
     };
   }, []);
