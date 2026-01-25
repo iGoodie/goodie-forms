@@ -112,7 +112,7 @@ function App() {
         <button
           type="button"
           onClick={() => {
-            control.triggerValidation();
+            control.validateForm();
             console.log(control);
           }}
         >

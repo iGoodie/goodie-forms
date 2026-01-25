@@ -2,6 +2,7 @@ import { StandardSchemaV1 } from "@standard-schema/spec";
 import { Field } from "../form/Field";
 import { FormController } from "../form/FormController";
 import { deepEquals } from "../utils/deep.util";
+import { createNanoEvents } from "nanoevents";
 
 export class FieldState<
   TShape extends object,
@@ -13,6 +14,13 @@ export class FieldState<
   protected _isDirty = false;
 
   protected issues: StandardSchemaV1.Issue[] = [];
+
+  public readonly events = createNanoEvents<{
+    elementBound(el: HTMLElement): void;
+    elementUnbound(): void;
+    touch(isTouched: boolean): void;
+    dirty(isDirty: boolean): void;
+  }>();
 
   constructor(
     protected control: FormController<TShape>,
@@ -34,7 +42,25 @@ export class FieldState<
     return this._isDirty;
   }
 
+  get isValid() {
+    return this.issues.length === 0;
+  }
+
+  protected _setTouched(isTouched: boolean) {
+    const changed = this._isTouched !== isTouched;
+    this._isTouched = isTouched;
+    if (changed) this.events.emit("touch", isTouched);
+  }
+
+  protected _setDirty(isDirty: boolean) {
+    const changed = this._isDirty !== isDirty;
+    this._isDirty = isDirty;
+    if (changed) this.events.emit("dirty", isDirty);
+  }
+
   bindElement(el: HTMLElement) {
+    if (el != null) this.events.emit("elementBound", el);
+    else this.events.emit("elementUnbound");
     this.target = el;
   }
 
@@ -43,9 +69,14 @@ export class FieldState<
       currentValue: Field.GetValue<TShape, TPath>,
       field: this,
     ) => Field.GetValue<TShape, TPath>,
-    opts?: { shouldTouch?: boolean },
+    opts?: {
+      shouldTouch?: boolean;
+      shouldMarkDirty?: boolean;
+    },
   ) {
-    if (opts?.shouldTouch == null || opts?.shouldTouch) this.touch();
+    if (opts?.shouldTouch == null || opts?.shouldTouch) {
+      this.touch();
+    }
 
     const initialValue = Field.getValue<TShape, TPath>(
       this.control.config.initialData as TShape,
@@ -63,7 +94,9 @@ export class FieldState<
       this.path,
     );
 
-    this._isDirty = !deepEquals(initialValue as any, currentValue as any);
+    if (opts?.shouldMarkDirty == null || opts?.shouldMarkDirty) {
+      this._setDirty(!deepEquals(initialValue as any, currentValue as any));
+    }
   }
 
   setValue(
@@ -77,17 +110,18 @@ export class FieldState<
     this.issues = issues;
   }
 
-  markDirty() {
-    this._isDirty = true;
-  }
-
-  reset() {
+  resetState() {
     this._isTouched = false;
     this._isDirty = false;
   }
 
   touch() {
-    this._isTouched = true;
+    this._setTouched(true);
+  }
+
+  markDirty() {
+    this.touch();
+    this._setDirty(true);
   }
 
   focus(opts?: { shouldTouch?: boolean }) {

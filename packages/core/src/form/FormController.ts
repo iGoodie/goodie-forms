@@ -14,13 +14,17 @@ export class FormController<TShape extends object = NativeFormObject> {
   _fields = new Map<Field.Paths<TShape>, FieldState<TShape, any>>();
   _initialData: DeepPartial<TShape>;
   _data: DeepPartial<TShape>;
-  _issues: readonly StandardSchemaV1.Issue[] = [];
+  _issues: StandardSchemaV1.Issue[] = [];
 
   get isDirty() {
     for (const fieldState of this._fields.values()) {
       if (fieldState.isDirty) return true;
     }
     return false;
+  }
+
+  get isValid() {
+    return this._issues.length === 0;
   }
 
   constructor(
@@ -82,7 +86,7 @@ export class FormController<TShape extends object = NativeFormObject> {
     this._data = deepClone(this.config.initialData as any);
 
     for (const fieldState of this._fields.values()) {
-      fieldState.reset();
+      fieldState.resetState();
     }
   }
 
@@ -107,7 +111,29 @@ export class FormController<TShape extends object = NativeFormObject> {
     return fieldState;
   }
 
-  async triggerValidation() {
+  async validateField<TPath extends Field.Paths<TShape>>(path: TPath) {
+    if (this.config.validationSchema == null) return;
+
+    const fieldState = this.getFieldState(path, { bindIfMissing: true });
+
+    const result = await this.config.validationSchema["~standard"].validate(
+      this._data,
+    );
+
+    this._issues = this._issues.filter((issue) => {
+      if (issue.path == null) return true;
+      const issuePath = issue.path.join(".");
+      return issuePath !== path;
+    });
+
+    if ("value" in result) {
+      fieldState.setIssues([]);
+    } else {
+      this._issues.push(...result.issues);
+    }
+  }
+
+  async validateForm() {
     if (this.config.validationSchema == null) return;
 
     const result = await this.config.validationSchema["~standard"].validate(
@@ -117,14 +143,14 @@ export class FormController<TShape extends object = NativeFormObject> {
     if ("value" in result) {
       this._issues = [];
     } else {
-      this._issues = result.issues;
+      this._issues = [...result.issues];
     }
 
     this._fields.forEach((fieldState, fieldPath) => {
       const issues = this._issues.filter((issue) => {
         if (issue.path == null) return false;
-        const issueFieldPath = issue.path.join(".");
-        return issueFieldPath === fieldPath;
+        const issuePath = issue.path.join(".");
+        return issuePath === fieldPath;
       });
       fieldState.setIssues(issues);
     });
