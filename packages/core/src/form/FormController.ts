@@ -16,6 +16,8 @@ export class FormController<TShape extends object = NativeFormObject> {
   _data: DeepPartial<TShape>;
   _issues: StandardSchemaV1.Issue[] = [];
 
+  validationSchema?: StandardSchemaV1<TShape, TShape>;
+
   get isDirty() {
     for (const fieldState of this._fields.values()) {
       if (fieldState.isDirty) return true;
@@ -27,12 +29,10 @@ export class FormController<TShape extends object = NativeFormObject> {
     return this._issues.length === 0;
   }
 
-  constructor(
-    public readonly config: {
-      initialData?: DeepPartial<TShape>;
-      validationSchema?: StandardSchemaV1<TShape, TShape>;
-    },
-  ) {
+  constructor(config: {
+    initialData?: DeepPartial<TShape>;
+    validationSchema?: StandardSchemaV1<TShape, TShape>;
+  }) {
     this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);
     this._data = deepClone(this._initialData);
 
@@ -40,6 +40,8 @@ export class FormController<TShape extends object = NativeFormObject> {
     } else {
       this._data = {} as TShape;
     }
+
+    this.validationSchema = config.validationSchema;
   }
 
   bindField<TPath extends Field.Paths<TShape>>(
@@ -76,6 +78,8 @@ export class FormController<TShape extends object = NativeFormObject> {
     });
 
     fieldState.setIssues(issues);
+
+    return fieldState;
   }
 
   unbindField(path: Field.Paths<TShape>) {
@@ -83,7 +87,7 @@ export class FormController<TShape extends object = NativeFormObject> {
   }
 
   reset() {
-    this._data = deepClone(this.config.initialData as any);
+    this._data = deepClone(this._initialData as any);
 
     for (const fieldState of this._fields.values()) {
       fieldState.resetState();
@@ -112,11 +116,12 @@ export class FormController<TShape extends object = NativeFormObject> {
   }
 
   async validateField<TPath extends Field.Paths<TShape>>(path: TPath) {
-    if (this.config.validationSchema == null) return;
+    // TODO: Support native HTML validation, if no schema is provided
+    if (this.validationSchema == null) return;
 
     const fieldState = this.getFieldState(path, { bindIfMissing: true });
 
-    const result = await this.config.validationSchema["~standard"].validate(
+    const result = await this.validationSchema["~standard"].validate(
       this._data,
     );
 
@@ -134,9 +139,10 @@ export class FormController<TShape extends object = NativeFormObject> {
   }
 
   async validateForm() {
-    if (this.config.validationSchema == null) return;
+    // TODO: Support native HTML validation, if no schema is provided
+    if (this.validationSchema == null) return;
 
-    const result = await this.config.validationSchema["~standard"].validate(
+    const result = await this.validationSchema["~standard"].validate(
       this._data,
     );
 
@@ -154,5 +160,37 @@ export class FormController<TShape extends object = NativeFormObject> {
       });
       fieldState.setIssues(issues);
     });
+  }
+
+  createSubmitHandler<Ev extends { preventDefault(): void }>(
+    onSuccess?: (data: TShape, event: Ev) => void | Promise<void>,
+    onError?: (
+      issues: StandardSchemaV1.Issue[],
+      event: Ev,
+    ) => void | Promise<void>,
+  ) {
+    return async (event: Ev) => {
+      await this.validateForm();
+
+      if (event != null) {
+        event.preventDefault();
+      }
+
+      if (this._issues.length === 0) {
+        await onSuccess?.(this._data as TShape, event);
+        return;
+      }
+
+      for (const issue of this._issues) {
+        if (issue.path == null) continue;
+        const fieldPath = issue.path.join(".") as Field.Paths<TShape>;
+        const fieldState = this.getFieldState(fieldPath);
+        if (fieldState == null) continue;
+        if (fieldState.boundElement == null) continue;
+        fieldState.focus();
+        break;
+      }
+      await onError?.(this._issues, event);
+    };
   }
 }

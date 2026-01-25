@@ -54,16 +54,34 @@ function App() {
     console.log(control);
   }, []);
 
+  useEffect(() => {
+    document.createElement("form").onsubmit = control.createSubmitHandler(
+      async (data, event) => {
+        //         ^?
+        console.log("Infers type of event correctly", event);
+      },
+    );
+  }, []);
   return (
     <main>
       <form
         className="flex flex-col gap-4"
-        onSubmit={(e) => {
-          e.preventDefault();
-          console.log({ data: control._data });
-        }}
+        onSubmit={control.createSubmitHandler(
+          async (data, event) => {
+            alert("Form submitted successfully: " + JSON.stringify(data));
+            console.log(event);
+          },
+          async (issues, event) => {
+            alert(
+              "Form has issues: " + issues.map((i) => i.message).join(", "),
+            );
+            console.log(event);
+          },
+        )}
       >
         <SimpleField
+          form={control}
+          name="name"
           label="User Name"
           render={() => (
             <input
@@ -90,6 +108,8 @@ function App() {
           )}
         />
         <SimpleField
+          form={control}
+          name="surname"
           label="User Lastname"
           render={() => (
             <input

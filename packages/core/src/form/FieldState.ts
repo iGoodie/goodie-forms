@@ -13,13 +13,17 @@ export class FieldState<
   protected _isTouched = false;
   protected _isDirty = false;
 
-  protected issues: StandardSchemaV1.Issue[] = [];
+  protected _issues: StandardSchemaV1.Issue[] = [];
 
   public readonly events = createNanoEvents<{
     elementBound(el: HTMLElement): void;
     elementUnbound(): void;
     touch(isTouched: boolean): void;
     dirty(isDirty: boolean): void;
+    valueChanged(
+      oldValue: Field.GetValue<TShape, TPath> | undefined,
+      newValue: Field.GetValue<TShape, TPath> | undefined,
+    ): void;
   }>();
 
   constructor(
@@ -34,6 +38,14 @@ export class FieldState<
     );
   }
 
+  get boundElement() {
+    return this.target;
+  }
+
+  get issues() {
+    return this._issues;
+  }
+
   get isTouched() {
     return this._isTouched;
   }
@@ -43,7 +55,7 @@ export class FieldState<
   }
 
   get isValid() {
-    return this.issues.length === 0;
+    return this._issues.length === 0;
   }
 
   protected _setTouched(isTouched: boolean) {
@@ -79,7 +91,7 @@ export class FieldState<
     }
 
     const initialValue = Field.getValue<TShape, TPath>(
-      this.control.config.initialData as TShape,
+      this.control._initialData as TShape,
       this.path,
     );
 
@@ -94,8 +106,14 @@ export class FieldState<
       this.path,
     );
 
+    const valueChanged = !deepEquals(initialValue, currentValue);
+
+    if (valueChanged) {
+      this.events.emit("valueChanged", initialValue, currentValue);
+    }
+
     if (opts?.shouldMarkDirty == null || opts?.shouldMarkDirty) {
-      this._setDirty(!deepEquals(initialValue as any, currentValue as any));
+      this._setDirty(valueChanged);
     }
   }
 
@@ -107,7 +125,7 @@ export class FieldState<
   }
 
   setIssues(issues: StandardSchemaV1.Issue[]) {
-    this.issues = issues;
+    this._issues = issues;
   }
 
   resetState() {

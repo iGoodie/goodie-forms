@@ -1,6 +1,4 @@
-import { NativeFormValue } from "../types/NativeForm";
-
-export function deepEquals<V1 extends object, V2 extends object>(
+export function deepEquals<V1, V2>(
   value1: V1 | undefined,
   value2: V2 | undefined,
 ): boolean {
@@ -78,7 +76,7 @@ export function deepEquals<V1 extends object, V2 extends object>(
   return false;
 }
 
-export function deepClone<V extends object>(value: V): V {
+export function deepClone<V>(value: V): V {
   if (typeof structuredClone === "function") {
     return structuredClone(value);
   }
