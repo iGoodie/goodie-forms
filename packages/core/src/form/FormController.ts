@@ -1,15 +1,17 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
+import { enableArrayMethods, enableMapSet, produce } from "immer";
 import { Field } from "../form/Field";
 import { FieldState } from "../form/FieldState";
-import { NativeFormObject } from "../types/NativeForm";
-import { deepClone } from "../utils/deep.util";
 import { DeepPartial } from "../types/DeepPartial";
+
+enableMapSet();
+enableArrayMethods();
 
 export namespace Form {
   export type Status = "idle" | "validating" | "submitting";
 }
 
-export class FormController<TShape extends object = NativeFormObject> {
+export class FormController<TShape extends object = object> {
   _status: Form.Status = "idle";
   _fields = new Map<Field.Paths<TShape>, FieldState<TShape, any>>();
   _initialData: DeepPartial<TShape>;
@@ -29,19 +31,28 @@ export class FormController<TShape extends object = NativeFormObject> {
     return this._issues.length === 0;
   }
 
+  _unsafeSetFieldValue<TPath extends Field.Paths<TShape>>(
+    path: TPath,
+    value: Field.GetValue<TShape, TPath>,
+    config?: { updateInitialValue?: boolean },
+  ) {
+    if (config?.updateInitialValue) {
+      this._initialData = produce(this._initialData, (draft) => {
+        Field.setValue<TShape, TPath>(draft as TShape, path, value);
+      });
+    }
+    this._data = produce(this._data, (draft) => {
+      Field.setValue<TShape, TPath>(draft as TShape, path, value);
+    });
+  }
+
   constructor(config: {
     initialData?: DeepPartial<TShape>;
     validationSchema?: StandardSchemaV1<TShape, TShape>;
   }) {
-    this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);
-    this._data = deepClone(this._initialData);
-
-    if (config.initialData != null) {
-    } else {
-      this._data = {} as TShape;
-    }
-
     this.validationSchema = config.validationSchema;
+    this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);
+    this._data = produce(this._initialData, () => {});
   }
 
   bindField<TPath extends Field.Paths<TShape>>(
@@ -55,29 +66,15 @@ export class FormController<TShape extends object = NativeFormObject> {
     this._fields.set(path, fieldState);
 
     if (config?.defaultValue != null) {
-      Field.setValue<TShape, TPath>(
-        this._initialData as TShape,
-        path,
-        config.defaultValue,
-      );
-      Field.setValue<TShape, TPath>(
-        this._data as TShape,
-        path,
-        config.defaultValue,
-      );
+      console.log("Binding");
+      this._unsafeSetFieldValue(path, config.defaultValue, {
+        updateInitialValue: true,
+      });
     }
 
     if (config?.domElement != null) {
       fieldState.bindElement(config.domElement);
     }
-
-    const issues = this._issues.filter((issue) => {
-      if (issue.path == null) return false;
-      const issuePath = issue.path.join(".");
-      return issuePath === path;
-    });
-
-    fieldState.setIssues(issues);
 
     return fieldState;
   }
@@ -87,10 +84,11 @@ export class FormController<TShape extends object = NativeFormObject> {
   }
 
   reset() {
-    this._data = deepClone(this._initialData as any);
+    this._data = this._initialData;
+    this._issues = [];
 
     for (const fieldState of this._fields.values()) {
-      fieldState.resetState();
+      fieldState.reset();
     }
   }
 
@@ -105,11 +103,10 @@ export class FormController<TShape extends object = NativeFormObject> {
     path: TPath,
     config?: { bindIfMissing?: boolean },
   ) {
-    const fieldState = this._fields.get(path);
+    let fieldState = this._fields.get(path);
 
     if (fieldState == null && config?.bindIfMissing) {
-      this.bindField(path);
-      return this.getFieldState(path);
+      fieldState = this.bindField(path);
     }
 
     return fieldState;
@@ -119,7 +116,7 @@ export class FormController<TShape extends object = NativeFormObject> {
     // TODO: Support native HTML validation, if no schema is provided
     if (this.validationSchema == null) return;
 
-    const fieldState = this.getFieldState(path, { bindIfMissing: true });
+    this.getFieldState(path, { bindIfMissing: true });
 
     const result = await this.validationSchema["~standard"].validate(
       this._data,
@@ -131,9 +128,7 @@ export class FormController<TShape extends object = NativeFormObject> {
       return issuePath !== path;
     });
 
-    if ("value" in result) {
-      fieldState.setIssues([]);
-    } else {
+    if (!("value" in result)) {
       this._issues.push(...result.issues);
     }
   }
@@ -151,15 +146,6 @@ export class FormController<TShape extends object = NativeFormObject> {
     } else {
       this._issues = [...result.issues];
     }
-
-    this._fields.forEach((fieldState, fieldPath) => {
-      const issues = this._issues.filter((issue) => {
-        if (issue.path == null) return false;
-        const issuePath = issue.path.join(".");
-        return issuePath === fieldPath;
-      });
-      fieldState.setIssues(issues);
-    });
   }
 
   createSubmitHandler<Ev extends { preventDefault(): void }>(
@@ -194,3 +180,42 @@ export class FormController<TShape extends object = NativeFormObject> {
     };
   }
 }
+
+/* --------------- */
+
+// class User {
+//   protected username: string;
+
+//   constructor(username: string) {
+//     this.username = username;
+//   }
+
+//   setUsername(username: string) {
+//     this.username = username;
+//   }
+// }
+
+// const initialData = {
+//   user: new User("initialUser"),
+//   name: "",
+//   address: {
+//     city: "",
+//     street: "",
+//   },
+// };
+
+// const control = new FormController({
+//   initialData,
+// });
+
+// const field = control.bindField("user");
+
+// console.log(initialData.user === field.value);
+
+// field.modifyValue((val) => {
+//   val.setUsername("newUser");
+// });
+
+// console.log(initialData.user === field.value);
+
+// console.log(initialData.user, field.value);

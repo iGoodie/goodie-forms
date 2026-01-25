@@ -1,8 +1,7 @@
-import { StandardSchemaV1 } from "@standard-schema/spec";
+import { immerable, produce } from "immer";
+import { createNanoEvents } from "nanoevents";
 import { Field } from "../form/Field";
 import { FormController } from "../form/FormController";
-import { deepEquals } from "../utils/deep.util";
-import { createNanoEvents } from "nanoevents";
 
 export class FieldState<
   TShape extends object,
@@ -12,8 +11,6 @@ export class FieldState<
 
   protected _isTouched = false;
   protected _isDirty = false;
-
-  protected _issues: StandardSchemaV1.Issue[] = [];
 
   public readonly events = createNanoEvents<{
     elementBound(el: HTMLElement): void;
@@ -43,7 +40,9 @@ export class FieldState<
   }
 
   get issues() {
-    return this._issues;
+    return this.control._issues.filter(
+      (issue) => issue.path?.join(".") === this.path,
+    );
   }
 
   get isTouched() {
@@ -55,7 +54,7 @@ export class FieldState<
   }
 
   get isValid() {
-    return this._issues.length === 0;
+    return this.issues.length === 0;
   }
 
   protected _setTouched(isTouched: boolean) {
@@ -76,11 +75,40 @@ export class FieldState<
     this.target = el;
   }
 
+  protected static ensureImmerability(value: any) {
+    if (typeof value !== "object" || value === null) return;
+
+    // Skip plain objects
+    const proto = Object.getPrototypeOf(value);
+    if (proto === Object.prototype || proto === null) return;
+
+    const ctor = proto.constructor;
+    if (typeof ctor !== "function") return;
+
+    // Skip known built-ins
+    if (
+      value instanceof Date ||
+      value instanceof RegExp ||
+      value instanceof Map ||
+      value instanceof Set ||
+      value instanceof WeakMap ||
+      value instanceof WeakSet ||
+      ArrayBuffer.isView(value)
+    ) {
+      return;
+    }
+
+    if (ctor[immerable] === true) return;
+
+    // Define non-enumerable immerable flag
+    ctor[immerable] = true;
+  }
+
   modifyValue(
     modifier: (
       currentValue: Field.GetValue<TShape, TPath>,
       field: this,
-    ) => Field.GetValue<TShape, TPath>,
+    ) => Field.GetValue<TShape, TPath> | void,
     opts?: {
       shouldTouch?: boolean;
       shouldMarkDirty?: boolean;
@@ -95,18 +123,22 @@ export class FieldState<
       this.path,
     );
 
-    Field.modifyValue<TShape, TPath>(
-      this.control._data as TShape,
-      this.path,
-      (oldValue) => modifier(oldValue, this),
-    );
+    FieldState.ensureImmerability(initialValue);
+
+    this.control._data = produce(this.control._data, (draft) => {
+      Field.modifyValue<TShape, TPath>(draft as TShape, this.path, (oldValue) =>
+        modifier(oldValue, this),
+      );
+    });
 
     const currentValue = Field.getValue<TShape, TPath>(
       this.control._data as TShape,
       this.path,
     );
 
-    const valueChanged = !deepEquals(initialValue, currentValue);
+    FieldState.ensureImmerability(currentValue);
+
+    const valueChanged = initialValue !== currentValue;
 
     if (valueChanged) {
       this.events.emit("valueChanged", initialValue, currentValue);
@@ -124,11 +156,7 @@ export class FieldState<
     return this.modifyValue(() => value, opts);
   }
 
-  setIssues(issues: StandardSchemaV1.Issue[]) {
-    this._issues = issues;
-  }
-
-  resetState() {
+  reset() {
     this._isTouched = false;
     this._isDirty = false;
   }

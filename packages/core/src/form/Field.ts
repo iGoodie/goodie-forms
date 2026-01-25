@@ -1,8 +1,12 @@
 export namespace Field {
   export type Paths<TShape extends object> = {
-    [K in keyof TShape & string]: NonNullable<TShape[K]> extends object
-      ? K | `${K}.${Paths<NonNullable<TShape[K]>>}`
-      : K;
+    [K in keyof TShape & string]: NonNullable<TShape[K]> extends (
+      ...args: any[]
+    ) => any
+      ? never
+      : NonNullable<TShape[K]> extends object
+        ? K | `${K}.${Paths<NonNullable<TShape[K]>>}`
+        : K;
   }[keyof TShape & string];
 
   export type GetValue<
@@ -48,7 +52,7 @@ export namespace Field {
     key: TPath,
     modifier: (
       currentValue: Field.GetValue<TShape, TPath>,
-    ) => Field.GetValue<TShape, TPath>,
+    ) => Field.GetValue<TShape, TPath> | void,
   ) {
     const parts = (key as string).split(".");
 
@@ -62,6 +66,10 @@ export namespace Field {
     }
 
     const oldValue = current[parts[parts.length - 1]];
-    current[parts[parts.length - 1]] = modifier(oldValue);
+    const newValue = modifier(oldValue);
+
+    if (newValue !== undefined) {
+      current[parts[parts.length - 1]] = newValue;
+    }
   }
 }

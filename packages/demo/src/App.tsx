@@ -1,10 +1,23 @@
 import { FormController } from "@goodie-forms/core";
 import { useEffect, useState } from "react";
+import z from "zod";
 import { SimpleField } from "./SimpleField";
 
 import "./App.css";
 import "./tailwind.css";
-import z from "zod";
+
+function vanillaTest() {
+  const control = new FormController({});
+
+  document.createElement("form").onsubmit = control.createSubmitHandler(
+    async (data, event) => {
+      //         ^?
+      console.log("Infers type of event correctly", event);
+    },
+  );
+}
+
+vanillaTest();
 
 // Allows deriving validation schema from the actual data shape too
 interface UserForm {
@@ -43,6 +56,15 @@ function App() {
     });
   });
 
+  const [renderNo, rerender] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      // rerender((i) => i + 1);
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
   useEffect(() => {
     // Simulating virtual field binding
     control.bindField("address");
@@ -50,20 +72,12 @@ function App() {
 
     // Simulating arbitrary focus by field path
     control.getFieldState("name")?.focus();
-
-    console.log(control);
   }, []);
 
-  useEffect(() => {
-    document.createElement("form").onsubmit = control.createSubmitHandler(
-      async (data, event) => {
-        //         ^?
-        console.log("Infers type of event correctly", event);
-      },
-    );
-  }, []);
+  console.log("Rendering app");
+
   return (
-    <main>
+    <main className="grid grid-cols-4 gap-20">
       <form
         className="flex flex-col gap-4"
         onSubmit={control.createSubmitHandler(
@@ -83,24 +97,13 @@ function App() {
           form={control}
           name="name"
           label="User Name"
-          render={() => (
+          defaultValue="foo"
+          render={({ field }) => (
             <input
-              defaultValue="foo"
-              ref={(el) => {
-                if (el) {
-                  control.bindField("name", { defaultValue: el.value });
-                  control.getFieldState("name")?.bindElement(el);
-                } else {
-                  control.unbindField("name");
-                }
-              }}
+              {...field}
               onChange={(e) => {
-                control
-                  .getFieldState("name")!
-                  .modifyValue((_currentValue, field) => {
-                    field.markDirty();
-                    return e.target.value;
-                  });
+                control.getFieldState("name")!.setValue(e.target.value);
+                rerender((i) => i + 1);
               }}
               type="text"
               placeholder="John"
@@ -111,35 +114,95 @@ function App() {
           form={control}
           name="surname"
           label="User Lastname"
-          render={() => (
+          defaultValue=""
+          render={({ field }) => (
             <input
-              ref={(el) => {
-                if (el) {
-                  control.bindField("surname", { defaultValue: el.value });
-                  control.getFieldState("surname")?.bindElement(el);
-                } else {
-                  control.unbindField("surname");
-                }
+              {...field}
+              onChange={(e) => {
+                control
+                  .getFieldState("surname")!
+                  .modifyValue((_currentValue, field) => {
+                    field.markDirty();
+                    return e.target.value;
+                  });
+                rerender((i) => i + 1);
               }}
               type="text"
               placeholder="Doe"
             />
           )}
         />
-        <button type="button" onClick={() => control.reset()}>
+
+        <SimpleField
+          form={control}
+          name="address"
+          label="Address"
+          defaultValue={{ city: "Foo", street: "Bar" }}
+          render={({ field, fieldState }) => (
+            <div {...(field as object)}>
+              <button
+                type="button"
+                onClick={() => {
+                  fieldState.modifyValue((address) => {
+                    address.city =
+                      Math.random() <= 0.5 ? "Garip Şehir" : "Gravity Falls";
+                  });
+                  rerender((i) => i + 1);
+                }}
+              >
+                Some complex city picker thing
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  fieldState.modifyValue((address) => {
+                    address.street =
+                      Math.random() <= 0.5
+                        ? "Aman Allahım Sokak"
+                        : "Akarsuyokuş Sokak";
+                  });
+                  rerender((i) => i + 1);
+                }}
+              >
+                Some complex street picker thing
+              </button>
+            </div>
+          )}
+        />
+
+        <button
+          type="button"
+          onClick={() => {
+            control.reset();
+            rerender((i) => i + 1);
+          }}
+        >
           Reset
         </button>
         <button
           type="button"
           onClick={() => {
             control.validateForm();
-            console.log(control);
+            rerender((i) => i + 1);
           }}
         >
           Validate
         </button>
         <button type="submit">Submit</button>
       </form>
+
+      <pre className="w-50 text-left">
+        {JSON.stringify(control._data, null, 2)}
+      </pre>
+
+      <pre className="w-50 text-left">
+        {JSON.stringify(control._initialData, null, 2)}
+      </pre>
+
+      <pre className="w-50 text-left">
+        <span>Render #{renderNo}</span>
+      </pre>
     </main>
   );
 }

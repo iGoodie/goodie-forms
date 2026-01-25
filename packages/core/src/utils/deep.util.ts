@@ -1,3 +1,4 @@
+/** @deprecated */
 export function deepEquals<V1, V2>(
   value1: V1 | undefined,
   value2: V2 | undefined,
@@ -76,6 +77,7 @@ export function deepEquals<V1, V2>(
   return false;
 }
 
+/** @deprecated */
 export function deepClone<V>(value: V): V {
   if (typeof structuredClone === "function") {
     return structuredClone(value);
