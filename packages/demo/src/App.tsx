@@ -6,20 +6,21 @@ import "./App.css";
 import "./tailwind.css";
 import z from "zod";
 
-// interface UserForm {
-//   name?: string;
-//   surname?: string;
-//   address?: {
-//     city: string;
-//     street: string;
-//   };
-//   scores?: string[];
-//   friends?: {
-//     name: string;
-//     friendshipPoints: string;
-//   }[];
-//   foo?: { bar: number[] };
-// }
+// Allows deriving validation schema from the actual data shape too
+interface UserForm {
+  name: string;
+  surname: string;
+  address: {
+    city: string;
+    street: string;
+  };
+  scores: string[];
+  friends: {
+    name: string;
+    friendshipPoints: string;
+  }[];
+  foo: { bar: number[] };
+}
 
 const UserSchema = z.object({
   name: z.string().nonempty(),
@@ -28,27 +29,26 @@ const UserSchema = z.object({
     city: z.string(),
     street: z.string(),
   }),
-});
+  foo: z.any(),
+  friends: z.any(),
+  scores: z.any(),
+}) satisfies z.ZodType<UserForm>;
 
-type UserForm = z.infer<typeof UserSchema>;
+// type UserForm = z.infer<typeof UserSchema>;
 
 function App() {
-  const [control] = useState(
-    () =>
-      new FormController<UserForm>({
-        validationSchema: UserSchema,
-        initialData: {
-          name: "",
-          surname: "",
-          address: { city: "", street: "" },
-        },
-      }),
-  );
+  const [control] = useState(() => {
+    return new FormController<UserForm>({
+      validationSchema: UserSchema,
+    });
+  });
 
   useEffect(() => {
-    control.registerField("address");
-    control.setValue("address", { city: "A", street: "B" });
+    // Simulating virtual field binding
+    control.bindField("address");
+    control.getFieldState("address")!.setValue({ city: "A", street: "B" });
 
+    // Simulating arbitrary focus by field path
     control.getFieldState("name")?.focus();
 
     console.log(control);
@@ -70,15 +70,14 @@ function App() {
               defaultValue="foo"
               ref={(el) => {
                 if (el) {
-                  control.registerField("name", el.value);
+                  control.bindField("name", el.value);
                   control.getFieldState("name")?.bindElement(el);
                 } else {
-                  control.unregisterField("name");
+                  control.unbindField("name");
                 }
               }}
               onChange={(e) => {
                 control.getFieldState("name")!.setValue(e.target.value);
-                control.setValue("name", e.target.value);
               }}
               type="text"
               placeholder="John"
@@ -91,10 +90,10 @@ function App() {
             <input
               ref={(el) => {
                 if (el) {
-                  control.registerField("surname", el.value);
+                  control.bindField("surname", el.value);
                   control.getFieldState("surname")?.bindElement(el);
                 } else {
-                  control.unregisterField("surname");
+                  control.unbindField("surname");
                 }
               }}
               type="text"

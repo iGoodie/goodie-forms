@@ -1,21 +1,16 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
+import { Field } from "../form/Field";
 import { FormController } from "../form/FormController";
 import { deepEquals } from "../utils/deep.util";
-import {
-  ExtractPaths,
-  getByPath,
-  setByPath,
-  ValueByPath,
-} from "../utils/path.utils";
 
 export class FieldState<
   TShape extends object,
-  TPath extends ExtractPaths<TShape>,
+  TPath extends Field.Paths<TShape>,
 > {
   protected target?: HTMLElement;
 
-  protected isTouched = false;
-  protected isDirty = false;
+  protected _isTouched = false;
+  protected _isDirty = false;
 
   protected issues: StandardSchemaV1.Issue[] = [];
 
@@ -25,24 +20,56 @@ export class FieldState<
   ) {}
 
   get value() {
-    return getByPath(this.control._data, this.path);
+    return Field.getValue<TShape, TPath>(
+      this.control._data as TShape,
+      this.path,
+    );
+  }
+
+  get isTouched() {
+    return this._isTouched;
+  }
+
+  get isDirty() {
+    return this._isDirty;
   }
 
   bindElement(el: HTMLElement) {
     this.target = el;
   }
 
-  setValue(
-    value: ValueByPath<TShape, TPath>,
+  modifyValue(
+    modifier: (
+      currentValue: Field.GetValue<TShape, TPath>,
+    ) => Field.GetValue<TShape, TPath>,
     opts?: { shouldTouch?: boolean },
   ) {
     if (opts?.shouldTouch == null || opts?.shouldTouch) this.touch();
 
-    const initialValue = getByPath(this.control.config.initialData, this.path);
+    const initialValue = Field.getValue<TShape, TPath>(
+      this.control.config.initialData as TShape,
+      this.path,
+    );
 
-    this.isDirty = !deepEquals(initialValue as any, value as any);
+    Field.modifyValue<TShape, TPath>(
+      this.control._data as TShape,
+      this.path,
+      modifier,
+    );
 
-    setByPath(this.control._data, this.path, value);
+    const currentValue = Field.getValue<TShape, TPath>(
+      this.control._data as TShape,
+      this.path,
+    );
+
+    this._isDirty = !deepEquals(initialValue as any, currentValue as any);
+  }
+
+  setValue(
+    value: Field.GetValue<TShape, TPath>,
+    opts?: { shouldTouch?: boolean },
+  ) {
+    return this.modifyValue(() => value, opts);
   }
 
   setIssues(issues: StandardSchemaV1.Issue[]) {
@@ -50,12 +77,12 @@ export class FieldState<
   }
 
   reset() {
-    this.isTouched = false;
-    this.isDirty = false;
+    this._isTouched = false;
+    this._isDirty = false;
   }
 
   touch() {
-    this.isTouched = true;
+    this._isTouched = true;
   }
 
   focus(opts?: { shouldTouch?: boolean }) {

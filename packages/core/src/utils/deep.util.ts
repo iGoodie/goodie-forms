@@ -1,9 +1,9 @@
 import { NativeFormValue } from "../types/NativeForm";
 
-export function deepEquals<
-  V1 extends NativeFormValue,
-  V2 extends NativeFormValue,
->(value1: V1 | undefined, value2: V2 | undefined): boolean {
+export function deepEquals<V1 extends object, V2 extends object>(
+  value1: V1 | undefined,
+  value2: V2 | undefined,
+): boolean {
   if (Object.is(value1, value2)) {
     return true;
   }
@@ -78,7 +78,7 @@ export function deepEquals<
   return false;
 }
 
-export function deepClone<V extends NativeFormValue>(value: V): V {
+export function deepClone<V extends object>(value: V): V {
   if (typeof structuredClone === "function") {
     return structuredClone(value);
   }
@@ -110,7 +110,7 @@ export function deepClone<V extends NativeFormValue>(value: V): V {
   if (Array.isArray(value)) {
     const cloned: unknown[] = new Array(value.length);
     for (let i = 0; i < value.length; i++) {
-      cloned[i] = deepClone(value[i] as NativeFormValue);
+      cloned[i] = deepClone(value[i]);
     }
     return cloned as V;
   }
@@ -118,7 +118,7 @@ export function deepClone<V extends NativeFormValue>(value: V): V {
   // Object
   const result: Record<string, unknown> = {};
   for (const key of Object.keys(value)) {
-    result[key] = deepClone((value as Record<string, NativeFormValue>)[key]);
+    result[key] = deepClone((value as any)[key]);
   }
 
   return result as V;

@@ -1,48 +1,70 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
+import { Field } from "../form/Field";
 import { FieldState } from "../form/FieldState";
 import { NativeFormObject } from "../types/NativeForm";
 import { deepClone } from "../utils/deep.util";
-import { ExtractPaths, setByPath, ValueByPath } from "../utils/path.utils";
+import { DeepPartial } from "../types/DeepPartial";
+
+export namespace Form {
+  export type Status = "idle" | "validating" | "submitting";
+}
 
 export class FormController<TShape extends object = NativeFormObject> {
-  _fields = new Map<ExtractPaths<TShape>, FieldState<TShape, any>>();
-  _data: TShape;
+  _status: Form.Status = "idle";
+  _fields = new Map<Field.Paths<TShape>, FieldState<TShape, any>>();
+  _initialData: DeepPartial<TShape>;
+  _data: DeepPartial<TShape>;
   _issues: readonly StandardSchemaV1.Issue[] = [];
+
+  get isDirty() {
+    for (const fieldState of this._fields.values()) {
+      if (fieldState.isDirty) return true;
+    }
+    return false;
+  }
 
   constructor(
     public readonly config: {
-      initialData: TShape;
+      initialData?: DeepPartial<TShape>;
       validationSchema?: StandardSchemaV1<TShape, TShape>;
     },
   ) {
-    this._data = deepClone(
-      config.initialData as any satisfies NativeFormObject,
-    );
+    this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);
+    this._data = deepClone(this._initialData);
+
+    if (config.initialData != null) {
+    } else {
+      this._data = {} as TShape;
+    }
   }
 
-  registerField<TPath extends ExtractPaths<TShape>>(
-    fieldPath: TPath,
-    defaultValue?: ValueByPath<TShape, TPath>,
+  bindField<TPath extends Field.Paths<TShape>>(
+    path: TPath,
+    defaultValue?: Field.GetValue<TShape, TPath>,
   ) {
-    const fieldState = new FieldState(this, fieldPath);
-    this._fields.set(fieldPath, fieldState);
+    const fieldState = new FieldState(this, path);
+    this._fields.set(path, fieldState);
 
     if (defaultValue != null) {
-      setByPath(this.config.initialData, fieldPath, defaultValue);
-      setByPath(this._data, fieldPath, defaultValue);
+      Field.setValue<TShape, TPath>(
+        this._initialData as TShape,
+        path,
+        defaultValue,
+      );
+      Field.setValue<TShape, TPath>(this._data as TShape, path, defaultValue);
     }
 
     const issues = this._issues.filter((issue) => {
       if (issue.path == null) return false;
-      const issueFieldPath = issue.path.join(".");
-      return issueFieldPath === fieldPath;
+      const issuePath = issue.path.join(".");
+      return issuePath === path;
     });
 
     fieldState.setIssues(issues);
   }
 
-  unregisterField(fieldPath: ExtractPaths<TShape>) {
-    this._fields.delete(fieldPath);
+  unbindField(path: Field.Paths<TShape>) {
+    this._fields.delete(path);
   }
 
   reset() {
@@ -53,16 +75,24 @@ export class FormController<TShape extends object = NativeFormObject> {
     }
   }
 
-  getFieldState<TPath extends ExtractPaths<TShape>>(fieldPath: TPath) {
-    return this._fields.get(fieldPath) as FieldState<TShape, TPath> | undefined;
-  }
-
-  setValue<TPath extends ExtractPaths<TShape>>(
+  getFieldState<TPath extends Field.Paths<TShape>>(
     path: TPath,
-    ...args: [...Parameters<FieldState<TShape, TPath>["setValue"]>]
+    config: { bindIfMissing: true },
+  ): FieldState<TShape, TPath>;
+  getFieldState<TPath extends Field.Paths<TShape>>(
+    path: TPath,
+  ): FieldState<TShape, TPath> | undefined;
+  getFieldState<TPath extends Field.Paths<TShape>>(
+    path: TPath,
+    config?: { bindIfMissing?: boolean },
   ) {
-    const fieldState = this.getFieldState(path);
-    fieldState?.setValue(...args);
+    const fieldState = this._fields.get(path);
+
+    if (fieldState == null && config?.bindIfMissing) {
+      this.bindField(path);
+      return this.getFieldState(path);
+    }
+
     return fieldState;
   }
 
