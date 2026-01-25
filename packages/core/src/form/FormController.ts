@@ -40,18 +40,29 @@ export class FormController<TShape extends object = NativeFormObject> {
 
   bindField<TPath extends Field.Paths<TShape>>(
     path: TPath,
-    defaultValue?: Field.GetValue<TShape, TPath>,
+    config?: {
+      defaultValue?: Field.GetValue<TShape, TPath>;
+      domElement?: HTMLElement;
+    },
   ) {
     const fieldState = new FieldState(this, path);
     this._fields.set(path, fieldState);
 
-    if (defaultValue != null) {
+    if (config?.defaultValue != null) {
       Field.setValue<TShape, TPath>(
         this._initialData as TShape,
         path,
-        defaultValue,
+        config.defaultValue,
       );
-      Field.setValue<TShape, TPath>(this._data as TShape, path, defaultValue);
+      Field.setValue<TShape, TPath>(
+        this._data as TShape,
+        path,
+        config.defaultValue,
+      );
+    }
+
+    if (config?.domElement != null) {
+      fieldState.bindElement(config.domElement);
     }
 
     const issues = this._issues.filter((issue) => {

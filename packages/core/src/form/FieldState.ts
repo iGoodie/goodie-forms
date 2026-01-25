@@ -41,6 +41,7 @@ export class FieldState<
   modifyValue(
     modifier: (
       currentValue: Field.GetValue<TShape, TPath>,
+      field: this,
     ) => Field.GetValue<TShape, TPath>,
     opts?: { shouldTouch?: boolean },
   ) {
@@ -54,7 +55,7 @@ export class FieldState<
     Field.modifyValue<TShape, TPath>(
       this.control._data as TShape,
       this.path,
-      modifier,
+      (oldValue) => modifier(oldValue, this),
     );
 
     const currentValue = Field.getValue<TShape, TPath>(
@@ -74,6 +75,10 @@ export class FieldState<
 
   setIssues(issues: StandardSchemaV1.Issue[]) {
     this.issues = issues;
+  }
+
+  markDirty() {
+    this._isDirty = true;
   }
 
   reset() {

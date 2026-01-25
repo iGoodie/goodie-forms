@@ -70,14 +70,19 @@ function App() {
               defaultValue="foo"
               ref={(el) => {
                 if (el) {
-                  control.bindField("name", el.value);
+                  control.bindField("name", { defaultValue: el.value });
                   control.getFieldState("name")?.bindElement(el);
                 } else {
                   control.unbindField("name");
                 }
               }}
               onChange={(e) => {
-                control.getFieldState("name")!.setValue(e.target.value);
+                control
+                  .getFieldState("name")!
+                  .modifyValue((_currentValue, field) => {
+                    field.markDirty();
+                    return e.target.value;
+                  });
               }}
               type="text"
               placeholder="John"
@@ -90,7 +95,7 @@ function App() {
             <input
               ref={(el) => {
                 if (el) {
-                  control.bindField("surname", el.value);
+                  control.bindField("surname", { defaultValue: el.value });
                   control.getFieldState("surname")?.bindElement(el);
                 } else {
                   control.unbindField("surname");
