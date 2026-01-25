@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/refs */
 
-import type { Field, FieldState, FormController } from "@goodie-forms/core";
+import {
+  FieldState,
+  type Field,
+  type FormController,
+} from "@goodie-forms/core";
+import flow from "lodash.flow";
 import {
   useEffect,
   useId,
@@ -18,7 +23,6 @@ interface RenderParams<
   field: {
     ref: Ref<any | null>;
     value: Field.GetValue<TShape, TPath> | undefined;
-    defaultValue?: Field.GetValue<TShape, TPath>;
   };
 
   fieldState: FieldState<TShape, TPath>;
@@ -38,53 +42,51 @@ export function SimpleField<
 >(props: Props<TShape, TPath>) {
   const id = useId();
 
-  const ref = useRef<HTMLElement>(null);
+  const elementRef = useRef<HTMLElement>(null);
 
   const [, rerender] = useState(0);
 
-  const [fieldState] = useState(() => {
-    return props.form.bindField(props.name, {
+  const [fieldState, setFieldState] = useState(() =>
+    props.form.bindField(props.name, {
       defaultValue: props.defaultValue,
-    });
-  });
+    }),
+  );
 
   const fieldError = props.form.getFieldState(props.name)?.issues.at(0);
 
   const _field: RenderParams<TShape, TPath>["field"] = {
-    ref,
-
-    // ref: (domElement: HTMLElement | null) => {
-    //   if (domElement == null) return;
-    //   if (ref.current != null) return;
-
-    //   props.form.bindField(props.name, {
-    //     defaultValue: props.defaultValue,
-    //     domElement,
-    //   });
-
-    //   ref.current = domElement;
-    // },
-
-    value: props.form.getFieldState(props.name)?.value,
-
-    defaultValue: props.defaultValue,
+    ref: elementRef,
+    value: fieldState?.value,
   };
 
   useEffect(() => {
-    const fieldState = props.form.bindField(props.name);
+    const { events } = props.form;
 
-    return fieldState.events.on("valueChanged", () => {
-      rerender((i) => i + 1);
-    });
+    return flow(
+      events.on("valueChanged", () => rerender((i) => i + 1)),
+      events.on("fieldUpdated", () => rerender((i) => i + 1)),
+      events.on("validationTriggered", (path) => {
+        console.log(path, props.name);
+        if (path === props.name) rerender((i) => i + 1);
+      }),
+    );
   }, []);
 
   useEffect(() => {
-    fieldState.bindElement(ref.current!);
+    if (props.form.getFieldState(props.name) != null) {
+      fieldState.bindElement(elementRef.current!);
+    } else {
+      const fieldState = props.form.bindField(props.name, {
+        defaultValue: props.defaultValue,
+        domElement: elementRef.current!,
+      });
+
+      setFieldState(fieldState);
+    }
 
     return () => {
       console.log("Unbinding");
       props.form.unbindField(props.name);
-      ref.current = null;
     };
   }, []);
 
@@ -92,13 +94,17 @@ export function SimpleField<
     <div className="flex flex-col gap-2 items-start">
       <label htmlFor={id}>{props.label}</label>
 
-      {props.render({
-        field: _field,
-        fieldState,
-      })}
+      <div className="flex w-full *:w-full">
+        {props.render({
+          field: _field,
+          fieldState,
+        })}
+      </div>
 
       {fieldError && (
-        <span className="text-red-400 text-xs">{fieldError.message}</span>
+        <span className="text-red-400 text-xs text-left">
+          {fieldError.message}
+        </span>
       )}
     </div>
   );

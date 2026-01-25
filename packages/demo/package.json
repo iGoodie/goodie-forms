@@ -13,13 +13,17 @@
     "@goodie-forms/core": "workspace:*",
     "@goodie-forms/react": "workspace:*",
     "@tailwindcss/vite": "^4.1.18",
+    "lodash.flow": "^3.5.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "remeda": "^2.33.4",
+    "safe-stringify": "^1.2.0",
     "tailwindcss": "^4.1.18",
     "zod": "^4.3.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/lodash.flow": "^3.5.9",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

@@ -2,30 +2,22 @@ import { immerable, produce } from "immer";
 import { createNanoEvents } from "nanoevents";
 import { Field } from "../form/Field";
 import { FormController } from "../form/FormController";
+import { getId } from "../utils/getId";
 
 export class FieldState<
   TShape extends object,
   TPath extends Field.Paths<TShape>,
 > {
+  public readonly id = getId();
+
   protected target?: HTMLElement;
 
   protected _isTouched = false;
   protected _isDirty = false;
 
-  public readonly events = createNanoEvents<{
-    elementBound(el: HTMLElement): void;
-    elementUnbound(): void;
-    touch(isTouched: boolean): void;
-    dirty(isDirty: boolean): void;
-    valueChanged(
-      oldValue: Field.GetValue<TShape, TPath> | undefined,
-      newValue: Field.GetValue<TShape, TPath> | undefined,
-    ): void;
-  }>();
-
   constructor(
-    protected control: FormController<TShape>,
-    protected path: TPath,
+    public readonly control: FormController<TShape>,
+    public readonly path: TPath,
   ) {}
 
   get value() {
@@ -60,18 +52,20 @@ export class FieldState<
   protected _setTouched(isTouched: boolean) {
     const changed = this._isTouched !== isTouched;
     this._isTouched = isTouched;
-    if (changed) this.events.emit("touch", isTouched);
+    console.log("Setting", this.id, isTouched);
+    if (changed) this.control.events.emit("fieldUpdated", this.path);
+    console.log(this.isTouched);
   }
 
   protected _setDirty(isDirty: boolean) {
     const changed = this._isDirty !== isDirty;
     this._isDirty = isDirty;
-    if (changed) this.events.emit("dirty", isDirty);
+    if (changed) this.control.events.emit("fieldUpdated", this.path);
   }
 
-  bindElement(el: HTMLElement) {
-    if (el != null) this.events.emit("elementBound", el);
-    else this.events.emit("elementUnbound");
+  bindElement(el: HTMLElement | undefined) {
+    if (el != null) this.control.events.emit("elementBound", this.path, el);
+    else this.control.events.emit("elementUnbound", this.path);
     this.target = el;
   }
 
@@ -138,11 +132,15 @@ export class FieldState<
 
     FieldState.ensureImmerability(currentValue);
 
+    // TODO: Won't work for address.city and address.street
     const valueChanged = initialValue !== currentValue;
 
-    if (valueChanged) {
-      this.events.emit("valueChanged", initialValue, currentValue);
-    }
+    this.control.events.emit(
+      "valueChanged",
+      this.path,
+      currentValue,
+      initialValue,
+    );
 
     if (opts?.shouldMarkDirty == null || opts?.shouldMarkDirty) {
       this._setDirty(valueChanged);

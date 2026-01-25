@@ -29,6 +29,7 @@ export namespace Field {
     const parts = (path as string).split(".");
 
     let current: any = data;
+
     for (const part of parts) {
       if (current == null) return undefined;
       current = current[part];
@@ -57,6 +58,7 @@ export namespace Field {
     const parts = (key as string).split(".");
 
     let current: any = data;
+
     for (let i = 0; i < parts.length - 1; i++) {
       const part = parts[i];
       if (current[part] == null) {
@@ -71,5 +73,24 @@ export namespace Field {
     if (newValue !== undefined) {
       current[parts[parts.length - 1]] = newValue;
     }
+  }
+
+  export function deleteValue<
+    TShape extends object,
+    TPath extends Field.Paths<TShape>,
+  >(data: TShape, key: TPath) {
+    const parts = (key as string).split(".");
+
+    let current: any = data;
+
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (current[part] == null) {
+        return;
+      }
+      current = current[part];
+    }
+
+    delete current[parts[parts.length - 1]];
   }
 }

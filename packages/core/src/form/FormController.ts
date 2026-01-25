@@ -3,6 +3,7 @@ import { enableArrayMethods, enableMapSet, produce } from "immer";
 import { Field } from "../form/Field";
 import { FieldState } from "../form/FieldState";
 import { DeepPartial } from "../types/DeepPartial";
+import { createNanoEvents } from "nanoevents";
 
 enableMapSet();
 enableArrayMethods();
@@ -19,6 +20,31 @@ export class FormController<TShape extends object = object> {
   _issues: StandardSchemaV1.Issue[] = [];
 
   validationSchema?: StandardSchemaV1<TShape, TShape>;
+  // TODO: Validation mode, e.g., onChange, onBlur, onSubmit, etc.
+
+  public readonly events = createNanoEvents<{
+    statusChanged(newStatus: Form.Status, oldStatus: Form.Status): void;
+    fieldBound(fieldPath: Field.Paths<TShape>): void;
+    fieldUnbound(fieldPath: Field.Paths<TShape>): void;
+    fieldUpdated(path: Field.Paths<TShape>): void;
+    elementBound(fieldPath: Field.Paths<TShape>, el: HTMLElement): void;
+    elementUnbound(fieldPath: Field.Paths<TShape>): void;
+    validationTriggered(fieldPath: Field.Paths<TShape> | null): void;
+    valueChanged(
+      path: Field.Paths<TShape>,
+      newValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined,
+      oldValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined,
+    ): void;
+  }>();
+
+  constructor(config: {
+    initialData?: DeepPartial<TShape>;
+    validationSchema?: StandardSchemaV1<TShape, TShape>;
+  }) {
+    this.validationSchema = config.validationSchema;
+    this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);
+    this._data = produce(this._initialData, () => {});
+  }
 
   get isDirty() {
     for (const fieldState of this._fields.values()) {
@@ -29,6 +55,12 @@ export class FormController<TShape extends object = object> {
 
   get isValid() {
     return this._issues.length === 0;
+  }
+
+  protected setStatus(newStatus: Form.Status) {
+    const oldStatus = this._status;
+    this._status = newStatus;
+    this.events.emit("statusChanged", newStatus, oldStatus);
   }
 
   _unsafeSetFieldValue<TPath extends Field.Paths<TShape>>(
@@ -46,15 +78,6 @@ export class FormController<TShape extends object = object> {
     });
   }
 
-  constructor(config: {
-    initialData?: DeepPartial<TShape>;
-    validationSchema?: StandardSchemaV1<TShape, TShape>;
-  }) {
-    this.validationSchema = config.validationSchema;
-    this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);
-    this._data = produce(this._initialData, () => {});
-  }
-
   bindField<TPath extends Field.Paths<TShape>>(
     path: TPath,
     config?: {
@@ -63,10 +86,12 @@ export class FormController<TShape extends object = object> {
     },
   ) {
     const fieldState = new FieldState(this, path);
+
+    console.log("Binding", path, config?.defaultValue);
     this._fields.set(path, fieldState);
+    this.events.emit("fieldBound", path);
 
     if (config?.defaultValue != null) {
-      console.log("Binding");
       this._unsafeSetFieldValue(path, config.defaultValue, {
         updateInitialValue: true,
       });
@@ -81,9 +106,11 @@ export class FormController<TShape extends object = object> {
 
   unbindField(path: Field.Paths<TShape>) {
     this._fields.delete(path);
+    this.events.emit("fieldUnbound", path);
   }
 
   reset() {
+    this.setStatus("idle");
     this._data = this._initialData;
     this._issues = [];
 
@@ -113,8 +140,12 @@ export class FormController<TShape extends object = object> {
   }
 
   async validateField<TPath extends Field.Paths<TShape>>(path: TPath) {
+    if (this._status !== "idle") return;
+
     // TODO: Support native HTML validation, if no schema is provided
     if (this.validationSchema == null) return;
+
+    this.setStatus("validating");
 
     this.getFieldState(path, { bindIfMissing: true });
 
@@ -131,11 +162,18 @@ export class FormController<TShape extends object = object> {
     if (!("value" in result)) {
       this._issues.push(...result.issues);
     }
+
+    this.events.emit("validationTriggered", path);
+    this.setStatus("idle");
   }
 
   async validateForm() {
+    if (this._status !== "idle") return;
+
     // TODO: Support native HTML validation, if no schema is provided
     if (this.validationSchema == null) return;
+
+    this.setStatus("validating");
 
     const result = await this.validationSchema["~standard"].validate(
       this._data,
@@ -146,6 +184,13 @@ export class FormController<TShape extends object = object> {
     } else {
       this._issues = [...result.issues];
     }
+
+    for (const path of this._fields.keys()) {
+      console.log([...this._fields.keys()]);
+      this.events.emit("validationTriggered", path);
+    }
+
+    this.setStatus("idle");
   }
 
   createSubmitHandler<Ev extends { preventDefault(): void }>(
