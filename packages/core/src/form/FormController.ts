@@ -11,7 +11,7 @@ enableArrayMethods();
 export namespace Form {
   export type Status = "idle" | "validating" | "submitting";
 
-  export type AutoValidationMode = "onChange" | "onBlur" | "onSubmit" | "none";
+  export type AutoValidationMode = "onChange" | "onBlur" | "onSubmit";
 
   export interface PreventableEvent {
     preventDefault(): void;
@@ -66,7 +66,7 @@ export class FormController<TShape extends object = object> {
     equalityComparators?: Record<any, (a: any, b: any) => boolean>;
   }) {
     this.validationSchema = config.validationSchema;
-    this.autoValidationMode = config.autoValidationMode ?? "none";
+    this.autoValidationMode = config.autoValidationMode ?? "onSubmit";
     this.equalityComparators = config.equalityComparators;
     this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);
     this._data = produce(this._initialData, () => {});
@@ -139,13 +139,18 @@ export class FormController<TShape extends object = object> {
     this.events.emit("fieldUnbound", path);
   }
 
-  reset() {
+  reset(newInitialData?: DeepPartial<TShape>) {
     this.setStatus("idle");
     this._data = this._initialData;
     this._issues = [];
 
     for (const fieldState of this._fields.values()) {
       fieldState.reset();
+    }
+
+    if (newInitialData != null) {
+      this._initialData = newInitialData;
+      this._data = produce(this._initialData, () => {});
     }
   }
 
@@ -235,7 +240,9 @@ export class FormController<TShape extends object = object> {
 
       const abortController = new AbortController();
 
-      await this.validateForm();
+      if (this.autoValidationMode === "onSubmit") {
+        await this.validateForm();
+      }
 
       this.setStatus("submitting");
 

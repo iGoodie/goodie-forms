@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/refs */
 import { FormController } from "@goodie-forms/core";
 import { FormDebug } from "./FormDebug";
 import { useEffect, useState } from "react";
@@ -22,11 +21,11 @@ function vanillaTest() {
 
 vanillaTest();
 
-class Foo {
-  bar: number[] = [];
+class Inventory {
+  contents: string[] = [];
 
-  push(num: number) {
-    this.bar.push(num);
+  push(item: string) {
+    this.contents.push(item);
   }
 }
 
@@ -43,7 +42,7 @@ interface UserForm {
     name: string;
     friendshipPoints: number;
   }[];
-  foo: Foo;
+  inventory: Inventory;
 }
 
 const UserSchema = z.object({
@@ -53,9 +52,9 @@ const UserSchema = z.object({
     city: z.string(),
     street: z.string(),
   }),
-  foo: z.custom<Foo>(
-    (d) => d instanceof Foo && d.bar.length >= 1,
-    "Requires at least 1 bar",
+  inventory: z.custom<Inventory>(
+    (d) => d instanceof Inventory && d.contents.length >= 1,
+    "Requires at least 1 item",
   ),
   friends: z.any(),
   scores: z.any(),
@@ -69,6 +68,7 @@ function App() {
   const [formController] = useState(() => {
     return new FormController<UserForm>({
       validationSchema: UserSchema,
+      autoValidationMode: "onSubmit",
     });
   });
 
@@ -76,6 +76,7 @@ function App() {
     async (data, event) => {
       alert("Form submitted successfully: " + JSON.stringify(data));
       console.log(event);
+      formController.reset(data);
     },
     async (issues, event) => {
       console.log(
@@ -85,14 +86,14 @@ function App() {
     },
   );
 
-  useEffect(() => {
-    // Simulating virtual field binding
-    const friendsField = formController.bindField("friends");
-    friendsField.setValue([{ name: "iGoodie", friendshipPoints: 100 }]);
+  // useEffect(() => {
+  //   // Simulating virtual field binding
+  //   const friendsField = formController.bindField("friends");
+  //   friendsField.setValue([{ name: "iGoodie", friendshipPoints: 100 }]);
 
-    // Simulating arbitrary focus by field path
-    formController.getFieldState("name")?.focus();
-  }, []);
+  //   // Simulating arbitrary focus by field path
+  //   formController.getFieldState("name")?.focus();
+  // }, []);
 
   return (
     <main className="grid grid-cols-4 gap-x-20 gap-y-5">
@@ -187,9 +188,9 @@ function App() {
 
         <SimpleField
           form={formController}
-          name="foo"
-          label="Arbitrary Foo"
-          defaultValue={new Foo()}
+          name="inventory"
+          label="Inventory"
+          defaultValue={new Inventory()}
           render={({ ref, field, fieldState }) => (
             <div className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700 focus-within:border-gray-400">
               <button
@@ -198,14 +199,19 @@ function App() {
                 type="button"
                 onClick={() => {
                   fieldState.modifyValue((foo) => {
-                    foo.push(1);
+                    const items = ["Gem", "Sword", "Bow", "Arrow"];
+                    const item =
+                      items[Math.floor(Math.random() * items.length)];
+                    foo.push(item);
                     return foo;
                   });
                 }}
               >
-                Push "1"
+                Add Random Item
               </button>
-              <span>{field.value?.bar.join(",")}</span>
+              <span className="text-wrap">
+                {field.value?.contents.join(", ")}
+              </span>
             </div>
           )}
         />
@@ -230,7 +236,7 @@ function App() {
         >
           Validate
         </button>
-        <button type="submit">Submit</button>
+        <button type="submit">Submit & Persist</button>
       </form>
 
       <FormDebug form={formController} />

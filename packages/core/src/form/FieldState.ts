@@ -163,8 +163,8 @@ export class FieldState<
   }
 
   reset() {
-    this._isTouched = false;
-    this._isDirty = false;
+    this._setTouched(false);
+    this._setDirty(false);
   }
 
   touch() {
