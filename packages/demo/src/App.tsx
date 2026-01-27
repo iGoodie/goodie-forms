@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/refs */
 import { FormController } from "@goodie-forms/core";
-import flow from "lodash.flow";
+import { FormDebug } from "./FormDebug";
 import { useEffect, useState } from "react";
 import z from "zod";
 import { SimpleField } from "./SimpleField";
@@ -63,63 +63,6 @@ const UserSchema = z.object({
 
 // type UserForm = z.infer<typeof UserSchema>;
 
-function FormDebug<TShape extends object>(props: {
-  form: FormController<TShape>;
-}) {
-  const renderControl = useRenderControl();
-
-  useEffect(() => {
-    const { events } = props.form;
-
-    return flow(
-      events.on("statusChanged", () => renderControl.forceRerender()),
-      events.on("valueChanged", () => renderControl.forceRerender()),
-      events.on("fieldBound", () => renderControl.forceRerender()),
-      events.on("fieldUnbound", () => renderControl.forceRerender()),
-      events.on("fieldUpdated", () => renderControl.forceRerender()),
-    );
-  }, []);
-
-  return (
-    <div className="h-fit col-span-3 grid grid-cols-3 gap-6">
-      <span className="text-left underline opacity-60 col-span-full">
-        Indicator Render #{renderControl.renderCount}
-      </span>
-
-      <pre className="text-left">
-        {JSON.stringify(props.form._data, null, 2)}
-      </pre>
-      <pre className="text-left">
-        {JSON.stringify(props.form._initialData, null, 2)}
-      </pre>
-      <pre className="text-left flex flex-col">
-        <span className="opacity-50">Fields</span>
-        {[...props.form._fields.values()].map((field, i) => (
-          <span key={i}>{field.path}</span>
-        ))}
-
-        <hr className="my-10" />
-
-        <span className="opacity-50">Touched Fields</span>
-        {[...props.form._fields.values()]
-          .filter((field) => field.isTouched)
-          .map((field, i) => (
-            <span key={i}>{field.path}</span>
-          ))}
-
-        <hr className="my-10" />
-
-        <span className="opacity-50">Dirty Fields</span>
-        {[...props.form._fields.values()]
-          .filter((field) => field.isDirty)
-          .map((field, i) => (
-            <span key={i}>{field.path}</span>
-          ))}
-      </pre>
-    </div>
-  );
-}
-
 function App() {
   const renderControl = useRenderControl();
 
@@ -129,12 +72,18 @@ function App() {
     });
   });
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      // rerender((i) => i + 1);
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
+  const handleSubmit = formController.createSubmitHandler(
+    async (data, event) => {
+      alert("Form submitted successfully: " + JSON.stringify(data));
+      console.log(event);
+    },
+    async (issues, event) => {
+      console.log(
+        "Form has issues: " + issues.map((i) => i.message).join(", "),
+      );
+      console.log(event);
+    },
+  );
 
   useEffect(() => {
     // Simulating virtual field binding
@@ -151,28 +100,15 @@ function App() {
         Root Render #{renderControl.renderCount}
       </span>
 
-      <form
-        className="flex flex-col gap-4"
-        onSubmit={formController.createSubmitHandler(
-          async (data, event) => {
-            alert("Form submitted successfully: " + JSON.stringify(data));
-            console.log(event);
-          },
-          async (issues, event) => {
-            alert(
-              "Form has issues: " + issues.map((i) => i.message).join(", "),
-            );
-            console.log(event);
-          },
-        )}
-      >
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <SimpleField
           form={formController}
           name="name"
           label="User Name"
           defaultValue="foo"
-          render={({ field, fieldState }) => (
+          render={({ ref, field, fieldState }) => (
             <input
+              ref={ref}
               {...field}
               onChange={(e) => fieldState.setValue(e.target.value)}
               type="text"
@@ -185,8 +121,9 @@ function App() {
           name="surname"
           label="User Lastname"
           defaultValue=""
-          render={({ field, fieldState }) => (
+          render={({ ref, field, fieldState }) => (
             <input
+              ref={ref}
               {...field}
               onChange={(e) => {
                 fieldState.modifyValue((_currentValue, field) => {
@@ -205,10 +142,11 @@ function App() {
           name="address"
           label="Address"
           defaultValue={{ city: "Foo", street: "Sesame Street" }}
-          render={({ field, fieldState }) => (
+          render={({ ref, field, fieldState }) => (
             <div
+              ref={ref}
               {...(field as object)}
-              className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700"
+              className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700 focus-within:border-gray-400"
             >
               <button
                 type="button"
@@ -252,12 +190,11 @@ function App() {
           name="foo"
           label="Arbitrary Foo"
           defaultValue={new Foo()}
-          render={({ field, fieldState }) => (
-            <div
-              {...(field as object)}
-              className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700"
-            >
+          render={({ ref, field, fieldState }) => (
+            <div className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700 focus-within:border-gray-400">
               <button
+                ref={ref}
+                {...(field as object)}
                 type="button"
                 onClick={() => {
                   fieldState.modifyValue((foo) => {

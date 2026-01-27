@@ -52,13 +52,13 @@ export class FieldState<
   protected _setTouched(isTouched: boolean) {
     const changed = this._isTouched !== isTouched;
     this._isTouched = isTouched;
-    if (changed) this.control.events.emit("fieldUpdated", this.path);
+    if (changed) this.control.events.emit("fieldStateUpdated", this.path);
   }
 
   protected _setDirty(isDirty: boolean) {
     const changed = this._isDirty !== isDirty;
     this._isDirty = isDirty;
-    if (changed) this.control.events.emit("fieldUpdated", this.path);
+    if (changed) this.control.events.emit("fieldStateUpdated", this.path);
   }
 
   bindElement(el: HTMLElement | undefined) {
@@ -130,7 +130,18 @@ export class FieldState<
 
     FieldState.ensureImmerability(currentValue);
 
-    const valueChanged = !Field.deepEqual(initialValue, currentValue);
+    const valueChanged = !Field.deepEqual(
+      initialValue,
+      currentValue,
+      (a, b) => {
+        if (typeof a !== "object") return;
+        if (typeof b !== "object") return;
+        const ctorA = a.constructor;
+        const ctorB = b.constructor;
+        if (ctorA !== ctorB) return;
+        return this.control.equalityComparators?.[ctorA]?.(a, b);
+      },
+    );
 
     this.control.events.emit(
       "valueChanged",
@@ -172,6 +183,7 @@ export class FieldState<
       });
     }
 
+    this.target?.scrollIntoView();
     this.target?.focus();
   }
 }

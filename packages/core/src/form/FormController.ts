@@ -10,6 +10,27 @@ enableArrayMethods();
 
 export namespace Form {
   export type Status = "idle" | "validating" | "submitting";
+
+  export type AutoValidationMode = "onChange" | "onBlur" | "onSubmit" | "none";
+
+  export interface PreventableEvent {
+    preventDefault(): void;
+  }
+
+  export type SubmitSuccessHandler<
+    TShape extends object,
+    TEvent extends PreventableEvent,
+  > = (
+    data: TShape,
+    event: TEvent,
+    abortSignal: AbortSignal,
+  ) => void | Promise<void>;
+
+  export type SubmitErrorHandler<TEvent extends PreventableEvent> = (
+    issues: StandardSchemaV1.Issue[],
+    event: TEvent,
+    abortSignal: AbortSignal,
+  ) => void | Promise<void>;
 }
 
 export class FormController<TShape extends object = object> {
@@ -19,14 +40,15 @@ export class FormController<TShape extends object = object> {
   _data: DeepPartial<TShape>;
   _issues: StandardSchemaV1.Issue[] = [];
 
+  equalityComparators?: Record<any, (a: any, b: any) => boolean>;
   validationSchema?: StandardSchemaV1<TShape, TShape>;
-  // TODO: Validation mode, e.g., onChange, onBlur, onSubmit, etc.
+  autoValidationMode: Form.AutoValidationMode; // TODO <-- Impl
 
   public readonly events = createNanoEvents<{
     statusChanged(newStatus: Form.Status, oldStatus: Form.Status): void;
     fieldBound(fieldPath: Field.Paths<TShape>): void;
     fieldUnbound(fieldPath: Field.Paths<TShape>): void;
-    fieldUpdated(path: Field.Paths<TShape>): void;
+    fieldStateUpdated(path: Field.Paths<TShape>): void;
     elementBound(fieldPath: Field.Paths<TShape>, el: HTMLElement): void;
     elementUnbound(fieldPath: Field.Paths<TShape>): void;
     validationTriggered(fieldPath: Field.Paths<TShape> | null): void;
@@ -40,9 +62,12 @@ export class FormController<TShape extends object = object> {
   constructor(config: {
     initialData?: DeepPartial<TShape>;
     validationSchema?: StandardSchemaV1<TShape, TShape>;
-    // TODO: equalityComparators?: Record<Constructor, (a,b) => boolean>
+    autoValidationMode?: Form.AutoValidationMode;
+    equalityComparators?: Record<any, (a: any, b: any) => boolean>;
   }) {
     this.validationSchema = config.validationSchema;
+    this.autoValidationMode = config.autoValidationMode ?? "none";
+    this.equalityComparators = config.equalityComparators;
     this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);
     this._data = produce(this._initialData, () => {});
   }
@@ -56,6 +81,10 @@ export class FormController<TShape extends object = object> {
 
   get isValid() {
     return this._issues.length === 0;
+  }
+
+  get isSubmitting() {
+    return this._status === "submitting";
   }
 
   protected setStatus(newStatus: Form.Status) {
@@ -187,29 +216,32 @@ export class FormController<TShape extends object = object> {
     }
 
     for (const path of this._fields.keys()) {
-      console.log([...this._fields.keys()]);
       this.events.emit("validationTriggered", path);
     }
 
     this.setStatus("idle");
   }
 
-  createSubmitHandler<Ev extends { preventDefault(): void }>(
-    onSuccess?: (data: TShape, event: Ev) => void | Promise<void>,
-    onError?: (
-      issues: StandardSchemaV1.Issue[],
-      event: Ev,
-    ) => void | Promise<void>,
+  createSubmitHandler<TEvent extends Form.PreventableEvent>(
+    onSuccess?: Form.SubmitSuccessHandler<TShape, TEvent>,
+    onError?: Form.SubmitErrorHandler<TEvent>,
   ) {
-    return async (event: Ev) => {
-      await this.validateForm();
-
+    return async (event: TEvent) => {
       if (event != null) {
         event.preventDefault();
       }
 
+      if (this._status !== "idle") return;
+
+      const abortController = new AbortController();
+
+      await this.validateForm();
+
+      this.setStatus("submitting");
+
       if (this._issues.length === 0) {
-        await onSuccess?.(this._data as TShape, event);
+        await onSuccess?.(this._data as TShape, event, abortController.signal);
+        this.setStatus("idle");
         return;
       }
 
@@ -222,46 +254,8 @@ export class FormController<TShape extends object = object> {
         fieldState.focus();
         break;
       }
-      await onError?.(this._issues, event);
+      await onError?.(this._issues, event, abortController.signal);
+      this.setStatus("idle");
     };
   }
 }
-
-/* --------------- */
-
-// class User {
-//   protected username: string;
-
-//   constructor(username: string) {
-//     this.username = username;
-//   }
-
-//   setUsername(username: string) {
-//     this.username = username;
-//   }
-// }
-
-// const initialData = {
-//   user: new User("initialUser"),
-//   name: "",
-//   address: {
-//     city: "",
-//     street: "",
-//   },
-// };
-
-// const control = new FormController({
-//   initialData,
-// });
-
-// const field = control.bindField("user");
-
-// console.log(initialData.user === field.value);
-
-// field.modifyValue((val) => {
-//   val.setUsername("newUser");
-// });
-
-// console.log(initialData.user === field.value);
-
-// console.log(initialData.user, field.value);

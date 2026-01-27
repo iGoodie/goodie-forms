@@ -38,11 +38,30 @@ export namespace Field {
     return current;
   }
 
-  export function deepEqual(a: any, b: any) {
+  export function deepEqual(
+    a: any,
+    b: any,
+    customComparator?: (a: any, b: any) => boolean | undefined,
+  ) {
     if (a === b) return true;
 
     if (a === null || b === null) return false;
     if (typeof a !== "object" || typeof b !== "object") return false;
+
+    // Arrays
+    if (Array.isArray(a)) {
+      if (!Array.isArray(b) || a.length !== b.length) return false;
+      for (let i = 0; i < a.length; i++) {
+        if (!deepEqual(a[i], b[i])) return false;
+      }
+      return true;
+    }
+
+    // Allow custom comparison
+    if (customComparator != null) {
+      const result = customComparator(a, b);
+      if (result !== undefined) return result;
+    }
 
     // Dates
     if (a instanceof Date && b instanceof Date) {
@@ -52,15 +71,6 @@ export namespace Field {
     // RegExp
     if (a instanceof RegExp && b instanceof RegExp) {
       return a.source === b.source && a.flags === b.flags;
-    }
-
-    // Arrays
-    if (Array.isArray(a)) {
-      if (!Array.isArray(b) || a.length !== b.length) return false;
-      for (let i = 0; i < a.length; i++) {
-        if (!deepEqual(a[i], b[i])) return false;
-      }
-      return true;
     }
 
     // Map

@@ -20,8 +20,9 @@ interface RenderParams<
   TShape extends object,
   TPath extends Field.Paths<TShape>,
 > {
+  ref: Ref<any | null>;
+
   field: {
-    ref: Ref<any | null>;
     value: Field.GetValue<TShape, TPath> | undefined;
   };
 
@@ -58,7 +59,6 @@ export function SimpleField<
   const fieldError = props.form.getFieldState(props.name)?.issues.at(0);
 
   const _field: RenderParams<TShape, TPath>["field"] = {
-    ref: elementRef,
     value: fieldState?.value,
   };
 
@@ -69,7 +69,7 @@ export function SimpleField<
       events.on("valueChanged", (path) => {
         if (path === props.name) rerender((i) => i + 1);
       }),
-      events.on("fieldUpdated", (path) => {
+      events.on("fieldStateUpdated", (path) => {
         if (path === props.name) rerender((i) => i + 1);
       }),
       events.on("validationTriggered", (path) => {
@@ -105,6 +105,7 @@ export function SimpleField<
 
       <div className="flex w-full *:w-full">
         {props.render({
+          ref: elementRef,
           field: _field,
           fieldState,
         })}

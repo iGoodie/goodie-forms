@@ -1,0 +1,61 @@
+import type { FormController } from "@goodie-forms/core";
+import flow from "lodash.flow";
+import { useEffect } from "react";
+import { useRenderControl } from "./hooks/useRenderControl";
+
+export function FormDebug<TShape extends object>(props: {
+  form: FormController<TShape>;
+}) {
+  const renderControl = useRenderControl();
+
+  useEffect(() => {
+    const { events } = props.form;
+
+    return flow(
+      events.on("statusChanged", () => renderControl.forceRerender()),
+      events.on("valueChanged", () => renderControl.forceRerender()),
+      events.on("fieldBound", () => renderControl.forceRerender()),
+      events.on("fieldUnbound", () => renderControl.forceRerender()),
+      events.on("fieldUpdated", () => renderControl.forceRerender()),
+    );
+  }, []);
+
+  return (
+    <div className="h-fit col-span-3 grid grid-cols-3 gap-6">
+      <span className="text-left underline opacity-60 col-span-full">
+        Indicator Render #{renderControl.renderCount}
+      </span>
+
+      <pre className="text-left">
+        {JSON.stringify(props.form._data, null, 2)}
+      </pre>
+      <pre className="text-left">
+        {JSON.stringify(props.form._initialData, null, 2)}
+      </pre>
+      <pre className="text-left flex flex-col">
+        <span className="opacity-50">Fields</span>
+        {[...props.form._fields.values()].map((field, i) => (
+          <span key={i}>{field.path}</span>
+        ))}
+
+        <hr className="my-10" />
+
+        <span className="opacity-50">Touched Fields</span>
+        {[...props.form._fields.values()]
+          .filter((field) => field.isTouched)
+          .map((field, i) => (
+            <span key={i}>{field.path}</span>
+          ))}
+
+        <hr className="my-10" />
+
+        <span className="opacity-50">Dirty Fields</span>
+        {[...props.form._fields.values()]
+          .filter((field) => field.isDirty)
+          .map((field, i) => (
+            <span key={i}>{field.path}</span>
+          ))}
+      </pre>
+    </div>
+  );
+}
