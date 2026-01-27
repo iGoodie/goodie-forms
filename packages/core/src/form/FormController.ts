@@ -40,6 +40,7 @@ export class FormController<TShape extends object = object> {
   constructor(config: {
     initialData?: DeepPartial<TShape>;
     validationSchema?: StandardSchemaV1<TShape, TShape>;
+    // TODO: equalityComparators?: Record<Constructor, (a,b) => boolean>
   }) {
     this.validationSchema = config.validationSchema;
     this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);

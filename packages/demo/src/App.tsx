@@ -1,8 +1,10 @@
+/* eslint-disable react-hooks/refs */
 import { FormController } from "@goodie-forms/core";
 import flow from "lodash.flow";
 import { useEffect, useState } from "react";
 import z from "zod";
 import { SimpleField } from "./SimpleField";
+import { useRenderControl } from "./hooks/useRenderControl";
 
 import "./App.css";
 import "./tailwind.css";
@@ -62,37 +64,35 @@ const UserSchema = z.object({
 // type UserForm = z.infer<typeof UserSchema>;
 
 function FormDebug<TShape extends object>(props: {
-  rootRerenderNo: number;
   form: FormController<TShape>;
 }) {
-  const [renderNo, rerender] = useState(0);
+  const renderControl = useRenderControl();
 
   useEffect(() => {
     const { events } = props.form;
 
     return flow(
-      events.on("statusChanged", () => rerender((i) => i + 1)),
-      events.on("valueChanged", () => rerender((i) => i + 1)),
-      events.on("fieldBound", () => rerender((i) => i + 1)),
-      events.on("fieldUnbound", () => rerender((i) => i + 1)),
-      events.on("fieldUpdated", () => rerender((i) => i + 1)),
+      events.on("statusChanged", () => renderControl.forceRerender()),
+      events.on("valueChanged", () => renderControl.forceRerender()),
+      events.on("fieldBound", () => renderControl.forceRerender()),
+      events.on("fieldUnbound", () => renderControl.forceRerender()),
+      events.on("fieldUpdated", () => renderControl.forceRerender()),
     );
   }, []);
 
   return (
-    <>
-      <pre className="w-50 text-left">
+    <div className="h-fit col-span-3 grid grid-cols-3 gap-6">
+      <span className="text-left underline opacity-60 col-span-full">
+        Indicator Render #{renderControl.renderCount}
+      </span>
+
+      <pre className="text-left">
         {JSON.stringify(props.form._data, null, 2)}
       </pre>
-      <pre className="w-50 text-left">
+      <pre className="text-left">
         {JSON.stringify(props.form._initialData, null, 2)}
       </pre>
-      <pre className="w-50 text-left flex flex-col">
-        <span>Root Render #{props.rootRerenderNo}</span>
-        <span>Indicator Render #{renderNo}</span>
-
-        <hr className="my-10" />
-
+      <pre className="text-left flex flex-col">
         <span className="opacity-50">Fields</span>
         {[...props.form._fields.values()].map((field, i) => (
           <span key={i}>{field.path}</span>
@@ -116,18 +116,18 @@ function FormDebug<TShape extends object>(props: {
             <span key={i}>{field.path}</span>
           ))}
       </pre>
-    </>
+    </div>
   );
 }
 
 function App() {
+  const renderControl = useRenderControl();
+
   const [formController] = useState(() => {
     return new FormController<UserForm>({
       validationSchema: UserSchema,
     });
   });
-
-  const [renderNo, rerender] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -146,7 +146,11 @@ function App() {
   }, []);
 
   return (
-    <main className="grid grid-cols-4 gap-20">
+    <main className="grid grid-cols-4 gap-x-20 gap-y-5">
+      <span className="col-span-full justify-self-start opacity-60 underline">
+        Root Render #{renderControl.renderCount}
+      </span>
+
       <form
         className="flex flex-col gap-4"
         onSubmit={formController.createSubmitHandler(
@@ -275,7 +279,7 @@ function App() {
           type="button"
           onClick={() => {
             formController.reset();
-            rerender((i) => i + 1);
+            renderControl.forceRerender();
           }}
         >
           Reset
@@ -284,7 +288,7 @@ function App() {
           type="button"
           onClick={() => {
             formController.validateForm();
-            rerender((i) => i + 1);
+            renderControl.forceRerender();
           }}
         >
           Validate
@@ -292,7 +296,7 @@ function App() {
         <button type="submit">Submit</button>
       </form>
 
-      <FormDebug rootRerenderNo={renderNo} form={formController} />
+      <FormDebug form={formController} />
     </main>
   );
 }

@@ -42,6 +42,9 @@ export function SimpleField<
 >(props: Props<TShape, TPath>) {
   const id = useId();
 
+  const renderCount = useRef(0);
+  renderCount.current++;
+
   const elementRef = useRef<HTMLElement>(null);
 
   const [, rerender] = useState(0);
@@ -63,10 +66,13 @@ export function SimpleField<
     const { events } = props.form;
 
     return flow(
-      events.on("valueChanged", () => rerender((i) => i + 1)),
-      events.on("fieldUpdated", () => rerender((i) => i + 1)),
+      events.on("valueChanged", (path) => {
+        if (path === props.name) rerender((i) => i + 1);
+      }),
+      events.on("fieldUpdated", (path) => {
+        if (path === props.name) rerender((i) => i + 1);
+      }),
       events.on("validationTriggered", (path) => {
-        console.log(path, props.name);
         if (path === props.name) rerender((i) => i + 1);
       }),
     );
@@ -92,7 +98,10 @@ export function SimpleField<
 
   return (
     <div className="flex flex-col gap-2 items-start">
-      <label htmlFor={id}>{props.label}</label>
+      <label htmlFor={id}>
+        {props.label}{" "}
+        <span className="opacity-50">(Render #{renderCount.current})</span>
+      </label>
 
       <div className="flex w-full *:w-full">
         {props.render({
