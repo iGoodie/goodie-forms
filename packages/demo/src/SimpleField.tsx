@@ -108,7 +108,6 @@ export function SimpleField<
       }),
       events.on("validationIssuesUpdated", (path) => {
         if (path === props.path) renderControl.forceRerender();
-        console.log("Issues updated", path);
       }),
     );
   }, []);

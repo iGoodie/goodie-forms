@@ -44,7 +44,6 @@ export class FormController<TShape extends object = object> {
   _issues: StandardSchemaV1.Issue[] = [];
 
   equalityComparators?: Record<any, (a: any, b: any) => boolean>;
-  // TODO: ability to hook custom cloning logic
   validationSchema?: StandardSchemaV1<TShape, TShape>;
 
   public readonly events = createNanoEvents<{
@@ -55,8 +54,8 @@ export class FormController<TShape extends object = object> {
     fieldDirtyUpdated(path: Field.Paths<TShape>): void;
     elementBound(fieldPath: Field.Paths<TShape>, el: HTMLElement): void;
     elementUnbound(fieldPath: Field.Paths<TShape>): void;
-    validationTriggered(fieldPath: Field.Paths<TShape> | null): void;
-    validationIssuesUpdated(fieldPath: Field.Paths<TShape> | null): void;
+    validationTriggered(fieldPath: Field.Paths<TShape>): void;
+    validationIssuesUpdated(fieldPath: Field.Paths<TShape>): void;
     valueChanged(
       path: Field.Paths<TShape>,
       newValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined,

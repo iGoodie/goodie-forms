@@ -79,7 +79,7 @@ function App() {
   );
 
   const formErrors = useFormErrors(form, {
-    include: ["address"],
+    include: ["inventory"],
   });
 
   console.log(formErrors);

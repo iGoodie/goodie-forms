@@ -69,7 +69,7 @@ export function FormDebug<TShape extends object>(props: {
 
         <span className="opacity-50">Errors</span>
         {props.formController._issues.map((issue) => (
-          <p className="inline text-wrap">
+          <p key={issue.path?.join(".")} className="inline text-wrap">
             <span className="mr-1">{issue.path?.join(".")}</span>
             <span className="text-xs opacity-30">({issue.message})</span>
           </p>
