@@ -19,7 +19,6 @@ export function SimpleField<
   const id = useId();
 
   const renderCount = useRef(0);
-  renderCount.current++;
 
   return (
     <FieldRenderer
@@ -28,6 +27,8 @@ export function SimpleField<
         const { field } = renderParams;
 
         const fieldError = field.issues.at(0);
+
+        renderCount.current++;
 
         return (
           <div className="flex flex-col gap-2 items-start">

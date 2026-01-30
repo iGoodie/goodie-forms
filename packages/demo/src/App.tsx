@@ -81,15 +81,15 @@ function App() {
     },
   );
 
-  const formErrors = useFormErrorObserver(form, {
-    include: ["inventory"],
-  });
+  // const formErrors = useFormErrorObserver(form, {
+  //   include: ["inventory"],
+  // });
 
-  const formValues = useFormValuesObserver(form, {
-    include: ["name", "surname"],
-  });
+  // const formValues = useFormValuesObserver(form, {
+  //   include: ["name", "surname"],
+  // });
 
-  console.log(formValues, formErrors);
+  // console.log(formValues, formErrors);
 
   const handleSubmit = form.controller.createSubmitHandler(
     async (data, event) => {
