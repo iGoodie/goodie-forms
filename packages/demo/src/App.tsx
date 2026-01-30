@@ -53,7 +53,7 @@ const UserSchema = z.object({
     city: z.string(),
     street: z.string(),
   }),
-  friends: z.any(),
+  friends: z.any().nonoptional(),
   scores: z.any(),
   inventory: z.custom<Inventory>(
     (d) => d instanceof Inventory && d.contents.length >= 1,

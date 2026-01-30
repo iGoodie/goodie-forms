@@ -246,17 +246,9 @@ export class FormController<TShape extends object = object> {
       this.applyValidation(result, path);
     }
 
-    // TODO: append non-registered issues too
-
-    // if ("value" in result) {
-    //   this._issues = [];
-    // } else {
-    //   this._issues = [...result.issues];
-    // }
-
-    // for (const path of this._fields.keys()) {
-    //   this.events.emit("validationTriggered", path);
-    // }
+    // Append non-registered issues too
+    const diff = Field.diff(this._issues, result.issues ?? [], Field.deepEqual);
+    diff.added.forEach((issue) => this._issues.push(issue));
 
     this.setStatus("idle");
   }
