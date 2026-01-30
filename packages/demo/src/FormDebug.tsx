@@ -26,12 +26,20 @@ export function FormDebug<TShape extends object>(props: {
         Indicator Render #{renderControl.renderCount}
       </span>
 
-      <pre className="text-left">
-        {JSON.stringify(props.formController._data, null, 2)}
-      </pre>
-      <pre className="text-left">
-        {JSON.stringify(props.formController._initialData, null, 2)}
-      </pre>
+      <div className="text-left flex flex-col gap-3">
+        <span className="opacity-60 font-bold">Form data</span>
+        <pre className="text-left">
+          {JSON.stringify(props.formController._data, null, 2)}
+        </pre>
+      </div>
+
+      <div className="text-left flex flex-col gap-3">
+        <span className="opacity-60 font-bold">Initial/Rollback data</span>
+        <pre className="text-left">
+          {JSON.stringify(props.formController._initialData, null, 2)}
+        </pre>
+      </div>
+
       <pre className="text-left flex flex-col">
         <span className="opacity-50">Fields</span>
         {[...props.formController._fields.values()].map((field, i) => (

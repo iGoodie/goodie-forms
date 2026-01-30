@@ -43,6 +43,7 @@ export class FormController<TShape extends object = object> {
   _issues: StandardSchemaV1.Issue[] = [];
 
   equalityComparators?: Record<any, (a: any, b: any) => boolean>;
+  // TODO: ability to hook custom cloning logic
   validationSchema?: StandardSchemaV1<TShape, TShape>;
 
   public readonly events = createNanoEvents<{
@@ -117,7 +118,7 @@ export class FormController<TShape extends object = object> {
   ) {
     const field = new FormField(this, path);
 
-    console.log("Binding", path, config?.defaultValue);
+    console.log("Binding", path, config?.defaultValue, field.id);
     this._fields.set(path, field);
     this.events.emit("fieldBound", path);
 

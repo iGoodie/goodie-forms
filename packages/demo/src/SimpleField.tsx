@@ -42,7 +42,6 @@ interface Props<TShape extends object, TPath extends Field.Paths<TShape>> {
   render: (params: RenderParams<TShape, TPath>) => ReactNode;
 }
 
-// TODO: impl validationMode and revalidationMode when extracted to a FormController wrapping hook
 export function SimpleField<
   TShape extends object,
   TPath extends Field.Paths<TShape>
@@ -56,11 +55,14 @@ export function SimpleField<
 
   const renderControl = useRenderControl();
 
-  const [field, setField] = useState(() =>
-    props.form.controller.bindField(props.path, {
-      defaultValue: props.defaultValue,
-    })
-  );
+  const [field] = useState(() => {
+    return (
+      props.form.controller.getField(props.path) ??
+      props.form.controller.bindField(props.path, {
+        defaultValue: props.defaultValue,
+      })
+    );
+  });
 
   const fieldError = field.issues.at(0);
 
@@ -108,16 +110,7 @@ export function SimpleField<
   }, []);
 
   useEffect(() => {
-    if (props.form.controller.getField(props.path) != null) {
-      field.bindElement(elementRef.current!);
-    } else {
-      const fieldState = props.form.controller.bindField(props.path, {
-        defaultValue: props.defaultValue,
-        domElement: elementRef.current!,
-      });
-
-      setField(fieldState);
-    }
+    field.bindElement(elementRef.current!);
 
     return () => {
       if (props.resetOnUnmount) {
