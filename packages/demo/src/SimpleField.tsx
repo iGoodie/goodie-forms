@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/refs */
 
-import { FormField, type Field, type FormController } from "@goodie-forms/core";
+import { FormField, type Field } from "@goodie-forms/core";
 import flow from "lodash.flow";
 import {
   useEffect,
@@ -13,6 +13,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
+import type { UseForm } from "./hooks/useForm";
 import { useRenderControl } from "./hooks/useRenderControl";
 
 interface RenderParams<
@@ -33,8 +34,8 @@ interface RenderParams<
 }
 
 interface Props<TShape extends object, TPath extends Field.Paths<TShape>> {
-  form: FormController<TShape>;
-  name: TPath;
+  form: UseForm<TShape>;
+  path: TPath;
   label: string;
   defaultValue?: Field.GetValue<TShape, TPath>;
   render: (params: RenderParams<TShape, TPath>) => ReactNode;
@@ -55,7 +56,7 @@ export function SimpleField<
   const renderControl = useRenderControl();
 
   const [field, setField] = useState(() =>
-    props.form.bindField(props.name, {
+    props.form.controller.bindField(props.path, {
       defaultValue: props.defaultValue,
     })
   );
@@ -65,6 +66,7 @@ export function SimpleField<
   const handlers: RenderParams<TShape, TPath>["handlers"] = {
     onChange(event) {
       const { target } = event;
+      if (target !== field.boundElement) return;
       if (!("value" in target)) return;
       if (typeof target.value !== "string") return;
       field.setValue(target.value as Field.GetValue<TShape, TPath>, {
@@ -75,33 +77,37 @@ export function SimpleField<
     onFocus() {
       field.touch();
     },
-    onBlur(event) {
-      console.log("Blur", props.name, event.target);
-      props.form.validateField(props.name);
+    onBlur() {
+      if (props.form.hookConfigs?.validateMode === "onBlur") {
+        props.form.controller.validateField(props.path);
+      }
     },
   };
 
   useEffect(() => {
-    const { events } = props.form;
+    const { events } = props.form.controller;
 
     return flow(
       events.on("valueChanged", (path) => {
-        if (path === props.name) renderControl.forceRerender();
+        if (path === props.path) renderControl.forceRerender();
+        if (props.form.hookConfigs?.validateMode === "onChange") {
+          props.form.controller.validateField(path);
+        }
       }),
       events.on("fieldStateUpdated", (path) => {
-        if (path === props.name) renderControl.forceRerender();
+        if (path === props.path) renderControl.forceRerender();
       }),
       events.on("validationTriggered", (path) => {
-        if (path === props.name) renderControl.forceRerender();
+        if (path === props.path) renderControl.forceRerender();
       })
     );
   }, []);
 
   useEffect(() => {
-    if (props.form.getField(props.name) != null) {
+    if (props.form.controller.getField(props.path) != null) {
       field.bindElement(elementRef.current!);
     } else {
-      const fieldState = props.form.bindField(props.name, {
+      const fieldState = props.form.controller.bindField(props.path, {
         defaultValue: props.defaultValue,
         domElement: elementRef.current!,
       });
@@ -110,8 +116,8 @@ export function SimpleField<
     }
 
     return () => {
-      console.log("Unbinding", props.name);
-      props.form.unbindField(props.name);
+      console.log("Unbinding", props.path);
+      props.form.controller.unbindField(props.path);
     };
   }, []);
 

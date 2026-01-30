@@ -1,8 +1,8 @@
 import { FormController } from "@goodie-forms/core";
-import { useState } from "react";
 import z from "zod";
 import { FormDebug } from "./FormDebug";
 import { SimpleField } from "./SimpleField";
+import { useForm } from "./hooks/useForm";
 import { useRenderControl } from "./hooks/useRenderControl";
 
 import "./App.css";
@@ -65,17 +65,21 @@ const UserSchema = z.object({
 function App() {
   const renderControl = useRenderControl();
 
-  const [formController] = useState(() => {
-    return new FormController<UserForm>({
+  const form = useForm(
+    {
       validationSchema: UserSchema,
-    });
-  });
+    },
+    {
+      validateMode: "onChange",
+      revalidateMode: "onChange",
+    }
+  );
 
-  const handleSubmit = formController.createSubmitHandler(
+  const handleSubmit = form.controller.createSubmitHandler(
     async (data, event) => {
       alert("Form submitted successfully: " + JSON.stringify(data));
       console.log(event);
-      formController.reset(data);
+      form.controller.reset(data);
     },
     async (issues, event) => {
       console.log(
@@ -102,8 +106,8 @@ function App() {
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <SimpleField
-          form={formController}
-          name="name"
+          form={form}
+          path="name"
           label="User Name"
           defaultValue="foo"
           render={({ ref, value, handlers }) => (
@@ -116,9 +120,10 @@ function App() {
             />
           )}
         />
+
         <SimpleField
-          form={formController}
-          name="surname"
+          form={form}
+          path="surname"
           label="User Lastname"
           defaultValue=""
           render={({ ref, value, handlers, field }) => (
@@ -126,12 +131,7 @@ function App() {
               ref={ref}
               {...handlers}
               value={value}
-              onChange={(e) => {
-                field.modifyValue((_, field) => {
-                  field.markDirty();
-                  return e.target.value;
-                });
-              }}
+              onChange={(e) => field.setValue(e.target.value)}
               type="text"
               placeholder="Doe"
             />
@@ -139,8 +139,8 @@ function App() {
         />
 
         <SimpleField
-          form={formController}
-          name="address"
+          form={form}
+          path="address"
           label="Address"
           defaultValue={{ city: "Foo", street: "Sesame Street" }}
           render={({ ref, value, handlers, field }) => (
@@ -157,38 +157,36 @@ function App() {
                       Math.random() <= 0.5
                         ? "City #" + Math.random().toFixed(5)
                         : "Gravity Falls";
-                    return address;
                   });
                 }}
               >
-                Some complex city picker thing
+                Random City
               </button>
               <span>City: {value?.city}</span>
 
               <hr className="border border-gray-700" />
 
-              <button
-                type="button"
-                onClick={() => {
+              <select
+                value={value?.street}
+                onChange={(e) =>
                   field.modifyValue((address) => {
-                    address.street =
-                      Math.random() <= 0.5
-                        ? "Street #" + Math.random().toFixed(5)
-                        : "Sesame Street";
-                    return address;
-                  });
-                }}
+                    address.street = e.target.value;
+                  })
+                }
               >
-                Some complex street picker thing
-              </button>
+                <option value="Sesame Street">Sesame Street</option>
+                <option value="Street #1">Street #1</option>
+                <option value="Street #3">Street #2</option>
+                <option value="Street #2">Street #3</option>
+              </select>
               <span>Street: {value?.street}</span>
             </div>
           )}
         />
 
         <SimpleField
-          form={formController}
-          name="inventory"
+          form={form}
+          path="inventory"
           label="Inventory"
           defaultValue={new Inventory()}
           render={({ ref, value, handlers, field }) => (
@@ -219,7 +217,7 @@ function App() {
         <button
           type="button"
           onClick={() => {
-            formController.reset();
+            form.controller.reset();
             renderControl.forceRerender();
           }}
         >
@@ -228,7 +226,7 @@ function App() {
         <button
           type="button"
           onClick={() => {
-            formController.validateForm();
+            form.controller.validateForm();
             renderControl.forceRerender();
           }}
         >
@@ -237,7 +235,7 @@ function App() {
         <button type="submit">Submit & Persist</button>
       </form>
 
-      <FormDebug form={formController} />
+      <FormDebug form={form.controller} />
     </main>
   );
 }

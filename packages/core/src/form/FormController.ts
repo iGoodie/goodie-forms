@@ -11,6 +11,10 @@ enableArrayMethods();
 export namespace Form {
   export type Status = "idle" | "validating" | "submitting";
 
+  export type FormConfigs<TShape extends object> = ConstructorParameters<
+    typeof FormController<TShape>
+  >[0];
+
   export interface PreventableEvent {
     preventDefault(): void;
   }
