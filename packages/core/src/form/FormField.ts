@@ -5,7 +5,7 @@ import { FormController } from "./FormController";
 
 export class FormField<
   TShape extends object,
-  TPath extends Field.Paths<TShape>
+  TPath extends Field.Paths<TShape>,
 > {
   public readonly id = getId();
 
@@ -15,14 +15,14 @@ export class FormField<
   protected _isDirty = false;
 
   constructor(
-    public readonly control: FormController<TShape>,
-    public readonly path: TPath
+    public readonly controller: FormController<TShape>,
+    public readonly path: TPath,
   ) {}
 
   get value() {
     return Field.getValue<TShape, TPath>(
-      this.control._data as TShape,
-      this.path
+      this.controller._data as TShape,
+      this.path,
     );
   }
 
@@ -31,8 +31,8 @@ export class FormField<
   }
 
   get issues() {
-    return this.control._issues.filter(
-      (issue) => issue.path?.join(".") === this.path
+    return this.controller._issues.filter(
+      (issue) => issue.path?.join(".") === this.path,
     );
   }
 
@@ -51,18 +51,18 @@ export class FormField<
   protected _setTouched(isTouched: boolean) {
     const changed = this._isTouched !== isTouched;
     this._isTouched = isTouched;
-    if (changed) this.control.events.emit("fieldStateUpdated", this.path);
+    if (changed) this.controller.events.emit("fieldTouchUpdated", this.path);
   }
 
   protected _setDirty(isDirty: boolean) {
     const changed = this._isDirty !== isDirty;
     this._isDirty = isDirty;
-    if (changed) this.control.events.emit("fieldStateUpdated", this.path);
+    if (changed) this.controller.events.emit("fieldDirtyUpdated", this.path);
   }
 
   bindElement(el: HTMLElement | undefined) {
-    if (el != null) this.control.events.emit("elementBound", this.path, el);
-    else this.control.events.emit("elementUnbound", this.path);
+    if (el != null) this.controller.events.emit("elementBound", this.path, el);
+    else this.controller.events.emit("elementUnbound", this.path);
     this.target = el;
   }
 
@@ -95,70 +95,77 @@ export class FormField<
     ctor[immerable] = true;
   }
 
+  setValue(
+    value: Field.GetValue<TShape, TPath>,
+    opts?: Parameters<typeof this.modifyValue>[1],
+  ) {
+    return this.modifyValue(() => value, opts);
+  }
+
   modifyValue(
     modifier: (
       currentValue: Field.GetValue<TShape, TPath>,
-      field: this
+      field: this,
     ) => Field.GetValue<TShape, TPath> | void,
     opts?: {
       shouldTouch?: boolean;
       shouldMarkDirty?: boolean;
-    }
+    },
   ) {
     if (opts?.shouldTouch == null || opts?.shouldTouch) {
       this.touch();
     }
 
     const initialValue = Field.getValue<TShape, TPath>(
-      this.control._initialData as TShape,
-      this.path
+      this.controller._initialData as TShape,
+      this.path,
+    );
+
+    const oldValue = Field.getValue<TShape, TPath>(
+      this.controller._data as TShape,
+      this.path,
     );
 
     FormField.ensureImmerability(initialValue);
+    FormField.ensureImmerability(oldValue);
 
-    this.control._data = produce(this.control._data, (draft) => {
+    this.controller._data = produce(this.controller._data, (draft) => {
       Field.modifyValue<TShape, TPath>(draft as TShape, this.path, (oldValue) =>
-        modifier(oldValue, this)
+        modifier(oldValue, this),
       );
     });
 
-    const currentValue = Field.getValue<TShape, TPath>(
-      this.control._data as TShape,
-      this.path
-    );
-
-    FormField.ensureImmerability(currentValue);
-
-    const valueChanged = !Field.deepEqual(
-      initialValue,
-      currentValue,
-      (a, b) => {
-        if (typeof a !== "object") return;
-        if (typeof b !== "object") return;
-        const ctorA = a.constructor;
-        const ctorB = b.constructor;
-        if (ctorA !== ctorB) return;
-        return this.control.equalityComparators?.[ctorA]?.(a, b);
-      }
-    );
-
-    this.control.events.emit(
-      "valueChanged",
+    const newValue = Field.getValue<TShape, TPath>(
+      this.controller._data as TShape,
       this.path,
-      currentValue,
-      initialValue
     );
+
+    FormField.ensureImmerability(newValue);
+
+    const compareCustom = (a: any, b: any) => {
+      if (typeof a !== "object") return;
+      if (typeof b !== "object") return;
+      const ctorA = a.constructor;
+      const ctorB = b.constructor;
+      if (ctorA !== ctorB) return;
+      return this.controller.equalityComparators?.[ctorA]?.(a, b);
+    };
+
+    const valueChanged = !Field.deepEqual(oldValue, newValue, compareCustom);
+
+    if (valueChanged) {
+      this.controller.events.emit(
+        "valueChanged",
+        this.path,
+        newValue,
+        oldValue,
+      );
+    }
 
     if (opts?.shouldMarkDirty == null || opts?.shouldMarkDirty) {
-      this._setDirty(valueChanged);
+      const gotDirty = !Field.deepEqual(initialValue, newValue, compareCustom);
+      this._setDirty(gotDirty);
     }
-  }
-
-  setValue(
-    value: Field.GetValue<TShape, TPath>,
-    opts?: Parameters<typeof this.modifyValue>[1]
-  ) {
-    return this.modifyValue(() => value, opts);
   }
 
   reset() {
@@ -173,6 +180,10 @@ export class FormField<
   markDirty() {
     this.touch();
     this._setDirty(true);
+  }
+
+  triggerValidation() {
+    this.controller.validateField(this.path);
   }
 
   focus(opts?: { shouldTouch?: boolean }) {

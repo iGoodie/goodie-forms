@@ -16,7 +16,8 @@ export function FormDebug<TShape extends object>(props: {
       events.on("valueChanged", () => renderControl.forceRerender()),
       events.on("fieldBound", () => renderControl.forceRerender()),
       events.on("fieldUnbound", () => renderControl.forceRerender()),
-      events.on("fieldStateUpdated", () => renderControl.forceRerender())
+      events.on("fieldTouchUpdated", () => renderControl.forceRerender()),
+      events.on("fieldDirtyUpdated", () => renderControl.forceRerender()),
     );
   }, []);
 

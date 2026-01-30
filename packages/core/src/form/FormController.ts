@@ -1,9 +1,10 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
 import { enableArrayMethods, enableMapSet, produce } from "immer";
-import { Field } from "../form/Field";
-import { FormField } from "./FormField";
-import { DeepPartial } from "../types/DeepPartial";
 import { createNanoEvents } from "nanoevents";
+import { Field } from "../form/Field";
+import { DeepPartial } from "../types/DeepPartial";
+import { removeBy } from "../utils/removeBy";
+import { FormField } from "./FormField";
 
 enableMapSet();
 enableArrayMethods();
@@ -21,17 +22,17 @@ export namespace Form {
 
   export type SubmitSuccessHandler<
     TShape extends object,
-    TEvent extends PreventableEvent
+    TEvent extends PreventableEvent,
   > = (
     data: TShape,
     event: TEvent,
-    abortSignal: AbortSignal
+    abortSignal: AbortSignal,
   ) => void | Promise<void>;
 
   export type SubmitErrorHandler<TEvent extends PreventableEvent> = (
     issues: StandardSchemaV1.Issue[],
     event: TEvent,
-    abortSignal: AbortSignal
+    abortSignal: AbortSignal,
   ) => void | Promise<void>;
 }
 
@@ -50,14 +51,16 @@ export class FormController<TShape extends object = object> {
     statusChanged(newStatus: Form.Status, oldStatus: Form.Status): void;
     fieldBound(fieldPath: Field.Paths<TShape>): void;
     fieldUnbound(fieldPath: Field.Paths<TShape>): void;
-    fieldStateUpdated(path: Field.Paths<TShape>): void;
+    fieldTouchUpdated(path: Field.Paths<TShape>): void;
+    fieldDirtyUpdated(path: Field.Paths<TShape>): void;
     elementBound(fieldPath: Field.Paths<TShape>, el: HTMLElement): void;
     elementUnbound(fieldPath: Field.Paths<TShape>): void;
     validationTriggered(fieldPath: Field.Paths<TShape> | null): void;
+    validationIssuesUpdated(fieldPath: Field.Paths<TShape> | null): void;
     valueChanged(
       path: Field.Paths<TShape>,
       newValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined,
-      oldValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined
+      oldValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined,
     ): void;
   }>();
 
@@ -97,7 +100,7 @@ export class FormController<TShape extends object = object> {
   _unsafeSetFieldValue<TPath extends Field.Paths<TShape>>(
     path: TPath,
     value: Field.GetValue<TShape, TPath>,
-    config?: { updateInitialValue?: boolean }
+    config?: { updateInitialValue?: boolean },
   ) {
     if (config?.updateInitialValue) {
       this._initialData = produce(this._initialData, (draft) => {
@@ -114,7 +117,7 @@ export class FormController<TShape extends object = object> {
     config?: {
       defaultValue?: Field.GetValue<TShape, TPath>;
       domElement?: HTMLElement;
-    }
+    },
   ) {
     const field = new FormField(this, path);
 
@@ -140,6 +143,7 @@ export class FormController<TShape extends object = object> {
     this.events.emit("fieldUnbound", path);
   }
 
+  // TODO: Add an option to keep dirty/touched fields as they are
   reset(newInitialData?: DeepPartial<TShape>) {
     this.setStatus("idle");
     this._data = this._initialData;
@@ -157,14 +161,14 @@ export class FormController<TShape extends object = object> {
 
   getField<TPath extends Field.Paths<TShape>>(
     path: TPath,
-    config: { bindIfMissing: true }
+    config: { bindIfMissing: true },
   ): FormField<TShape, TPath>;
   getField<TPath extends Field.Paths<TShape>>(
-    path: TPath
+    path: TPath,
   ): FormField<TShape, TPath> | undefined;
   getField<TPath extends Field.Paths<TShape>>(
     path: TPath,
-    config?: { bindIfMissing?: boolean }
+    config?: { bindIfMissing?: boolean },
   ) {
     let field = this._fields.get(path);
 
@@ -183,6 +187,36 @@ export class FormController<TShape extends object = object> {
     });
   }
 
+  private async applyValidation<TPath extends Field.Paths<TShape>>(
+    result: StandardSchemaV1.Result<TShape>,
+    path: TPath,
+  ) {
+    let updated = false;
+
+    // Reset issues of this path first
+    removeBy(this._issues, (issue) => {
+      if (issue.path == null) return false;
+      const issuePath = issue.path.join(".");
+      if (issuePath !== path) return false;
+      updated = true; // <-- Removed an existing issue
+      return true;
+    });
+
+    if (!("value" in result)) {
+      result.issues.forEach((issue) => {
+        if (issue.path == null) return;
+        const issuePath = issue.path.join(".");
+        if (issuePath !== path) return;
+        updated = true;
+        this._issues.push(issue);
+      });
+    }
+
+    if (updated) {
+      this.events.emit("validationIssuesUpdated", path);
+    }
+  }
+
   async validateField<TPath extends Field.Paths<TShape>>(path: TPath) {
     if (this._status !== "idle") return;
 
@@ -193,22 +227,12 @@ export class FormController<TShape extends object = object> {
     this.getField(path, { bindIfMissing: true });
 
     const result = await this.validationSchema["~standard"].validate(
-      this._data
+      this._data,
     );
 
-    this.clearFieldIssues(path);
-
-    if (!("value" in result)) {
-      this._issues.push(
-        ...result.issues.filter((issue) => {
-          if (issue.path == null) return;
-          const fieldPath = issue.path.join(".") as Field.Paths<TShape>;
-          return fieldPath === path;
-        })
-      );
-    }
-
     this.events.emit("validationTriggered", path);
+    this.applyValidation(result, path);
+
     this.setStatus("idle");
   }
 
@@ -220,25 +244,32 @@ export class FormController<TShape extends object = object> {
     this.setStatus("validating");
 
     const result = await this.validationSchema["~standard"].validate(
-      this._data
+      this._data,
     );
-
-    if ("value" in result) {
-      this._issues = [];
-    } else {
-      this._issues = [...result.issues];
-    }
 
     for (const path of this._fields.keys()) {
       this.events.emit("validationTriggered", path);
+      this.applyValidation(result, path);
     }
+
+    // TODO: append non-registered issues too
+
+    // if ("value" in result) {
+    //   this._issues = [];
+    // } else {
+    //   this._issues = [...result.issues];
+    // }
+
+    // for (const path of this._fields.keys()) {
+    //   this.events.emit("validationTriggered", path);
+    // }
 
     this.setStatus("idle");
   }
 
   createSubmitHandler<TEvent extends Form.PreventableEvent>(
     onSuccess?: Form.SubmitSuccessHandler<TShape, TEvent>,
-    onError?: Form.SubmitErrorHandler<TEvent>
+    onError?: Form.SubmitErrorHandler<TEvent>,
   ) {
     return async (event: TEvent) => {
       if (event != null) {

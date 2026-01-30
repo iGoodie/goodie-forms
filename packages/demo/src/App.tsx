@@ -16,7 +16,7 @@ function vanillaTest() {
     async (data, event) => {
       //         ^?
       console.log("Infers type of event correctly", event);
-    }
+    },
   );
 }
 
@@ -57,11 +57,13 @@ const UserSchema = z.object({
   scores: z.any(),
   inventory: z.custom<Inventory>(
     (d) => d instanceof Inventory && d.contents.length >= 1,
-    "Requires at least 1 item"
+    "Requires at least 1 item",
   ),
 }) satisfies z.ZodType<UserForm>;
 
-// type UserForm = z.infer<typeof UserSchema>;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type UserFormInferred = z.infer<typeof UserSchema>;
+//   ^?
 
 function App() {
   const renderControl = useRenderControl();
@@ -73,7 +75,7 @@ function App() {
     {
       validateMode: "onChange",
       revalidateMode: "onChange",
-    }
+    },
   );
 
   const formErrors = useFormErrors(form, {
@@ -96,10 +98,10 @@ function App() {
     },
     async (issues, event) => {
       console.log(
-        "Form has issues: " + issues.map((i) => i.message).join(", ")
+        "Form has issues: " + issues.map((i) => i.message).join(", "),
       );
       console.log(event);
-    }
+    },
   );
 
   // useEffect(() => {
@@ -234,6 +236,7 @@ function App() {
                     field.modifyValue((inventory) => {
                       inventory.contents.splice(inventory.contents.length - 1);
                     });
+                    field.triggerValidation();
                   }}
                 >
                   Remove Last

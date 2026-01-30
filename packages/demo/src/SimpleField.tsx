@@ -18,7 +18,7 @@ import { useRenderControl } from "./hooks/useRenderControl";
 
 interface RenderParams<
   TShape extends object,
-  TPath extends Field.Paths<TShape>
+  TPath extends Field.Paths<TShape>,
 > {
   ref: Ref<any | null>;
 
@@ -44,7 +44,7 @@ interface Props<TShape extends object, TPath extends Field.Paths<TShape>> {
 
 export function SimpleField<
   TShape extends object,
-  TPath extends Field.Paths<TShape>
+  TPath extends Field.Paths<TShape>,
 >(props: Props<TShape, TPath>) {
   const id = useId();
 
@@ -100,12 +100,16 @@ export function SimpleField<
           props.form.controller.validateField(path);
         }
       }),
-      events.on("fieldStateUpdated", (path) => {
+      events.on("fieldTouchUpdated", (path) => {
         if (path === props.path) renderControl.forceRerender();
       }),
-      events.on("validationTriggered", (path) => {
+      events.on("fieldDirtyUpdated", (path) => {
         if (path === props.path) renderControl.forceRerender();
-      })
+      }),
+      events.on("validationIssuesUpdated", (path) => {
+        if (path === props.path) renderControl.forceRerender();
+        console.log("Issues updated", path);
+      }),
     );
   }, []);
 
