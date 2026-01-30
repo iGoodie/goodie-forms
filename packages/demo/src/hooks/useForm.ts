@@ -1,5 +1,6 @@
 import { FormController, type Form } from "@goodie-forms/core";
-import { useState } from "react";
+import flow from "lodash.flow";
+import { useEffect, useState } from "react";
 
 export function useForm<TShape extends object>(
   formConfigs: Form.FormConfigs<TShape>,
@@ -9,6 +10,17 @@ export function useForm<TShape extends object>(
   }
 ) {
   const [controller] = useState(() => new FormController(formConfigs));
+
+  const [, setIsSubmitting] = useState(() => controller.isSubmitting);
+
+  useEffect(() => {
+    return flow(
+      controller.events.on("statusChanged", (state) => {
+        // Only re-render when submission state changes
+        setIsSubmitting(state === "submitting");
+      })
+    );
+  }, [controller]);
 
   return {
     formConfigs,

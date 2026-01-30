@@ -77,8 +77,14 @@ function App() {
 
   const handleSubmit = form.controller.createSubmitHandler(
     async (data, event) => {
+      const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+      await sleep(2_000);
+
       alert("Form submitted successfully: " + JSON.stringify(data));
+
       console.log(event);
+
+      // Persist with current data
       form.controller.reset(data);
     },
     async (issues, event) => {
@@ -115,6 +121,7 @@ function App() {
               ref={ref}
               {...handlers}
               value={value}
+              disabled={form.controller.isSubmitting}
               type="text"
               placeholder="John"
             />
@@ -131,6 +138,7 @@ function App() {
               ref={ref}
               {...handlers}
               value={value}
+              disabled={form.controller.isSubmitting}
               onChange={(e) => field.setValue(e.target.value)}
               type="text"
               placeholder="Doe"
@@ -151,6 +159,7 @@ function App() {
             >
               <button
                 type="button"
+                disabled={form.controller.isSubmitting}
                 onClick={() => {
                   field.modifyValue((address) => {
                     address.city =
@@ -168,6 +177,7 @@ function App() {
 
               <select
                 value={value?.street}
+                disabled={form.controller.isSubmitting}
                 onChange={(e) =>
                   field.modifyValue((address) => {
                     address.street = e.target.value;
@@ -190,23 +200,38 @@ function App() {
           label="Inventory"
           defaultValue={new Inventory()}
           render={({ ref, value, handlers, field }) => (
-            <div className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700 focus-within:border-gray-400">
-              <button
-                ref={ref}
-                {...handlers}
-                type="button"
-                onClick={() => {
-                  field.modifyValue((inventory) => {
-                    const items = ["Gem", "Sword", "Bow", "Arrow"];
-                    const item =
-                      items[Math.floor(Math.random() * items.length)];
-                    inventory.push(item);
-                    return inventory;
-                  });
-                }}
-              >
-                Add Random Item
-              </button>
+            <div
+              ref={ref}
+              {...handlers}
+              className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700 focus-within:border-gray-400"
+            >
+              <div className="grid grid-cols-2 gap-1">
+                <button
+                  type="button"
+                  disabled={form.controller.isSubmitting}
+                  onClick={() => {
+                    field.modifyValue((inventory) => {
+                      const items = ["Gem", "Sword", "Bow", "Arrow"];
+                      const item =
+                        items[Math.floor(Math.random() * items.length)];
+                      inventory.push(item);
+                    });
+                  }}
+                >
+                  Add Random Item
+                </button>
+                <button
+                  type="button"
+                  disabled={form.controller.isSubmitting}
+                  onClick={() => {
+                    field.modifyValue((inventory) => {
+                      inventory.contents.splice(inventory.contents.length - 1);
+                    });
+                  }}
+                >
+                  Remove Last
+                </button>
+              </div>
               <span className="text-wrap">{value?.contents.join(", ")}</span>
             </div>
           )}
@@ -232,7 +257,9 @@ function App() {
         >
           Validate
         </button>
-        <button type="submit">Submit & Persist</button>
+        <button type="submit" disabled={!form.controller.isValid}>
+          {form.controller.isSubmitting ? "Submitting.." : "Submit & Persist"}
+        </button>
       </form>
 
       <FormDebug form={form.controller} />

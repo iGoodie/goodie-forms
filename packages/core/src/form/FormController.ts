@@ -87,6 +87,7 @@ export class FormController<TShape extends object = object> {
   }
 
   protected setStatus(newStatus: Form.Status) {
+    if (newStatus === this._status) return;
     const oldStatus = this._status;
     this._status = newStatus;
     this.events.emit("statusChanged", newStatus, oldStatus);
@@ -249,9 +250,8 @@ export class FormController<TShape extends object = object> {
 
       await this.validateForm();
 
-      this.setStatus("submitting");
-
       if (this._issues.length === 0) {
+        this.setStatus("submitting");
         await onSuccess?.(this._data as TShape, event, abortController.signal);
         this.setStatus("idle");
         return;

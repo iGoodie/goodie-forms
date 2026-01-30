@@ -10,4 +10,9 @@ select {
   padding: 10px;
   border: 1px solid #fff;
   border-radius: 8px;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }

@@ -78,7 +78,10 @@ export function SimpleField<
       field.touch();
     },
     onBlur() {
-      if (props.form.hookConfigs?.validateMode === "onBlur") {
+      if (
+        props.form.hookConfigs?.validateMode === "onBlur" ||
+        props.form.hookConfigs?.validateMode === "onChange"
+      ) {
         props.form.controller.validateField(props.path);
       }
     },
