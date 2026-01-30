@@ -1,0 +1,107 @@
+import { Field, FormField } from "@goodie-forms/core";
+import {
+  ChangeEvent,
+  FocusEvent,
+  ReactNode,
+  Ref,
+  useEffect,
+  useRef,
+} from "react";
+import { UseForm } from "../hooks/useForm";
+import { useFormField } from "../hooks/useFormField";
+import { composeFns } from "../utils/composeFns";
+
+export interface RenderParams<
+  TShape extends object,
+  TPath extends Field.Paths<TShape>,
+> {
+  ref: Ref<any | null>;
+
+  value: Field.GetValue<TShape, TPath> | undefined;
+
+  handlers: {
+    onChange: (event: ChangeEvent<EventTarget>) => void;
+    onFocus: (event: FocusEvent) => void;
+    onBlur: (event: FocusEvent) => void;
+  };
+
+  field: FormField<TShape, TPath>;
+}
+
+export interface FieldRendererProps<
+  TShape extends object,
+  TPath extends Field.Paths<TShape>,
+> {
+  form: UseForm<TShape>;
+  path: TPath;
+  resetOnUnmount?: boolean;
+  defaultValue?: Field.GetValue<TShape, TPath>;
+  render: (params: RenderParams<TShape, TPath>) => ReactNode;
+}
+
+export function FieldRenderer<
+  TShape extends object,
+  TPath extends Field.Paths<TShape>,
+>(props: FieldRendererProps<TShape, TPath>) {
+  const elementRef = useRef<HTMLElement>(null);
+
+  const field = useFormField(props.form, props.path, props.defaultValue);
+
+  const handlers: RenderParams<TShape, TPath>["handlers"] = {
+    onChange(event) {
+      const { target } = event;
+      if (target !== field.boundElement) return;
+      if (!("value" in target)) return;
+      if (typeof target.value !== "string") return;
+      field.setValue(target.value as Field.GetValue<TShape, TPath>, {
+        shouldTouch: true,
+        shouldMarkDirty: true,
+      });
+    },
+    onFocus() {
+      field.touch();
+    },
+    onBlur() {
+      if (
+        props.form.hookConfigs?.validateMode === "onBlur" ||
+        props.form.hookConfigs?.validateMode === "onChange"
+      ) {
+        props.form.controller.validateField(props.path);
+      }
+    },
+  };
+
+  useEffect(() => {
+    const { events } = props.form.controller;
+
+    return composeFns(
+      events.on("valueChanged", (path) => {
+        if (path !== props.path) return;
+        if (props.form.hookConfigs?.validateMode === "onChange") {
+          props.form.controller.validateField(path);
+        }
+      }),
+    );
+  }, []);
+
+  useEffect(() => {
+    field.bindElement(elementRef.current!);
+
+    return () => {
+      if (props.resetOnUnmount) {
+        props.form.controller.unbindField(props.path);
+      }
+    };
+  }, []);
+
+  return (
+    <>
+      {props.render({
+        ref: elementRef,
+        value: field.value,
+        handlers: handlers,
+        field: field,
+      })}
+    </>
+  );
+}

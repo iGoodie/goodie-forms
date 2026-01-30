@@ -1,7 +1,7 @@
 import type { FormController } from "@goodie-forms/core";
+import { useRenderControl } from "@goodie-forms/react";
 import flow from "lodash.flow";
 import { useEffect } from "react";
-import { useRenderControl } from "./hooks/useRenderControl";
 
 export function FormDebug<TShape extends object>(props: {
   formController: FormController<TShape>;

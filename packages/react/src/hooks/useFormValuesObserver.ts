@@ -1,6 +1,6 @@
 import { Field } from "@goodie-forms/core";
-import flow from "lodash.flow";
 import { useEffect } from "react";
+import { composeFns } from "../utils/composeFns";
 import type { UseForm } from "./useForm";
 import { useRenderControl } from "./useRenderControl";
 
@@ -15,7 +15,7 @@ export function useFormValuesObserver<TShape extends object>(
   useEffect(() => {
     const { events } = form.controller;
 
-    return flow(
+    return composeFns(
       events.on("valueChanged", (path) => {
         if (options?.include?.includes?.(path) ?? true) {
           renderControl.forceRerender();

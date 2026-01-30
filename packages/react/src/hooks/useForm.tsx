@@ -1,7 +1,7 @@
 import { FormController, type Form } from "@goodie-forms/core";
-import flow from "lodash.flow";
-import { useRenderControl } from "../hooks/useRenderControl";
 import { useEffect, useState } from "react";
+import { composeFns } from "../utils/composeFns";
+import { useRenderControl } from "../hooks/useRenderControl";
 
 export function useForm<TShape extends object>(
   formConfigs: Form.FormConfigs<TShape>,
@@ -17,14 +17,16 @@ export function useForm<TShape extends object>(
   const renderControl = useRenderControl();
 
   const [, setIsSubmitting] = useState(() => controller.isSubmitting);
+  const [, setIsValid] = useState(() => controller.isValid);
 
   useEffect(() => {
     const noop = () => {};
 
-    return flow(
+    return composeFns(
       controller.events.on("statusChanged", (state) => {
         // Only re-render when submission state changes
         setIsSubmitting(state === "submitting");
+        setIsValid(controller.isValid);
       }),
       hookConfigs?.watchIssues
         ? controller.events.on("validationIssuesUpdated", () =>

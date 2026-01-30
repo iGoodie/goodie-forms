@@ -1,9 +1,9 @@
 import type { Field } from "@goodie-forms/core";
+import { useEffect } from "react";
+import { composeFns } from "../utils/composeFns";
+import { groupBy } from "../utils/groupBy";
 import type { UseForm } from "./useForm";
 import { useRenderControl } from "./useRenderControl";
-import flow from "lodash.flow";
-import { useEffect } from "react";
-import { groupBy } from "remeda";
 
 export function useFormErrorObserver<TShape extends object>(
   form: UseForm<TShape>,
@@ -16,7 +16,7 @@ export function useFormErrorObserver<TShape extends object>(
   useEffect(() => {
     const { events } = form.controller;
 
-    return flow(
+    return composeFns(
       events.on("validationIssuesUpdated", (path) => {
         if (options?.include?.includes?.(path) ?? true) {
           renderControl.forceRerender();
@@ -27,13 +27,12 @@ export function useFormErrorObserver<TShape extends object>(
 
   const filteredIssues = form.controller._issues.filter((issue) => {
     if (options?.include == null) return true;
-    const path = issue.path?.join(".") as Field.Paths<TShape>;
+    const path = issue.path!.join(".") as Field.Paths<TShape>;
     return options.include.includes(path);
   });
 
-  return groupBy(filteredIssues, (issue) =>
-    issue.path?.join("."),
-  ) as unknown as Partial<
-    Record<Field.Paths<TShape>, typeof form.controller._issues>
-  >;
+  return groupBy(
+    filteredIssues,
+    (issue) => issue.path!.join(".") as Field.Paths<TShape>,
+  );
 }

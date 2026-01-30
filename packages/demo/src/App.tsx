@@ -1,11 +1,13 @@
 import { FormController } from "@goodie-forms/core";
+import {
+  useForm,
+  useFormErrorObserver,
+  useFormValuesObserver,
+  useRenderControl,
+} from "@goodie-forms/react";
 import z from "zod";
 import { FormDebug } from "./FormDebug";
 import { SimpleField } from "./SimpleField";
-import { useForm } from "./hooks/useForm";
-import { useRenderControl } from "./hooks/useRenderControl";
-import { useFormErrorObserver } from "./hooks/useFormErrorObserver";
-import { useFormValuesObserver } from "./hooks/useFormValuesObserver";
 
 import "./App.css";
 import "./tailwind.css";
@@ -54,7 +56,7 @@ const UserSchema = z.object({
     city: z.string(),
     street: z.string(),
   }),
-  friends: z.any().nonoptional(),
+  friends: z.any(),
   scores: z.any(),
   inventory: z.custom<Inventory>(
     (d) => d instanceof Inventory && d.contents.length >= 1,
@@ -272,7 +274,7 @@ function App() {
         >
           Validate
         </button>
-        <button type="submit" disabled={!form.controller.isValid}>
+        <button type="submit" disabled={form.controller.isSubmitting}>
           {form.controller.isSubmitting ? "Submitting.." : "Submit & Persist"}
         </button>
       </form>

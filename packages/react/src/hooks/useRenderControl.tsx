@@ -1,5 +1,3 @@
-/* eslint-disable react-hooks/refs */
-
 import { useRef, useState } from "react";
 
 export function useRenderControl() {
