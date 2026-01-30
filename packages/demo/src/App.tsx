@@ -4,6 +4,7 @@ import { FormDebug } from "./FormDebug";
 import { SimpleField } from "./SimpleField";
 import { useForm } from "./hooks/useForm";
 import { useRenderControl } from "./hooks/useRenderControl";
+import { useFormErrors } from "./hooks/useFormErrors";
 
 import "./App.css";
 import "./tailwind.css";
@@ -74,6 +75,12 @@ function App() {
       revalidateMode: "onChange",
     }
   );
+
+  const formErrors = useFormErrors(form, {
+    include: ["address"],
+  });
+
+  console.log(formErrors);
 
   const handleSubmit = form.controller.createSubmitHandler(
     async (data, event) => {
@@ -262,7 +269,7 @@ function App() {
         </button>
       </form>
 
-      <FormDebug form={form.controller} />
+      <FormDebug formController={form.controller} />
     </main>
   );
 }

@@ -37,6 +37,7 @@ interface Props<TShape extends object, TPath extends Field.Paths<TShape>> {
   form: UseForm<TShape>;
   path: TPath;
   label: string;
+  resetOnUnmount?: boolean;
   defaultValue?: Field.GetValue<TShape, TPath>;
   render: (params: RenderParams<TShape, TPath>) => ReactNode;
 }
@@ -119,8 +120,10 @@ export function SimpleField<
     }
 
     return () => {
-      console.log("Unbinding", props.path);
-      props.form.controller.unbindField(props.path);
+      if (props.resetOnUnmount) {
+        console.log("Unbinding", props.path);
+        props.form.controller.unbindField(props.path);
+      }
     };
   }, []);
 

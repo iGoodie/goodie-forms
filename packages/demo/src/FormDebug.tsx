@@ -4,12 +4,12 @@ import { useEffect } from "react";
 import { useRenderControl } from "./hooks/useRenderControl";
 
 export function FormDebug<TShape extends object>(props: {
-  form: FormController<TShape>;
+  formController: FormController<TShape>;
 }) {
   const renderControl = useRenderControl();
 
   useEffect(() => {
-    const { events } = props.form;
+    const { events } = props.formController;
 
     return flow(
       events.on("statusChanged", () => renderControl.forceRerender()),
@@ -27,21 +27,21 @@ export function FormDebug<TShape extends object>(props: {
       </span>
 
       <pre className="text-left">
-        {JSON.stringify(props.form._data, null, 2)}
+        {JSON.stringify(props.formController._data, null, 2)}
       </pre>
       <pre className="text-left">
-        {JSON.stringify(props.form._initialData, null, 2)}
+        {JSON.stringify(props.formController._initialData, null, 2)}
       </pre>
       <pre className="text-left flex flex-col">
         <span className="opacity-50">Fields</span>
-        {[...props.form._fields.values()].map((field, i) => (
+        {[...props.formController._fields.values()].map((field, i) => (
           <span key={i}>{field.path}</span>
         ))}
 
         <hr className="my-10" />
 
         <span className="opacity-50">Touched Fields</span>
-        {[...props.form._fields.values()]
+        {[...props.formController._fields.values()]
           .filter((field) => field.isTouched)
           .map((field, i) => (
             <span key={i}>{field.path}</span>
@@ -50,11 +50,21 @@ export function FormDebug<TShape extends object>(props: {
         <hr className="my-10" />
 
         <span className="opacity-50">Dirty Fields</span>
-        {[...props.form._fields.values()]
+        {[...props.formController._fields.values()]
           .filter((field) => field.isDirty)
           .map((field, i) => (
             <span key={i}>{field.path}</span>
           ))}
+
+        <hr className="my-10" />
+
+        <span className="opacity-50">Errors</span>
+        {props.formController._issues.map((issue) => (
+          <p className="inline text-wrap">
+            <span className="mr-1">{issue.path?.join(".")}</span>
+            <span className="text-xs opacity-30">({issue.message})</span>
+          </p>
+        ))}
       </pre>
     </div>
   );
