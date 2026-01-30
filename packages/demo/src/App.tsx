@@ -1,7 +1,7 @@
 import { FormController } from "@goodie-forms/core";
-import { FormDebug } from "./FormDebug";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import z from "zod";
+import { FormDebug } from "./FormDebug";
 import { SimpleField } from "./SimpleField";
 import { useRenderControl } from "./hooks/useRenderControl";
 
@@ -15,7 +15,7 @@ function vanillaTest() {
     async (data, event) => {
       //         ^?
       console.log("Infers type of event correctly", event);
-    },
+    }
   );
 }
 
@@ -52,12 +52,12 @@ const UserSchema = z.object({
     city: z.string(),
     street: z.string(),
   }),
-  inventory: z.custom<Inventory>(
-    (d) => d instanceof Inventory && d.contents.length >= 1,
-    "Requires at least 1 item",
-  ),
   friends: z.any(),
   scores: z.any(),
+  inventory: z.custom<Inventory>(
+    (d) => d instanceof Inventory && d.contents.length >= 1,
+    "Requires at least 1 item"
+  ),
 }) satisfies z.ZodType<UserForm>;
 
 // type UserForm = z.infer<typeof UserSchema>;
@@ -68,7 +68,6 @@ function App() {
   const [formController] = useState(() => {
     return new FormController<UserForm>({
       validationSchema: UserSchema,
-      autoValidationMode: "onSubmit",
     });
   });
 
@@ -80,10 +79,10 @@ function App() {
     },
     async (issues, event) => {
       console.log(
-        "Form has issues: " + issues.map((i) => i.message).join(", "),
+        "Form has issues: " + issues.map((i) => i.message).join(", ")
       );
       console.log(event);
-    },
+    }
   );
 
   // useEffect(() => {
@@ -107,11 +106,11 @@ function App() {
           name="name"
           label="User Name"
           defaultValue="foo"
-          render={({ ref, field, fieldState }) => (
+          render={({ ref, value, handlers }) => (
             <input
               ref={ref}
-              {...field}
-              onChange={(e) => fieldState.setValue(e.target.value)}
+              {...handlers}
+              value={value}
               type="text"
               placeholder="John"
             />
@@ -122,12 +121,13 @@ function App() {
           name="surname"
           label="User Lastname"
           defaultValue=""
-          render={({ ref, field, fieldState }) => (
+          render={({ ref, value, handlers, field }) => (
             <input
               ref={ref}
-              {...field}
+              {...handlers}
+              value={value}
               onChange={(e) => {
-                fieldState.modifyValue((_currentValue, field) => {
+                field.modifyValue((_, field) => {
                   field.markDirty();
                   return e.target.value;
                 });
@@ -143,16 +143,16 @@ function App() {
           name="address"
           label="Address"
           defaultValue={{ city: "Foo", street: "Sesame Street" }}
-          render={({ ref, field, fieldState }) => (
+          render={({ ref, value, handlers, field }) => (
             <div
               ref={ref}
-              {...(field as object)}
+              {...handlers}
               className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700 focus-within:border-gray-400"
             >
               <button
                 type="button"
                 onClick={() => {
-                  fieldState.modifyValue((address) => {
+                  field.modifyValue((address) => {
                     address.city =
                       Math.random() <= 0.5
                         ? "City #" + Math.random().toFixed(5)
@@ -163,14 +163,14 @@ function App() {
               >
                 Some complex city picker thing
               </button>
-              <span>City: {field.value?.city}</span>
+              <span>City: {value?.city}</span>
 
               <hr className="border border-gray-700" />
 
               <button
                 type="button"
                 onClick={() => {
-                  fieldState.modifyValue((address) => {
+                  field.modifyValue((address) => {
                     address.street =
                       Math.random() <= 0.5
                         ? "Street #" + Math.random().toFixed(5)
@@ -181,7 +181,7 @@ function App() {
               >
                 Some complex street picker thing
               </button>
-              <span>Street: {field.value?.street}</span>
+              <span>Street: {value?.street}</span>
             </div>
           )}
         />
@@ -191,27 +191,25 @@ function App() {
           name="inventory"
           label="Inventory"
           defaultValue={new Inventory()}
-          render={({ ref, field, fieldState }) => (
+          render={({ ref, value, handlers, field }) => (
             <div className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700 focus-within:border-gray-400">
               <button
                 ref={ref}
-                {...(field as object)}
+                {...handlers}
                 type="button"
                 onClick={() => {
-                  fieldState.modifyValue((foo) => {
+                  field.modifyValue((inventory) => {
                     const items = ["Gem", "Sword", "Bow", "Arrow"];
                     const item =
                       items[Math.floor(Math.random() * items.length)];
-                    foo.push(item);
-                    return foo;
+                    inventory.push(item);
+                    return inventory;
                   });
                 }}
               >
                 Add Random Item
               </button>
-              <span className="text-wrap">
-                {field.value?.contents.join(", ")}
-              </span>
+              <span className="text-wrap">{value?.contents.join(", ")}</span>
             </div>
           )}
         />

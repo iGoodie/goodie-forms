@@ -1,32 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/refs */
 
-import {
-  FieldState,
-  type Field,
-  type FormController,
-} from "@goodie-forms/core";
+import { FormField, type Field, type FormController } from "@goodie-forms/core";
 import flow from "lodash.flow";
 import {
   useEffect,
   useId,
   useRef,
   useState,
+  type ChangeEvent,
+  type FocusEvent,
   type ReactNode,
   type Ref,
 } from "react";
+import { useRenderControl } from "./hooks/useRenderControl";
 
 interface RenderParams<
   TShape extends object,
-  TPath extends Field.Paths<TShape>,
+  TPath extends Field.Paths<TShape>
 > {
   ref: Ref<any | null>;
 
-  field: {
-    value: Field.GetValue<TShape, TPath> | undefined;
+  value: Field.GetValue<TShape, TPath> | undefined;
+
+  handlers: {
+    onChange: (event: ChangeEvent<EventTarget>) => void;
+    onFocus: (event: FocusEvent) => void;
+    onBlur: (event: FocusEvent) => void;
   };
 
-  fieldState: FieldState<TShape, TPath>;
+  field: FormField<TShape, TPath>;
 }
 
 interface Props<TShape extends object, TPath extends Field.Paths<TShape>> {
@@ -37,9 +40,10 @@ interface Props<TShape extends object, TPath extends Field.Paths<TShape>> {
   render: (params: RenderParams<TShape, TPath>) => ReactNode;
 }
 
+// TODO: impl validationMode and revalidationMode when extracted to a FormController wrapping hook
 export function SimpleField<
   TShape extends object,
-  TPath extends Field.Paths<TShape>,
+  TPath extends Field.Paths<TShape>
 >(props: Props<TShape, TPath>) {
   const id = useId();
 
@@ -48,18 +52,33 @@ export function SimpleField<
 
   const elementRef = useRef<HTMLElement>(null);
 
-  const [, rerender] = useState(0);
+  const renderControl = useRenderControl();
 
-  const [fieldState, setFieldState] = useState(() =>
+  const [field, setField] = useState(() =>
     props.form.bindField(props.name, {
       defaultValue: props.defaultValue,
-    }),
+    })
   );
 
-  const fieldError = props.form.getFieldState(props.name)?.issues.at(0);
+  const fieldError = field.issues.at(0);
 
-  const _field: RenderParams<TShape, TPath>["field"] = {
-    value: fieldState?.value,
+  const handlers: RenderParams<TShape, TPath>["handlers"] = {
+    onChange(event) {
+      const { target } = event;
+      if (!("value" in target)) return;
+      if (typeof target.value !== "string") return;
+      field.setValue(target.value as Field.GetValue<TShape, TPath>, {
+        shouldTouch: true,
+        shouldMarkDirty: true,
+      });
+    },
+    onFocus() {
+      field.touch();
+    },
+    onBlur(event) {
+      console.log("Blur", props.name, event.target);
+      props.form.validateField(props.name);
+    },
   };
 
   useEffect(() => {
@@ -67,27 +86,27 @@ export function SimpleField<
 
     return flow(
       events.on("valueChanged", (path) => {
-        if (path === props.name) rerender((i) => i + 1);
+        if (path === props.name) renderControl.forceRerender();
       }),
       events.on("fieldStateUpdated", (path) => {
-        if (path === props.name) rerender((i) => i + 1);
+        if (path === props.name) renderControl.forceRerender();
       }),
       events.on("validationTriggered", (path) => {
-        if (path === props.name) rerender((i) => i + 1);
-      }),
+        if (path === props.name) renderControl.forceRerender();
+      })
     );
   }, []);
 
   useEffect(() => {
-    if (props.form.getFieldState(props.name) != null) {
-      fieldState.bindElement(elementRef.current!);
+    if (props.form.getField(props.name) != null) {
+      field.bindElement(elementRef.current!);
     } else {
       const fieldState = props.form.bindField(props.name, {
         defaultValue: props.defaultValue,
         domElement: elementRef.current!,
       });
 
-      setFieldState(fieldState);
+      setField(fieldState);
     }
 
     return () => {
@@ -106,8 +125,9 @@ export function SimpleField<
       <div className="flex w-full *:w-full">
         {props.render({
           ref: elementRef,
-          field: _field,
-          fieldState,
+          value: field.value,
+          handlers: handlers,
+          field: field,
         })}
       </div>
 

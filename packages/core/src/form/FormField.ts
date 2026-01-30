@@ -1,12 +1,11 @@
 import { immerable, produce } from "immer";
-import { createNanoEvents } from "nanoevents";
-import { Field } from "../form/Field";
-import { FormController } from "../form/FormController";
 import { getId } from "../utils/getId";
+import { Field } from "./Field";
+import { FormController } from "./FormController";
 
-export class FieldState<
+export class FormField<
   TShape extends object,
-  TPath extends Field.Paths<TShape>,
+  TPath extends Field.Paths<TShape>
 > {
   public readonly id = getId();
 
@@ -17,13 +16,13 @@ export class FieldState<
 
   constructor(
     public readonly control: FormController<TShape>,
-    public readonly path: TPath,
+    public readonly path: TPath
   ) {}
 
   get value() {
     return Field.getValue<TShape, TPath>(
       this.control._data as TShape,
-      this.path,
+      this.path
     );
   }
 
@@ -33,7 +32,7 @@ export class FieldState<
 
   get issues() {
     return this.control._issues.filter(
-      (issue) => issue.path?.join(".") === this.path,
+      (issue) => issue.path?.join(".") === this.path
     );
   }
 
@@ -99,12 +98,12 @@ export class FieldState<
   modifyValue(
     modifier: (
       currentValue: Field.GetValue<TShape, TPath>,
-      field: this,
+      field: this
     ) => Field.GetValue<TShape, TPath> | void,
     opts?: {
       shouldTouch?: boolean;
       shouldMarkDirty?: boolean;
-    },
+    }
   ) {
     if (opts?.shouldTouch == null || opts?.shouldTouch) {
       this.touch();
@@ -112,23 +111,23 @@ export class FieldState<
 
     const initialValue = Field.getValue<TShape, TPath>(
       this.control._initialData as TShape,
-      this.path,
+      this.path
     );
 
-    FieldState.ensureImmerability(initialValue);
+    FormField.ensureImmerability(initialValue);
 
     this.control._data = produce(this.control._data, (draft) => {
       Field.modifyValue<TShape, TPath>(draft as TShape, this.path, (oldValue) =>
-        modifier(oldValue, this),
+        modifier(oldValue, this)
       );
     });
 
     const currentValue = Field.getValue<TShape, TPath>(
       this.control._data as TShape,
-      this.path,
+      this.path
     );
 
-    FieldState.ensureImmerability(currentValue);
+    FormField.ensureImmerability(currentValue);
 
     const valueChanged = !Field.deepEqual(
       initialValue,
@@ -140,14 +139,14 @@ export class FieldState<
         const ctorB = b.constructor;
         if (ctorA !== ctorB) return;
         return this.control.equalityComparators?.[ctorA]?.(a, b);
-      },
+      }
     );
 
     this.control.events.emit(
       "valueChanged",
       this.path,
       currentValue,
-      initialValue,
+      initialValue
     );
 
     if (opts?.shouldMarkDirty == null || opts?.shouldMarkDirty) {
@@ -157,7 +156,7 @@ export class FieldState<
 
   setValue(
     value: Field.GetValue<TShape, TPath>,
-    opts?: { shouldTouch?: boolean },
+    opts?: Parameters<typeof this.modifyValue>[1]
   ) {
     return this.modifyValue(() => value, opts);
   }

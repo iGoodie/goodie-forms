@@ -1,7 +1,7 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
 import { enableArrayMethods, enableMapSet, produce } from "immer";
 import { Field } from "../form/Field";
-import { FieldState } from "../form/FieldState";
+import { FormField } from "./FormField";
 import { DeepPartial } from "../types/DeepPartial";
 import { createNanoEvents } from "nanoevents";
 
@@ -11,38 +11,35 @@ enableArrayMethods();
 export namespace Form {
   export type Status = "idle" | "validating" | "submitting";
 
-  export type AutoValidationMode = "onChange" | "onBlur" | "onSubmit";
-
   export interface PreventableEvent {
     preventDefault(): void;
   }
 
   export type SubmitSuccessHandler<
     TShape extends object,
-    TEvent extends PreventableEvent,
+    TEvent extends PreventableEvent
   > = (
     data: TShape,
     event: TEvent,
-    abortSignal: AbortSignal,
+    abortSignal: AbortSignal
   ) => void | Promise<void>;
 
   export type SubmitErrorHandler<TEvent extends PreventableEvent> = (
     issues: StandardSchemaV1.Issue[],
     event: TEvent,
-    abortSignal: AbortSignal,
+    abortSignal: AbortSignal
   ) => void | Promise<void>;
 }
 
 export class FormController<TShape extends object = object> {
   _status: Form.Status = "idle";
-  _fields = new Map<Field.Paths<TShape>, FieldState<TShape, any>>();
+  _fields = new Map<Field.Paths<TShape>, FormField<TShape, any>>();
   _initialData: DeepPartial<TShape>;
   _data: DeepPartial<TShape>;
   _issues: StandardSchemaV1.Issue[] = [];
 
   equalityComparators?: Record<any, (a: any, b: any) => boolean>;
   validationSchema?: StandardSchemaV1<TShape, TShape>;
-  autoValidationMode: Form.AutoValidationMode; // TODO <-- Impl
 
   public readonly events = createNanoEvents<{
     statusChanged(newStatus: Form.Status, oldStatus: Form.Status): void;
@@ -55,26 +52,24 @@ export class FormController<TShape extends object = object> {
     valueChanged(
       path: Field.Paths<TShape>,
       newValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined,
-      oldValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined,
+      oldValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined
     ): void;
   }>();
 
   constructor(config: {
     initialData?: DeepPartial<TShape>;
     validationSchema?: StandardSchemaV1<TShape, TShape>;
-    autoValidationMode?: Form.AutoValidationMode;
     equalityComparators?: Record<any, (a: any, b: any) => boolean>;
   }) {
     this.validationSchema = config.validationSchema;
-    this.autoValidationMode = config.autoValidationMode ?? "onSubmit";
     this.equalityComparators = config.equalityComparators;
     this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);
     this._data = produce(this._initialData, () => {});
   }
 
   get isDirty() {
-    for (const fieldState of this._fields.values()) {
-      if (fieldState.isDirty) return true;
+    for (const field of this._fields.values()) {
+      if (field.isDirty) return true;
     }
     return false;
   }
@@ -96,7 +91,7 @@ export class FormController<TShape extends object = object> {
   _unsafeSetFieldValue<TPath extends Field.Paths<TShape>>(
     path: TPath,
     value: Field.GetValue<TShape, TPath>,
-    config?: { updateInitialValue?: boolean },
+    config?: { updateInitialValue?: boolean }
   ) {
     if (config?.updateInitialValue) {
       this._initialData = produce(this._initialData, (draft) => {
@@ -113,12 +108,12 @@ export class FormController<TShape extends object = object> {
     config?: {
       defaultValue?: Field.GetValue<TShape, TPath>;
       domElement?: HTMLElement;
-    },
+    }
   ) {
-    const fieldState = new FieldState(this, path);
+    const field = new FormField(this, path);
 
     console.log("Binding", path, config?.defaultValue);
-    this._fields.set(path, fieldState);
+    this._fields.set(path, field);
     this.events.emit("fieldBound", path);
 
     if (config?.defaultValue != null) {
@@ -128,10 +123,10 @@ export class FormController<TShape extends object = object> {
     }
 
     if (config?.domElement != null) {
-      fieldState.bindElement(config.domElement);
+      field.bindElement(config.domElement);
     }
 
-    return fieldState;
+    return field;
   }
 
   unbindField(path: Field.Paths<TShape>) {
@@ -144,8 +139,8 @@ export class FormController<TShape extends object = object> {
     this._data = this._initialData;
     this._issues = [];
 
-    for (const fieldState of this._fields.values()) {
-      fieldState.reset();
+    for (const field of this._fields.values()) {
+      field.reset();
     }
 
     if (newInitialData != null) {
@@ -154,48 +149,57 @@ export class FormController<TShape extends object = object> {
     }
   }
 
-  getFieldState<TPath extends Field.Paths<TShape>>(
+  getField<TPath extends Field.Paths<TShape>>(
     path: TPath,
-    config: { bindIfMissing: true },
-  ): FieldState<TShape, TPath>;
-  getFieldState<TPath extends Field.Paths<TShape>>(
+    config: { bindIfMissing: true }
+  ): FormField<TShape, TPath>;
+  getField<TPath extends Field.Paths<TShape>>(
+    path: TPath
+  ): FormField<TShape, TPath> | undefined;
+  getField<TPath extends Field.Paths<TShape>>(
     path: TPath,
-  ): FieldState<TShape, TPath> | undefined;
-  getFieldState<TPath extends Field.Paths<TShape>>(
-    path: TPath,
-    config?: { bindIfMissing?: boolean },
+    config?: { bindIfMissing?: boolean }
   ) {
-    let fieldState = this._fields.get(path);
+    let field = this._fields.get(path);
 
-    if (fieldState == null && config?.bindIfMissing) {
-      fieldState = this.bindField(path);
+    if (field == null && config?.bindIfMissing) {
+      field = this.bindField(path);
     }
 
-    return fieldState;
+    return field;
   }
 
-  async validateField<TPath extends Field.Paths<TShape>>(path: TPath) {
-    if (this._status !== "idle") return;
-
-    // TODO: Support native HTML validation, if no schema is provided
-    if (this.validationSchema == null) return;
-
-    this.setStatus("validating");
-
-    this.getFieldState(path, { bindIfMissing: true });
-
-    const result = await this.validationSchema["~standard"].validate(
-      this._data,
-    );
-
+  clearFieldIssues<TPath extends Field.Paths<TShape>>(path: TPath) {
     this._issues = this._issues.filter((issue) => {
       if (issue.path == null) return true;
       const issuePath = issue.path.join(".");
       return issuePath !== path;
     });
+  }
+
+  async validateField<TPath extends Field.Paths<TShape>>(path: TPath) {
+    if (this._status !== "idle") return;
+
+    if (this.validationSchema == null) return;
+
+    this.setStatus("validating");
+
+    this.getField(path, { bindIfMissing: true });
+
+    const result = await this.validationSchema["~standard"].validate(
+      this._data
+    );
+
+    this.clearFieldIssues(path);
 
     if (!("value" in result)) {
-      this._issues.push(...result.issues);
+      this._issues.push(
+        ...result.issues.filter((issue) => {
+          if (issue.path == null) return;
+          const fieldPath = issue.path.join(".") as Field.Paths<TShape>;
+          return fieldPath === path;
+        })
+      );
     }
 
     this.events.emit("validationTriggered", path);
@@ -205,13 +209,12 @@ export class FormController<TShape extends object = object> {
   async validateForm() {
     if (this._status !== "idle") return;
 
-    // TODO: Support native HTML validation, if no schema is provided
     if (this.validationSchema == null) return;
 
     this.setStatus("validating");
 
     const result = await this.validationSchema["~standard"].validate(
-      this._data,
+      this._data
     );
 
     if ("value" in result) {
@@ -229,7 +232,7 @@ export class FormController<TShape extends object = object> {
 
   createSubmitHandler<TEvent extends Form.PreventableEvent>(
     onSuccess?: Form.SubmitSuccessHandler<TShape, TEvent>,
-    onError?: Form.SubmitErrorHandler<TEvent>,
+    onError?: Form.SubmitErrorHandler<TEvent>
   ) {
     return async (event: TEvent) => {
       if (event != null) {
@@ -240,9 +243,7 @@ export class FormController<TShape extends object = object> {
 
       const abortController = new AbortController();
 
-      if (this.autoValidationMode === "onSubmit") {
-        await this.validateForm();
-      }
+      await this.validateForm();
 
       this.setStatus("submitting");
 
@@ -255,10 +256,10 @@ export class FormController<TShape extends object = object> {
       for (const issue of this._issues) {
         if (issue.path == null) continue;
         const fieldPath = issue.path.join(".") as Field.Paths<TShape>;
-        const fieldState = this.getFieldState(fieldPath);
-        if (fieldState == null) continue;
-        if (fieldState.boundElement == null) continue;
-        fieldState.focus();
+        const field = this.getField(fieldPath);
+        if (field == null) continue;
+        if (field.boundElement == null) continue;
+        field.focus();
         break;
       }
       await onError?.(this._issues, event, abortController.signal);
