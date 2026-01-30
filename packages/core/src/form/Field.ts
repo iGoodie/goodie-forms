@@ -109,6 +109,33 @@ export namespace Field {
     return true;
   }
 
+  export function diff<T>(
+    prev: readonly T[],
+    next: readonly T[],
+    equals: (a: T, b: T) => boolean,
+    filter?: (a: T) => boolean,
+  ) {
+    const added: T[] = [];
+    const removed: T[] = [];
+    const unchanged: T[] = [];
+
+    for (const n of next) {
+      if (prev.some((p) => equals(p, n))) {
+        if (filter?.(n) ?? true) unchanged.push(n);
+      } else {
+        if (filter?.(n) ?? true) added.push(n);
+      }
+    }
+
+    for (const p of prev) {
+      if (!next.some((n) => equals(p, n))) {
+        if (filter?.(p) ?? true) removed.push(p);
+      }
+    }
+
+    return { added, removed, unchanged };
+  }
+
   export function setValue<
     TShape extends object,
     TPath extends Field.Paths<TShape>,

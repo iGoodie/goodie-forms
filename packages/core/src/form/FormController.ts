@@ -188,31 +188,25 @@ export class FormController<TShape extends object = object> {
   }
 
   private async applyValidation<TPath extends Field.Paths<TShape>>(
-    result: StandardSchemaV1.Result<TShape>,
+    _result: StandardSchemaV1.Result<TShape>,
     path: TPath,
   ) {
-    let updated = false;
-
-    // Reset issues of this path first
-    removeBy(this._issues, (issue) => {
-      if (issue.path == null) return false;
-      const issuePath = issue.path.join(".");
-      if (issuePath !== path) return false;
-      updated = true; // <-- Removed an existing issue
-      return true;
-    });
-
-    if (!("value" in result)) {
-      result.issues.forEach((issue) => {
-        if (issue.path == null) return;
+    const diff = Field.diff(
+      this._issues,
+      _result.issues ?? [],
+      Field.deepEqual,
+      (issue) => {
+        if (issue.path == null) return false;
         const issuePath = issue.path.join(".");
-        if (issuePath !== path) return;
-        updated = true;
-        this._issues.push(issue);
-      });
-    }
+        return issuePath === path;
+      },
+    );
 
-    if (updated) {
+    removeBy(this._issues, (issue) => diff.removed.includes(issue));
+
+    diff.added.forEach((issue) => this._issues.push(issue));
+
+    if (diff.added.length !== 0 || diff.removed.length !== 0) {
       this.events.emit("validationIssuesUpdated", path);
     }
   }
