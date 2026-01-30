@@ -4,7 +4,8 @@ import { FormDebug } from "./FormDebug";
 import { SimpleField } from "./SimpleField";
 import { useForm } from "./hooks/useForm";
 import { useRenderControl } from "./hooks/useRenderControl";
-import { useFormErrors } from "./hooks/useFormErrors";
+import { useFormErrorObserver } from "./hooks/useFormErrorObserver";
+import { useFormValuesObserver } from "./hooks/useFormValuesObserver";
 
 import "./App.css";
 import "./tailwind.css";
@@ -78,11 +79,15 @@ function App() {
     },
   );
 
-  const formErrors = useFormErrors(form, {
+  const formErrors = useFormErrorObserver(form, {
     include: ["inventory"],
   });
 
-  console.log(formErrors);
+  const formValues = useFormValuesObserver(form, {
+    include: ["name", "surname"],
+  });
+
+  console.log(formValues, formErrors);
 
   const handleSubmit = form.controller.createSubmitHandler(
     async (data, event) => {

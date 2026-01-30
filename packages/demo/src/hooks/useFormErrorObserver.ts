@@ -1,11 +1,11 @@
 import type { Field } from "@goodie-forms/core";
-import type { UseForm } from "../hooks/useForm";
-import { useRenderControl } from "../hooks/useRenderControl";
+import type { UseForm } from "./useForm";
+import { useRenderControl } from "./useRenderControl";
 import flow from "lodash.flow";
 import { useEffect } from "react";
 import { groupBy } from "remeda";
 
-export function useFormErrors<TShape extends object>(
+export function useFormErrorObserver<TShape extends object>(
   form: UseForm<TShape>,
   options?: {
     include?: Field.Paths<TShape>[];
