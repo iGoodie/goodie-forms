@@ -1,6 +1,6 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
-import { DeepPartial } from "../types/DeepPartial";
 import { Field } from "../form/Field";
+import { DeepPartial } from "../types/DeepPartial";
 
 export type CustomValidationIssue<TShape extends object> = {
   path: Field.Paths<TShape>;
@@ -33,7 +33,7 @@ export function customValidation<TShape extends object>(
 
           return {
             issues: customIssues.map((i) => ({
-              path: i.path.split("."),
+              path: Field.parsePathFragments(i.path),
               message: i.message,
             })),
           };

@@ -1,4 +1,4 @@
-import { Field, FormField } from "@goodie-forms/core";
+import { Field, FormField, NonnullFormField } from "@goodie-forms/core";
 import {
   ChangeEvent,
   FocusEvent,
@@ -25,19 +25,24 @@ export interface RenderParams<
     onBlur: (event: FocusEvent) => void;
   };
 
-  field: FormField<TShape, TPath>;
+  field: undefined extends Field.GetValue<TShape, TPath>
+    ? FormField<TShape, TPath>
+    : NonnullFormField<TShape, TPath>;
 }
 
-export interface FieldRendererProps<
+type DefaultValueProps<TValue> = undefined extends TValue
+  ? { defaultValue?: TValue | (() => TValue) }
+  : { defaultValue: TValue | (() => TValue) };
+
+export type FieldRendererProps<
   TShape extends object,
   TPath extends Field.Paths<TShape>,
-> {
+> = {
   form: UseForm<TShape>;
   path: TPath;
   resetOnUnmount?: boolean;
-  defaultValue?: Field.GetValue<TShape, TPath>;
   render: (params: RenderParams<TShape, TPath>) => ReactNode;
-}
+} & DefaultValueProps<Field.GetValue<TShape, TPath>>;
 
 export function FieldRenderer<
   TShape extends object,
@@ -46,7 +51,10 @@ export function FieldRenderer<
   const elementRef = useRef<HTMLElement>(null);
 
   const field = useFormField(props.form, props.path, {
-    defaultValue: props.defaultValue,
+    defaultValue:
+      typeof props.defaultValue === "function"
+        ? (props.defaultValue as any)()
+        : props.defaultValue,
   })!;
 
   const handlers: RenderParams<TShape, TPath>["handlers"] = {
@@ -102,7 +110,7 @@ export function FieldRenderer<
         ref: elementRef,
         value: field.value,
         handlers: handlers,
-        field: field,
+        field: field as any,
       })}
     </>
   );

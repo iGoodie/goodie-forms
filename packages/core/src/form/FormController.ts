@@ -36,10 +36,11 @@ export namespace Form {
   ) => void | Promise<void>;
 }
 
+// TODO: Rename TShape to TTarget, as it represents the targetted data shape on successful submission cb
 export class FormController<TShape extends object = object> {
   _status: Form.Status = "idle";
   _fields = new Map<Field.Paths<TShape>, FormField<TShape, any>>();
-  _initialData: DeepPartial<TShape>;
+  _initialData: DeepPartial<TShape>; // TODO <-- Maybe rename to something like _baselineData?
   _data: DeepPartial<TShape>;
   _issues: StandardSchemaV1.Issue[] = [];
 
@@ -111,6 +112,7 @@ export class FormController<TShape extends object = object> {
     });
   }
 
+  // TODO: Rename to "register" ??
   bindField<TPath extends Field.Paths<TShape>>(
     path: TPath,
     config?: {
@@ -164,7 +166,7 @@ export class FormController<TShape extends object = object> {
   clearFieldIssues<TPath extends Field.Paths<TShape>>(path: TPath) {
     this._issues = this._issues.filter((issue) => {
       if (issue.path == null) return true;
-      const issuePath = issue.path.join(".");
+      const issuePath = Field.parsePath(issue.path);
       return issuePath !== path;
     });
   }
@@ -179,7 +181,7 @@ export class FormController<TShape extends object = object> {
       Field.deepEqual,
       (issue) => {
         if (issue.path == null) return false;
-        const issuePath = issue.path.join(".");
+        const issuePath = Field.parsePath(issue.path);
         return issuePath === path;
       },
     );
@@ -259,7 +261,7 @@ export class FormController<TShape extends object = object> {
 
       for (const issue of this._issues) {
         if (issue.path == null) continue;
-        const fieldPath = issue.path.join(".") as Field.Paths<TShape>;
+        const fieldPath = Field.parsePath(issue.path) as Field.Paths<TShape>;
         const field = this.getField(fieldPath);
         if (field == null) continue;
         if (field.boundElement == null) continue;

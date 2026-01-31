@@ -1,4 +1,4 @@
-import type { FormController } from "@goodie-forms/core";
+import { Field, type FormController } from "@goodie-forms/core";
 import { useRenderControl } from "@goodie-forms/react";
 import flow from "lodash.flow";
 import { useEffect } from "react";
@@ -69,8 +69,11 @@ export function FormDebug<TShape extends object>(props: {
 
         <span className="opacity-50">Errors</span>
         {props.formController._issues.map((issue) => (
-          <p key={issue.path?.join(".")} className="inline text-wrap">
-            <span className="mr-1">{issue.path?.join(".")}</span>
+          <p
+            key={Field.parsePath(issue.path ?? [])}
+            className="inline text-wrap"
+          >
+            <span className="mr-1">{Field.parsePath(issue.path ?? [])}</span>
             <span className="text-xs opacity-30">({issue.message})</span>
           </p>
         ))}

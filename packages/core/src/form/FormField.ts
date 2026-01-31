@@ -2,6 +2,7 @@ import { immerable, produce } from "immer";
 import { getId } from "../utils/getId";
 import { Field } from "./Field";
 import { FormController } from "./FormController";
+import { DeepPartial } from "../types/DeepPartial";
 
 export class FormField<
   TShape extends object,
@@ -32,7 +33,7 @@ export class FormField<
 
   get issues() {
     return this.controller._issues.filter(
-      (issue) => issue.path?.join(".") === this.path,
+      (issue) => Field.parsePath(issue.path ?? []) === this.path,
     );
   }
 
@@ -104,14 +105,13 @@ export class FormField<
 
   modifyValue(
     modifier: (
-      currentValue: Field.GetValue<TShape, TPath>,
-      field: this,
+      currentValue: Field.GetValue<TShape, TPath> | undefined,
     ) => Field.GetValue<TShape, TPath> | void,
     opts?: {
       shouldTouch?: boolean;
       shouldMarkDirty?: boolean;
     },
-  ) {
+  ): void {
     if (opts?.shouldTouch == null || opts?.shouldTouch) {
       this.touch();
     }
@@ -130,9 +130,7 @@ export class FormField<
     FormField.ensureImmerability(oldValue);
 
     this.controller._data = produce(this.controller._data, (draft) => {
-      Field.modifyValue<TShape, TPath>(draft as TShape, this.path, (oldValue) =>
-        modifier(oldValue, this),
-      );
+      Field.modifyValue(draft as TShape, this.path, modifier);
     });
 
     const newValue = Field.getValue<TShape, TPath>(

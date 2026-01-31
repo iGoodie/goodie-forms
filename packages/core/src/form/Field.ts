@@ -1,44 +1,49 @@
+import { StandardSchemaV1 } from "@standard-schema/spec";
+
 export namespace Field {
   export type Paths<TShape extends object> = {
     [K in keyof TShape & string]: NonNullable<TShape[K]> extends (
       ...args: any[]
     ) => any
       ? never
-      : NonNullable<TShape[K]> extends any[]
-        ? K
+      : NonNullable<TShape[K]> extends (infer U)[]
+        ? U extends object
+          ?
+              | K
+              | `${K}[0]` // TODO <-- IntelliSense won't suggest properly
+              | `${K}[${number}]`
+              | `${K}[0].${Paths<U>}` // TODO <-- IntelliSense won't suggest properly
+              | `${K}[${number}].${Paths<U>}`
+          : K | `${K}[0]` | `${K}[${number}]`
         : NonNullable<TShape[K]> extends object
           ? K | `${K}.${Paths<NonNullable<TShape[K]>>}`
           : K;
   }[keyof TShape & string];
 
-  export type GetValue<
-    TShape extends object,
-    TPath extends string,
-  > = TPath extends `${infer K}.${infer Rest}`
-    ? K extends keyof TShape
-      ? GetValue<NonNullable<TShape[K]>, Rest>
-      : never
-    : TPath extends keyof TShape
-      ? TShape[TPath]
-      : never;
-
-  export function getValue<
-    TShape extends object,
-    TPath extends Field.Paths<TShape>,
-  >(data: TShape, path: TPath): Field.GetValue<TShape, TPath> | undefined {
-    if (data == null) return undefined;
-
-    const parts = (path as string).split(".");
-
-    let current: any = data;
-
-    for (const part of parts) {
-      if (current == null) return undefined;
-      current = current[part];
-    }
-
-    return current;
-  }
+  export type GetValue<TShape, TPath extends string> =
+    // case: foo[123].bar...
+    TPath extends `${infer K}[${number}].${infer Rest}`
+      ? K extends keyof TShape
+        ? NonNullable<TShape[K]> extends readonly (infer U)[]
+          ? GetValue<U, Rest>
+          : never
+        : never
+      : // case: foo[123]
+        TPath extends `${infer K}[${number}]`
+        ? K extends keyof TShape
+          ? NonNullable<TShape[K]> extends readonly (infer U)[]
+            ? U
+            : never
+          : never
+        : // case: foo.bar...
+          TPath extends `${infer K}.${infer Rest}`
+          ? K extends keyof TShape
+            ? GetValue<NonNullable<TShape[K]>, Rest>
+            : never
+          : // case: foo
+            TPath extends keyof TShape
+            ? TShape[TPath]
+            : never;
 
   export function deepEqual(
     a: any,
@@ -138,6 +143,97 @@ export namespace Field {
     return { added, removed, unchanged };
   }
 
+  export function parsePathFragments(path: string) {
+    const result: Array<string | number> = [];
+
+    let i = 0;
+
+    while (i < path.length) {
+      const char = path[i];
+
+      // dot separator
+      if (char === ".") {
+        i++;
+        continue;
+      }
+
+      // bracket index: [123]
+      if (char === "[") {
+        i++; // skip '['
+        let num = "";
+
+        while (i < path.length && path[i] !== "]") {
+          num += path[i];
+          i++;
+        }
+
+        i++; // skip ']'
+
+        if (!num || !/^\d+$/.test(num)) {
+          throw new Error(`Invalid array index in path: ${path}`);
+        }
+
+        result.push(Number(num));
+        continue;
+      }
+
+      // identifier
+      let key = "";
+      while (i < path.length && /[^\.\[]/.test(path[i])) {
+        key += path[i];
+        i++;
+      }
+
+      if (key) {
+        result.push(key);
+      }
+    }
+
+    return result;
+  }
+
+  export function parsePath(
+    fragments: readonly (PropertyKey | StandardSchemaV1.PathSegment)[],
+  ) {
+    let result = "";
+
+    for (const fragment of fragments) {
+      const pathFragment =
+        typeof fragment === "object" && "key" in fragment
+          ? fragment.key
+          : fragment;
+
+      if (typeof pathFragment === "number") {
+        result += `[${pathFragment}]`;
+      } else {
+        if (result.length > 0) {
+          result += ".";
+        }
+        result += pathFragment.toString();
+      }
+    }
+
+    return result;
+  }
+
+  export function getValue<
+    TShape extends object,
+    TPath extends Field.Paths<TShape>,
+  >(data: TShape, path: TPath): Field.GetValue<TShape, TPath> | undefined {
+    if (data == null) return undefined;
+
+    const pathFragments = parsePathFragments(path);
+
+    let current: any = data;
+
+    for (const pathFragment of pathFragments) {
+      if (current == null) return undefined;
+      current = current[pathFragment];
+    }
+
+    return current;
+  }
+
   export function setValue<
     TShape extends object,
     TPath extends Field.Paths<TShape>,
@@ -150,47 +246,54 @@ export namespace Field {
     TPath extends Field.Paths<TShape>,
   >(
     data: TShape,
-    key: TPath,
+    path: TPath,
     modifier: (
       currentValue: Field.GetValue<TShape, TPath>,
     ) => Field.GetValue<TShape, TPath> | void,
   ) {
-    const parts = (key as string).split(".");
+    const pathFragments = parsePathFragments(path);
 
     let current: any = data;
 
-    for (let i = 0; i < parts.length - 1; i++) {
-      const part = parts[i];
-      if (current[part] == null) {
-        current[part] = {};
+    for (let i = 0; i < pathFragments.length - 1; i++) {
+      const pathFragment = pathFragments[i];
+      const nextFragment = pathFragments[i + 1];
+
+      if (current[pathFragment] == null) {
+        current[pathFragment] = typeof nextFragment === "number" ? [] : {};
       }
-      current = current[part];
+
+      current = current[pathFragment];
     }
 
-    const oldValue = current[parts[parts.length - 1]];
+    const lastFragment = pathFragments[pathFragments.length - 1];
+
+    const oldValue = current[lastFragment];
     const newValue = modifier(oldValue);
 
     if (newValue !== undefined) {
-      current[parts[parts.length - 1]] = newValue;
+      current[lastFragment] = newValue;
     }
   }
 
   export function deleteValue<
     TShape extends object,
     TPath extends Field.Paths<TShape>,
-  >(data: TShape, key: TPath) {
-    const parts = (key as string).split(".");
+  >(data: TShape, path: TPath) {
+    const pathFragments = parsePathFragments(path);
 
     let current: any = data;
 
-    for (let i = 0; i < parts.length - 1; i++) {
-      const part = parts[i];
-      if (current[part] == null) {
-        return;
-      }
-      current = current[part];
+    for (let i = 0; i < pathFragments.length - 1; i++) {
+      const pathFragment = pathFragments[i];
+
+      if (current[pathFragment] == null) return;
+
+      current = current[pathFragment];
     }
 
-    delete current[parts[parts.length - 1]];
+    const lastFragment = pathFragments[pathFragments.length - 1];
+
+    delete current[lastFragment];
   }
 }

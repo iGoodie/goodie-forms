@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { customValidation, FormController } from "@goodie-forms/core";
-import { useForm, useFormField, useRenderControl } from "@goodie-forms/react";
+import { customValidation, Field, FormController } from "@goodie-forms/core";
+import {
+  FieldRenderer,
+  useForm,
+  useFormField,
+  useRenderControl,
+} from "@goodie-forms/react";
 import z from "zod";
 import { FormDebug } from "./FormDebug";
 import { SimpleField } from "./SimpleField";
@@ -44,8 +49,30 @@ interface UserForm {
     name: string;
     friendshipPoints: number;
   }[];
-  inventory: Inventory;
+  inventory?: Inventory;
 }
+
+const obj = {
+  a: [
+    {
+      b: {
+        c: 99,
+      },
+    },
+  ],
+};
+
+Field.modifyValue(obj, "a[0].b.c", () => 100);
+Field.modifyValue(obj, "a[0].b", (b) => {
+  b!.c++;
+});
+Field.modifyValue(obj, "a[99].b", (b) => {
+  if (!b) return { c: 999 };
+  b.c++;
+});
+console.log(Field.getValue(obj, "a[0].b.c"));
+console.log(Field.getValue(obj, "a[1].b.c"));
+console.log(Field.getValue(obj, "a"));
 
 const UserSchema = z.object({
   name: z.string().nonempty(),
@@ -82,6 +109,7 @@ function App() {
         if (data.inventory?.contents == null) {
           return [{ path: "inventory.contents", message: "Contents, huh?" }];
         }
+        return [{ path: "friends[99]", message: "Contents, huh?" }];
       }),
     },
     {
@@ -238,7 +266,7 @@ function App() {
           form={form}
           path="inventory"
           label="Inventory"
-          defaultValue={new Inventory()}
+          defaultValue={() => new Inventory()}
           render={({ ref, value, handlers, field }) => (
             <div
               ref={ref}
@@ -254,7 +282,8 @@ function App() {
                       const items = ["Gem", "Sword", "Bow", "Arrow"];
                       const item =
                         items[Math.floor(Math.random() * items.length)];
-                      inventory.push(item);
+                      inventory!.push(item);
+                      return inventory;
                     });
                   }}
                 >
@@ -265,7 +294,9 @@ function App() {
                   disabled={form.controller.isSubmitting}
                   onClick={() => {
                     field.modifyValue((inventory) => {
-                      inventory.contents.splice(inventory.contents.length - 1);
+                      inventory!.contents.splice(
+                        inventory!.contents.length - 1,
+                      );
                     });
                     field.triggerValidation();
                   }}

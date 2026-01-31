@@ -1,4 +1,4 @@
-import type { Field } from "@goodie-forms/core";
+import { Field } from "@goodie-forms/core";
 import { useEffect } from "react";
 import { composeFns } from "../utils/composeFns";
 import { groupBy } from "../utils/groupBy";
@@ -27,12 +27,12 @@ export function useFormErrorObserver<TShape extends object>(
 
   const filteredIssues = form.controller._issues.filter((issue) => {
     if (options?.include == null) return true;
-    const path = issue.path!.join(".") as Field.Paths<TShape>;
+    const path = Field.parsePath(issue.path!) as Field.Paths<TShape>;
     return options.include.includes(path);
   });
 
   return groupBy(
     filteredIssues,
-    (issue) => issue.path!.join(".") as Field.Paths<TShape>,
+    (issue) => Field.parsePath(issue.path!) as Field.Paths<TShape>,
   );
 }
