@@ -120,7 +120,6 @@ export class FormController<TShape extends object = object> {
   ) {
     const field = new FormField(this, path);
 
-    console.log("Binding", path, config?.defaultValue, field.id);
     this._fields.set(path, field);
     this.events.emit("fieldBound", path);
 

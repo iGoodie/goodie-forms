@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { FormController } from "@goodie-forms/core";
 import {
   useForm,
@@ -11,6 +13,7 @@ import { SimpleField } from "./SimpleField";
 
 import "./App.css";
 import "./tailwind.css";
+import { useState } from "react";
 
 function vanillaTest() {
   const control = new FormController({});
@@ -91,6 +94,8 @@ function App() {
 
   // console.log(formValues, formErrors);
 
+  const [hidden, setHidden] = useState(false);
+
   const handleSubmit = form.controller.createSubmitHandler(
     async (data, event) => {
       const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
@@ -162,53 +167,60 @@ function App() {
           )}
         />
 
-        <SimpleField
-          form={form}
-          path="address"
-          label="Address"
-          defaultValue={{ city: "Foo", street: "Sesame Street" }}
-          render={({ ref, value, handlers, field }) => (
-            <div
-              ref={ref}
-              {...handlers}
-              className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700 focus-within:border-gray-400"
-            >
-              <button
-                type="button"
-                disabled={form.controller.isSubmitting}
-                onClick={() => {
-                  field.modifyValue((address) => {
-                    address.city =
-                      Math.random() <= 0.5
-                        ? "City #" + Math.random().toFixed(5)
-                        : "Gravity Falls";
-                  });
-                }}
-              >
-                Random City
-              </button>
-              <span>City: {value?.city}</span>
+        <div className="flex flex-col p-2 border rounded-xl border-gray-700 focus-within:border-gray-400">
+          <button
+            className="text-xs! justify-self-end self-end"
+            type="button"
+            onClick={() => setHidden((h) => !h)}
+          >
+            Hide/Unhide
+          </button>
+          {!hidden && (
+            <SimpleField
+              form={form}
+              path="address"
+              label="Address"
+              defaultValue={{ city: "Foo", street: "Sesame Street" }}
+              render={({ ref, value, handlers, field }) => (
+                <div ref={ref} {...handlers} className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    disabled={form.controller.isSubmitting}
+                    onClick={() => {
+                      field.modifyValue((address) => {
+                        address.city =
+                          Math.random() <= 0.5
+                            ? "City #" + Math.random().toFixed(5)
+                            : "Gravity Falls";
+                      });
+                    }}
+                  >
+                    Random City
+                  </button>
+                  <span>City: {value?.city}</span>
 
-              <hr className="border border-gray-700" />
+                  <hr className="border border-gray-700" />
 
-              <select
-                value={value?.street}
-                disabled={form.controller.isSubmitting}
-                onChange={(e) =>
-                  field.modifyValue((address) => {
-                    address.street = e.target.value;
-                  })
-                }
-              >
-                <option value="Sesame Street">Sesame Street</option>
-                <option value="Street #1">Street #1</option>
-                <option value="Street #3">Street #2</option>
-                <option value="Street #2">Street #3</option>
-              </select>
-              <span>Street: {value?.street}</span>
-            </div>
+                  <select
+                    value={value?.street}
+                    disabled={form.controller.isSubmitting}
+                    onChange={(e) =>
+                      field.modifyValue((address) => {
+                        address.street = e.target.value;
+                      })
+                    }
+                  >
+                    <option value="Sesame Street">Sesame Street</option>
+                    <option value="Street #1">Street #1</option>
+                    <option value="Street #3">Street #2</option>
+                    <option value="Street #2">Street #3</option>
+                  </select>
+                  <span>Street: {value?.street}</span>
+                </div>
+              )}
+            />
           )}
-        />
+        </div>
 
         <SimpleField
           form={form}
