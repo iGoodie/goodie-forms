@@ -2,7 +2,11 @@
 /* eslint-disable react-hooks/refs */
 
 import { type Field } from "@goodie-forms/core";
-import { FieldRenderer, type FieldRendererProps } from "@goodie-forms/react";
+import {
+  FieldRenderer,
+  useFormField,
+  type FieldRendererProps,
+} from "@goodie-forms/react";
 import { useId, useRef } from "react";
 
 type Props<
@@ -18,18 +22,16 @@ export function SimpleField<
 >(props: Props<TShape, TPath>) {
   const id = useId();
 
+  const field = useFormField(props.form, props.path);
+  const fieldError = field?.issues.at(0);
+
   const renderCount = useRef(0);
+  renderCount.current++;
 
   return (
     <FieldRenderer
       {...props}
       render={(renderParams) => {
-        const { field } = renderParams;
-
-        const fieldError = field.issues.at(0);
-
-        renderCount.current++;
-
         return (
           <div className="flex flex-col gap-2 items-start">
             <label htmlFor={id}>

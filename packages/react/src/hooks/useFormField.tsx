@@ -10,23 +10,30 @@ export function useFormField<
 >(
   form: UseForm<TShape>,
   path: TPath,
-  defaultValue?: Field.GetValue<TShape, TPath>,
+  bindingConfig?: Parameters<typeof form.controller.bindField<TPath>>[1],
 ) {
   const renderControl = useRenderControl();
 
-  const [field] = useState(() => {
-    return (
-      form.controller.getField(path) ??
-      form.controller.bindField(path, {
-        defaultValue: defaultValue,
-      })
-    );
+  const [field, setField] = useState(() => {
+    let field = form.controller.getField(path);
+    if (field == null && bindingConfig != null) {
+      field = form.controller.bindField(path, bindingConfig);
+    }
+    return field;
   });
 
   useEffect(() => {
     const { events } = form.controller;
 
+    setField(form.controller.getField(path));
+
     return composeFns(
+      events.on("fieldBound", (_path) => {
+        if (_path === path) setField(form.controller.getField(path));
+      }),
+      events.on("fieldUnbound", (_path) => {
+        if (_path === path) setField(undefined);
+      }),
       events.on("valueChanged", (_path) => {
         if (_path === path) renderControl.forceRerender();
       }),

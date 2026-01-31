@@ -45,7 +45,9 @@ export function FieldRenderer<
 >(props: FieldRendererProps<TShape, TPath>) {
   const elementRef = useRef<HTMLElement>(null);
 
-  const field = useFormField(props.form, props.path, props.defaultValue);
+  const field = useFormField(props.form, props.path, {
+    defaultValue: props.defaultValue,
+  })!;
 
   const handlers: RenderParams<TShape, TPath>["handlers"] = {
     onChange(event) {
