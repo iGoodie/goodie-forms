@@ -79,6 +79,9 @@ function App() {
         if (data.name.length <= 0) {
           return [{ path: "name", message: "Name cannot be empty, bro" }];
         }
+        if (data.inventory?.contents == null) {
+          return [{ path: "inventory.contents", message: "Contents, huh?" }];
+        }
       }),
     },
     {

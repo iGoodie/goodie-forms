@@ -4,9 +4,11 @@ export namespace Field {
       ...args: any[]
     ) => any
       ? never
-      : NonNullable<TShape[K]> extends object
-        ? K | `${K}.${Paths<NonNullable<TShape[K]>>}`
-        : K;
+      : NonNullable<TShape[K]> extends any[]
+        ? K
+        : NonNullable<TShape[K]> extends object
+          ? K | `${K}.${Paths<NonNullable<TShape[K]>>}`
+          : K;
   }[keyof TShape & string];
 
   export type GetValue<
