@@ -157,24 +157,8 @@ export class FormController<TShape extends object = object> {
     }
   }
 
-  getField<TPath extends Field.Paths<TShape>>(
-    path: TPath,
-    config: { bindIfMissing: true },
-  ): FormField<TShape, TPath>;
-  getField<TPath extends Field.Paths<TShape>>(
-    path: TPath,
-  ): FormField<TShape, TPath> | undefined;
-  getField<TPath extends Field.Paths<TShape>>(
-    path: TPath,
-    config?: { bindIfMissing?: boolean },
-  ) {
-    let field = this._fields.get(path);
-
-    if (field == null && config?.bindIfMissing) {
-      field = this.bindField(path);
-    }
-
-    return field;
+  getField<TPath extends Field.Paths<TShape>>(path: TPath) {
+    return this._fields.get(path) as FormField<TShape, TPath> | undefined;
   }
 
   clearFieldIssues<TPath extends Field.Paths<TShape>>(path: TPath) {
@@ -216,7 +200,7 @@ export class FormController<TShape extends object = object> {
 
     this.setStatus("validating");
 
-    this.getField(path, { bindIfMissing: true });
+    if (this.getField(path) == null) this.bindField(path);
 
     const result = await this.validationSchema["~standard"].validate(
       this._data,

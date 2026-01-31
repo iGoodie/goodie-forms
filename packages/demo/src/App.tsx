@@ -1,19 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { FormController } from "@goodie-forms/core";
-import {
-  useForm,
-  useFormErrorObserver,
-  useFormValuesObserver,
-  useRenderControl,
-} from "@goodie-forms/react";
+import { customValidation, FormController } from "@goodie-forms/core";
+import { useForm, useFormField, useRenderControl } from "@goodie-forms/react";
 import z from "zod";
 import { FormDebug } from "./FormDebug";
 import { SimpleField } from "./SimpleField";
 
+import { useState } from "react";
 import "./App.css";
 import "./tailwind.css";
-import { useState } from "react";
 
 function vanillaTest() {
   const control = new FormController({});
@@ -74,15 +69,29 @@ type UserFormInferred = z.infer<typeof UserSchema>;
 function App() {
   const renderControl = useRenderControl();
 
-  const form = useForm(
+  const form = useForm<UserForm>(
     {
-      validationSchema: UserSchema,
+      // validationSchema: UserSchema,
+      validationSchema: customValidation((data) => {
+        if (data.name == null) {
+          return [{ path: "name", message: "No name? Boring" }];
+        }
+        if (data.name.length <= 0) {
+          return [{ path: "name", message: "Name cannot be empty, bro" }];
+        }
+      }),
     },
     {
       validateMode: "onChange",
       revalidateMode: "onChange",
     },
   );
+
+  const nameField = useFormField(form, "name");
+  console.log({ name: nameField?.value });
+
+  const inventoryField = useFormField(form, "inventory");
+  console.log({ inventory: inventoryField?.value });
 
   // const formErrors = useFormErrorObserver(form, {
   //   include: ["inventory"],
