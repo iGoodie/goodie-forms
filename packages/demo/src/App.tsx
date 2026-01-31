@@ -83,10 +83,27 @@ const UserSchema = z.object({
   }),
   friends: z.any(),
   scores: z.any(),
-  inventory: z.custom<Inventory>(
-    (d) => d instanceof Inventory && d.contents.length >= 1,
-    "Requires at least 1 item",
-  ),
+  inventory: z
+    .custom<Inventory>((d) => d instanceof Inventory, "Invalid inventory")
+    .superRefine((d, ctx) => {
+      if (d.contents.length < 1) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Requires at least 1 item",
+        });
+      }
+
+      for (let i = 0; i < d.contents.length; i++) {
+        const item = d.contents[i] ?? "";
+        if (item.length < 2) {
+          ctx.addIssue({
+            code: "custom",
+            message: "Item must be at least 2 characters long",
+            path: ["contents", i],
+          });
+        }
+      }
+    }),
 }) satisfies z.ZodType<UserForm>;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -98,19 +115,19 @@ function App() {
 
   const form = useForm<UserForm>(
     {
-      // validationSchema: UserSchema,
-      validationSchema: customValidation((data) => {
-        if (data.name == null) {
-          return [{ path: "name", message: "No name? Boring" }];
-        }
-        if (data.name.length <= 0) {
-          return [{ path: "name", message: "Name cannot be empty, bro" }];
-        }
-        if (data.inventory?.contents == null) {
-          return [{ path: "inventory.contents", message: "Contents, huh?" }];
-        }
-        return [{ path: "friends[99]", message: "Contents, huh?" }];
-      }),
+      validationSchema: UserSchema,
+      // validationSchema: customValidation((data) => {
+      //   if (data.name == null) {
+      //     return [{ path: "name", message: "No name? Boring" }];
+      //   }
+      //   if (data.name.length <= 0) {
+      //     return [{ path: "name", message: "Name cannot be empty, bro" }];
+      //   }
+      //   if (data.inventory?.contents == null) {
+      //     return [{ path: "inventory.contents", message: "Contents, huh?" }];
+      //   }
+      //   return [{ path: "friends[99]", message: "Contents, huh?" }];
+      // }),
     },
     {
       validateMode: "onChange",
@@ -118,11 +135,11 @@ function App() {
     },
   );
 
-  const nameField = useFormField(form, "name");
-  console.log({ name: nameField?.value });
+  // const nameField = useFormField(form, "name");
+  // console.log({ name: nameField?.value });
 
-  const inventoryField = useFormField(form, "inventory");
-  console.log({ inventory: inventoryField?.value });
+  // const inventoryField = useFormField(form, "inventory");
+  // console.log({ inventory: inventoryField?.value });
 
   // const formErrors = useFormErrorObserver(form, {
   //   include: ["inventory"],
@@ -207,7 +224,7 @@ function App() {
           )}
         />
 
-        <div className="flex flex-col p-2 border rounded-xl border-gray-700 focus-within:border-gray-400">
+        {/* <div className="flex flex-col p-2 border rounded-xl border-gray-700 focus-within:border-gray-400">
           <button
             className="text-xs! justify-self-end self-end"
             type="button"
@@ -260,7 +277,7 @@ function App() {
               )}
             />
           )}
-        </div>
+        </div> */}
 
         <SimpleField
           form={form}
@@ -306,6 +323,24 @@ function App() {
               </div>
               <span className="text-wrap">{value?.contents.join(", ")}</span>
             </div>
+          )}
+        />
+
+        <SimpleField
+          form={form}
+          path="inventory.contents[1]"
+          label="Inventory Item #1"
+          defaultValue={() => "Sword"}
+          render={({ ref, value, handlers, field }) => (
+            <input
+              ref={ref}
+              {...handlers}
+              value={value ?? ""}
+              disabled={form.controller.isSubmitting}
+              onChange={(e) => field.setValue(e.target.value)}
+              type="text"
+              placeholder="Sword"
+            />
           )}
         />
 

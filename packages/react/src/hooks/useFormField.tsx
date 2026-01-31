@@ -35,7 +35,9 @@ export function useFormField<
         if (_path === path) setField(undefined);
       }),
       events.on("valueChanged", (_path) => {
-        if (_path === path) renderControl.forceRerender();
+        if (_path === path || path.startsWith(_path)) {
+          renderControl.forceRerender();
+        }
       }),
       events.on("fieldTouchUpdated", (_path) => {
         if (_path === path) renderControl.forceRerender();

@@ -46,5 +46,3 @@ const inventory1Field = formController.bindField("inventory.contents[1]");
 inventory1Field.setValue("Sword");
 
 console.log("Data =", formController._data);
-
-console.log(Field.parsePath(["foo", 1, { key: "bar" }, 99, { key: 111 }]));

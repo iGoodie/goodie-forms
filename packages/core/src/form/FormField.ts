@@ -2,7 +2,6 @@ import { immerable, produce } from "immer";
 import { getId } from "../utils/getId";
 import { Field } from "./Field";
 import { FormController } from "./FormController";
-import { DeepPartial } from "../types/DeepPartial";
 
 export class FormField<
   TShape extends object,
@@ -20,9 +19,16 @@ export class FormField<
     public readonly path: TPath,
   ) {}
 
-  get value() {
+  get value(): Field.GetValue<TShape, TPath> | undefined {
     return Field.getValue<TShape, TPath>(
       this.controller._data as TShape,
+      this.path,
+    );
+  }
+
+  get initialValue(): Field.GetValue<TShape, TPath> | undefined {
+    return Field.getValue<TShape, TPath>(
+      this.controller._initialData as TShape,
       this.path,
     );
   }
@@ -116,29 +122,22 @@ export class FormField<
       this.touch();
     }
 
-    const initialValue = Field.getValue<TShape, TPath>(
-      this.controller._initialData as TShape,
-      this.path,
-    );
+    const ascendantFields = this.controller.getAscendantFields(this.path);
 
-    const oldValue = Field.getValue<TShape, TPath>(
-      this.controller._data as TShape,
-      this.path,
-    );
+    const initialValues = ascendantFields.map((field) => field?.initialValue);
+    initialValues.forEach((v) => FormField.ensureImmerability(v));
 
-    FormField.ensureImmerability(initialValue);
-    FormField.ensureImmerability(oldValue);
+    const oldValues = ascendantFields.map((field) => field?.value);
+    oldValues.forEach((v) => FormField.ensureImmerability(v));
 
     this.controller._data = produce(this.controller._data, (draft) => {
-      Field.modifyValue(draft as TShape, this.path, modifier);
+      Field.modifyValue(draft as TShape, this.path, (oldValue) =>
+        modifier(oldValue),
+      );
     });
 
-    const newValue = Field.getValue<TShape, TPath>(
-      this.controller._data as TShape,
-      this.path,
-    );
-
-    FormField.ensureImmerability(newValue);
+    const newValues = ascendantFields.map((field) => field?.value);
+    newValues.forEach((v) => FormField.ensureImmerability(v));
 
     const compareCustom = (a: any, b: any) => {
       if (typeof a !== "object") return;
@@ -149,19 +148,31 @@ export class FormField<
       return this.controller.equalityComparators?.[ctorA]?.(a, b);
     };
 
-    const valueChanged = !Field.deepEqual(oldValue, newValue, compareCustom);
+    const valueChanged = !Field.deepEqual(
+      oldValues[oldValues.length - 1],
+      newValues[newValues.length - 1],
+      compareCustom,
+    );
 
     if (valueChanged) {
-      this.controller.events.emit(
-        "valueChanged",
-        this.path,
-        newValue,
-        oldValue,
-      );
+      for (let i = ascendantFields.length - 1; i >= 0; i--) {
+        const field = ascendantFields[i];
+        if (field == null) continue;
+        this.controller.events.emit(
+          "valueChanged",
+          field.path,
+          newValues[i],
+          oldValues[i],
+        );
+      }
     }
 
     if (opts?.shouldMarkDirty == null || opts?.shouldMarkDirty) {
-      const gotDirty = !Field.deepEqual(initialValue, newValue, compareCustom);
+      const gotDirty = !Field.deepEqual(
+        initialValues[initialValues.length - 1],
+        newValues[newValues.length - 1],
+        compareCustom,
+      );
       this._setDirty(gotDirty);
     }
   }

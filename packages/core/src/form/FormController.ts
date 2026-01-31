@@ -159,6 +159,18 @@ export class FormController<TShape extends object = object> {
     }
   }
 
+  getAscendantFields<TPath extends Field.Paths<TShape>>(path: TPath) {
+    const pathFragments = Field.parsePathFragments(path);
+
+    const paths = pathFragments.map((_, i) => {
+      return Field.parsePath(
+        pathFragments.slice(0, i + 1),
+      ) as Field.Paths<TShape>;
+    });
+
+    return paths.map((path) => this.getField(path));
+  }
+
   getField<TPath extends Field.Paths<TShape>>(path: TPath) {
     return this._fields.get(path) as FormField<TShape, TPath> | undefined;
   }

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/refs */
 
 import { type Field } from "@goodie-forms/core";
@@ -29,30 +28,31 @@ export function SimpleField<
   renderCount.current++;
 
   return (
-    <FieldRenderer
-      {...props}
-      render={(renderParams) => {
-        return (
-          <div className="flex flex-col gap-2 items-start">
-            <label htmlFor={id}>
-              {props.label}{" "}
-              <span className="opacity-50">
-                (Render #{renderCount.current})
-              </span>
-            </label>
+    <div className="flex flex-col gap-2 items-start">
+      <label htmlFor={id}>
+        {props.label}{" "}
+        <span className="opacity-50">(Render #{renderCount.current})</span>
+      </label>
 
+      <FieldRenderer
+        form={props.form}
+        path={props.path}
+        defaultValue={props.defaultValue!}
+        // {...props} // TODO <-- Why won't this work?
+        render={(renderParams) => {
+          return (
             <div className="flex w-full *:w-full">
               {props.render(renderParams)}
             </div>
+          );
+        }}
+      />
 
-            {fieldError && (
-              <span className="text-red-400 text-xs text-left">
-                {fieldError.message}
-              </span>
-            )}
-          </div>
-        );
-      }}
-    />
+      {fieldError && (
+        <span className="text-red-400 text-xs text-left">
+          {fieldError.message}
+        </span>
+      )}
+    </div>
   );
 }
