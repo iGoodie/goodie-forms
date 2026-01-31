@@ -20,30 +20,35 @@ export namespace Field {
           : K;
   }[keyof TShape & string];
 
-  export type GetValue<TShape, TPath extends string> =
-    // case: foo[123].bar...
-    TPath extends `${infer K}[${number}].${infer Rest}`
-      ? K extends keyof TShape
-        ? NonNullable<TShape[K]> extends readonly (infer U)[]
-          ? GetValue<U, Rest>
-          : never
-        : never
-      : // case: foo[123]
-        TPath extends `${infer K}[${number}]`
-        ? K extends keyof TShape
-          ? NonNullable<TShape[K]> extends readonly (infer U)[]
-            ? U
-            : never
-          : never
-        : // case: foo.bar...
-          TPath extends `${infer K}.${infer Rest}`
-          ? K extends keyof TShape
-            ? GetValue<NonNullable<TShape[K]>, Rest>
-            : never
-          : // case: foo
-            TPath extends keyof TShape
-            ? TShape[TPath]
-            : never;
+  export type GetValue<TShape, TPath extends string> = GetValueImpl<
+    TShape,
+    NormalizePath<TPath>
+  >;
+
+  type GetValueImpl<
+    TShape,
+    TPath extends string,
+  > = TPath extends `${infer Head}.${infer Tail}`
+    ? GetValueImpl<ResolveFragment<NonNullable<TShape>, Head>, Tail>
+    : ResolveFragment<TShape, TPath>;
+
+  type NormalizePath<TPath extends string> =
+    TPath extends `${infer A}[${infer B}]${infer Rest}`
+      ? NormalizePath<`${A}.${B}${Rest}`>
+      : TPath extends `.${infer R}`
+        ? NormalizePath<R>
+        : TPath;
+
+  type ResolveFragment<
+    TShape,
+    TFragment extends string,
+  > = TFragment extends `${number}`
+    ? TShape extends readonly (infer U)[]
+      ? U
+      : never
+    : TFragment extends keyof TShape
+      ? TShape[TFragment]
+      : never;
 
   export function deepEqual(
     a: any,
