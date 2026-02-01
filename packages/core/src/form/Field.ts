@@ -1,28 +1,80 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
 
 export namespace Field {
-  declare const __foldMark: unique symbol;
+  type Unfoldable<T> = T & { _____foldMark?: never } & {};
 
-  type Unfoldable<T> = T & { [__foldMark]?: never } & {};
+  export type Paths<TShape extends object> = PathsImpl<CanonicalPaths<TShape>>;
 
-  export type Paths<TShape extends object> = {
+  type PathsImpl<T> = T extends string
+    ? T extends `${string}[*]${string}`
+      ?
+          | ReplaceAll<T, "[*]", "[0]">
+          | Unfoldable<ReplaceAll<T, "[*]", `[${number}]`>>
+      : T
+    : never;
+
+  type CanonicalPaths<TShape extends object> = {
     [K in keyof TShape & string]: NonNullable<TShape[K]> extends (
       ...args: any[]
     ) => any
       ? never
       : NonNullable<TShape[K]> extends (infer U)[]
         ? U extends object
-          ?
-              | K
-              | `${K}[0]`
-              | Unfoldable<`${K}[${number}]`>
-              | `${K}[0].${Paths<NonNullable<U>>}`
-              | Unfoldable<`${K}[${number}].${Paths<NonNullable<U>>}`>
-          : K | `${K}[0]` | Unfoldable<`${K}[${number}]`>
+          ? K | `${K}[*]` | `${K}[*].${CanonicalPaths<NonNullable<U>>}`
+          : K | `${K}[*]`
         : NonNullable<TShape[K]> extends object
-          ? K | `${K}.${Paths<NonNullable<TShape[K]>>}`
+          ? K | `${K}.${CanonicalPaths<NonNullable<TShape[K]>>}`
           : K;
   }[keyof TShape & string];
+
+  type ReplaceAll<
+    TString extends string,
+    TMatch extends string,
+    TReplace extends string | number,
+  > = TString extends `${infer A}${TMatch}${infer B}`
+    ? `${A}${TReplace}${ReplaceAll<B, TMatch, TReplace>}`
+    : TString;
+
+  type Obj = {
+    a: [
+      {
+        b: {
+          c: [{ a: 99 }];
+        };
+      },
+    ];
+    simple: [1];
+    foo: {
+      bar: ["a"];
+    };
+  };
+
+  type ObjPaths1 = CanonicalPaths<Obj>;
+
+  type ObjPath = Paths<Obj>;
+
+  const paths: ObjPath[] = [
+    "a",
+    "a[0]",
+    "a[1]",
+    "a[0].b",
+    "a[1].b",
+    "a[0].b.c",
+    "a[1].b.c",
+    "a[0].b.c[0]",
+    "a[0].b.c[1]",
+    "a[0].b.c[1].a",
+    "simple[0]",
+    "foo.bar[0]",
+    "foo.bar[11]",
+
+    // @ts-expect-error
+    "simple[]",
+    // @ts-expect-error
+    "simple[0].boo",
+    // @ts-expect-error
+    "nonexistingField",
+  ];
 
   export type GetValue<TShape, TPath extends string> = GetValueImpl<
     TShape,

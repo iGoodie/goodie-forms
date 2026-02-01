@@ -55,23 +55,27 @@ const obj = {
   a: [
     {
       b: {
-        c: 99,
+        c: [{ a: 99 }],
       },
     },
   ],
+  simple: [1],
+  foo: {
+    bar: ["a"],
+  },
 };
-
-Field.modifyValue(obj, "a[0].b.c", () => 100);
-Field.modifyValue(obj, "a[0].b", (b) => {
-  b!.c++;
-});
-Field.modifyValue(obj, "a[99].b", (b) => {
-  if (!b) return { c: 999 };
-  b.c++;
-});
+console.log(Field.getValue(obj, "a"));
+console.log(Field.getValue(obj, "a[0]"));
+console.log(Field.getValue(obj, "a[1]"));
+console.log(Field.getValue(obj, "a[1].b"));
 console.log(Field.getValue(obj, "a[0].b.c"));
 console.log(Field.getValue(obj, "a[1].b.c"));
-console.log(Field.getValue(obj, "a"));
+console.log(Field.getValue(obj, "a[0].b.c[0]"));
+console.log(Field.getValue(obj, "a[0].b.c[1]"));
+console.log(Field.getValue(obj, "a[0].b.c[1].a"));
+console.log(Field.getValue(obj, "simple[0]"));
+console.log(Field.getValue(obj, "foo.bar[0]"));
+console.log(Field.getValue(obj, "foo.bar[11]"));
 
 const UserSchema = z.object({
   name: z.string().nonempty(),
@@ -333,7 +337,7 @@ function App() {
           <SimpleField
             key={i}
             form={form}
-            path={`inventory.contents[${i}]`}
+            path={`inventory.contents[99]`}
             label={`Inventory Item #${i}`}
             defaultValue={() => "Sword"}
             overrideOnMount={false}
