@@ -17,9 +17,13 @@ export function useFormValuesObserver<TShape extends object>(
 
     return composeFns(
       events.on("valueChanged", (path) => {
-        if (options?.include?.includes?.(path) ?? true) {
-          renderControl.forceRerender();
-        }
+        if (
+          !options?.include?.some((include) =>
+            Field.isDescendant(path, include),
+          )
+        )
+          return;
+        renderControl.forceRerender();
       }),
     );
   }, []);

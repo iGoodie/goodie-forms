@@ -40,6 +40,7 @@ export type FieldRendererProps<
 > = {
   form: UseForm<TShape>;
   path: TPath;
+  overrideOnMount?: boolean;
   resetOnUnmount?: boolean;
   render: (params: RenderParams<TShape, TPath>) => ReactNode;
 } & DefaultValueProps<Field.GetValue<TShape, TPath>>;
@@ -51,6 +52,7 @@ export function FieldRenderer<
   const elementRef = useRef<HTMLElement>(null);
 
   const field = useFormField(props.form, props.path, {
+    updateInitialValue: props.overrideOnMount ?? true,
     defaultValue:
       typeof props.defaultValue === "function"
         ? (props.defaultValue as any)()
@@ -86,9 +88,10 @@ export function FieldRenderer<
 
     return composeFns(
       events.on("valueChanged", (path) => {
-        if (path !== props.path) return;
+        if (path !== props.path && !Field.isDescendant(path, props.path))
+          return;
         if (props.form.hookConfigs?.validateMode === "onChange") {
-          props.form.controller.validateField(path);
+          props.form.controller.validateField(props.path);
         }
       }),
     );

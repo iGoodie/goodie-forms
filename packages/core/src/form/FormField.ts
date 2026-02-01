@@ -58,13 +58,29 @@ export class FormField<
   protected _setTouched(isTouched: boolean) {
     const changed = this._isTouched !== isTouched;
     this._isTouched = isTouched;
-    if (changed) this.controller.events.emit("fieldTouchUpdated", this.path);
+
+    if (changed) {
+      const ascendantFields = this.controller.getAscendantFields(this.path);
+      for (let i = ascendantFields.length - 1; i >= 0; i--) {
+        const field = ascendantFields[i];
+        if (field == null) continue;
+        this.controller.events.emit("fieldTouchUpdated", field.path);
+      }
+    }
   }
 
   protected _setDirty(isDirty: boolean) {
     const changed = this._isDirty !== isDirty;
     this._isDirty = isDirty;
-    if (changed) this.controller.events.emit("fieldDirtyUpdated", this.path);
+
+    if (changed) {
+      const ascendantFields = this.controller.getAscendantFields(this.path);
+      for (let i = ascendantFields.length - 1; i >= 0; i--) {
+        const field = ascendantFields[i];
+        if (field == null) continue;
+        this.controller.events.emit("fieldDirtyUpdated", field.path);
+      }
+    }
   }
 
   bindElement(el: HTMLElement | undefined) {

@@ -1,6 +1,10 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
 
 export namespace Field {
+  declare const __foldMark: unique symbol;
+
+  type Unfoldable<T> = T & { [__foldMark]?: never } & {};
+
   export type Paths<TShape extends object> = {
     [K in keyof TShape & string]: NonNullable<TShape[K]> extends (
       ...args: any[]
@@ -10,11 +14,11 @@ export namespace Field {
         ? U extends object
           ?
               | K
-              | `${K}[0]` // TODO <-- IntelliSense won't suggest properly
-              | `${K}[${number}]`
-              | `${K}[0].${Paths<U>}` // TODO <-- IntelliSense won't suggest properly
-              | `${K}[${number}].${Paths<U>}`
-          : K | `${K}[0]` | `${K}[${number}]`
+              | `${K}[0]`
+              | Unfoldable<`${K}[${number}]`>
+              | `${K}[0].${Paths<NonNullable<U>>}`
+              | Unfoldable<`${K}[${number}].${Paths<NonNullable<U>>}`>
+          : K | `${K}[0]` | Unfoldable<`${K}[${number}]`>
         : NonNullable<TShape[K]> extends object
           ? K | `${K}.${Paths<NonNullable<TShape[K]>>}`
           : K;
@@ -30,7 +34,7 @@ export namespace Field {
     TPath extends string,
   > = TPath extends `${infer Head}.${infer Tail}`
     ? GetValueImpl<ResolveFragment<NonNullable<TShape>, Head>, Tail>
-    : ResolveFragment<TShape, TPath>;
+    : ResolveFragment<NonNullable<TShape>, TPath>;
 
   type NormalizePath<TPath extends string> =
     TPath extends `${infer A}[${infer B}]${infer Rest}`
@@ -219,6 +223,21 @@ export namespace Field {
     }
 
     return result;
+  }
+
+  export function isDescendant(parentPath: string, childPath: string) {
+    const parentFrags = parsePathFragments(parentPath);
+    const childFrags = parsePathFragments(childPath);
+
+    if (parentFrags.length >= childFrags.length) return false;
+
+    for (let i = 0; i < parentFrags.length; i++) {
+      if (parentFrags[i] !== childFrags[i]) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   export function getValue<

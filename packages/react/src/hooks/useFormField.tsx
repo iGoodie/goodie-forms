@@ -35,7 +35,7 @@ export function useFormField<
         if (_path === path) setField(undefined);
       }),
       events.on("valueChanged", (_path) => {
-        if (_path === path || path.startsWith(_path)) {
+        if (_path === path || Field.isDescendant(_path, path)) {
           renderControl.forceRerender();
         }
       }),

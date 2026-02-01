@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { customValidation, Field, FormController } from "@goodie-forms/core";
+import { Field, FormController } from "@goodie-forms/core";
 import {
-  FieldRenderer,
   useForm,
-  useFormField,
+  useFormValuesObserver,
   useRenderControl,
 } from "@goodie-forms/react";
 import z from "zod";
@@ -148,6 +147,10 @@ function App() {
   // const formValues = useFormValuesObserver(form, {
   //   include: ["name", "surname"],
   // });
+
+  const inventoryValues = useFormValuesObserver(form, {
+    include: ["inventory.contents"],
+  });
 
   // console.log(formValues, formErrors);
 
@@ -326,23 +329,28 @@ function App() {
           )}
         />
 
-        <SimpleField
-          form={form}
-          path="inventory.contents[1]"
-          label="Inventory Item #1"
-          defaultValue={() => "Sword"}
-          render={({ ref, value, handlers, field }) => (
-            <input
-              ref={ref}
-              {...handlers}
-              value={value ?? ""}
-              disabled={form.controller.isSubmitting}
-              onChange={(e) => field.setValue(e.target.value)}
-              type="text"
-              placeholder="Sword"
-            />
-          )}
-        />
+        {form.controller._data.inventory?.contents.map((_, i) => (
+          <SimpleField
+            key={i}
+            form={form}
+            path={`inventory.contents[${i}]`}
+            label={`Inventory Item #${i}`}
+            defaultValue={() => "Sword"}
+            overrideOnMount={false}
+            resetOnUnmount
+            render={({ ref, value, handlers, field }) => (
+              <input
+                ref={ref}
+                {...handlers}
+                value={value ?? ""}
+                disabled={form.controller.isSubmitting}
+                onChange={(e) => field.setValue(e.target.value)}
+                type="text"
+                placeholder="Sword"
+              />
+            )}
+          />
+        ))}
 
         <hr />
 

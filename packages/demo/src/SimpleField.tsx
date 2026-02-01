@@ -38,6 +38,8 @@ export function SimpleField<
         form={props.form}
         path={props.path}
         defaultValue={props.defaultValue!}
+        overrideOnMount={props.overrideOnMount}
+        resetOnUnmount={props.resetOnUnmount}
         // {...props} // TODO <-- Why won't this work?
         render={(renderParams) => {
           return (

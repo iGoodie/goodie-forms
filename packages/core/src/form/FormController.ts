@@ -37,7 +37,7 @@ export namespace Form {
 }
 
 // TODO: Rename TShape to TTarget, as it represents the targetted data shape on successful submission cb
-export class FormController<TShape extends object = object> {
+export class FormController<TShape extends object> {
   _status: Form.Status = "idle";
   _fields = new Map<Field.Paths<TShape>, FormField<TShape, any>>();
   _initialData: DeepPartial<TShape>; // TODO <-- Maybe rename to something like _baselineData?
@@ -45,7 +45,7 @@ export class FormController<TShape extends object = object> {
   _issues: StandardSchemaV1.Issue[] = [];
 
   equalityComparators?: Record<any, (a: any, b: any) => boolean>;
-  validationSchema?: StandardSchemaV1<TShape, TShape>;
+  validationSchema?: StandardSchemaV1<unknown, TShape>;
 
   public readonly events = createNanoEvents<{
     statusChanged(newStatus: Form.Status, oldStatus: Form.Status): void;
@@ -66,7 +66,7 @@ export class FormController<TShape extends object = object> {
 
   constructor(config: {
     initialData?: DeepPartial<TShape>;
-    validationSchema?: StandardSchemaV1<TShape, TShape>;
+    validationSchema?: StandardSchemaV1<unknown, TShape>;
     equalityComparators?: Record<any, (a: any, b: any) => boolean>;
   }) {
     this.validationSchema = config.validationSchema;
@@ -118,6 +118,7 @@ export class FormController<TShape extends object = object> {
     config?: {
       defaultValue?: Field.GetValue<TShape, TPath>;
       domElement?: HTMLElement;
+      updateInitialValue?: boolean;
     },
   ) {
     const field = new FormField(this, path);
@@ -127,7 +128,7 @@ export class FormController<TShape extends object = object> {
 
     if (config?.defaultValue != null) {
       this._unsafeSetFieldValue(path, config.defaultValue, {
-        updateInitialValue: true,
+        updateInitialValue: config.updateInitialValue ?? true,
       });
     }
 
@@ -194,7 +195,7 @@ export class FormController<TShape extends object = object> {
       (issue) => {
         if (issue.path == null) return false;
         const issuePath = Field.parsePath(issue.path);
-        return issuePath === path;
+        return issuePath === path || Field.isDescendant(path, issuePath);
       },
     );
 
