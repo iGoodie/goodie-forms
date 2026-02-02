@@ -22,17 +22,17 @@ export namespace Form {
 
   export type SubmitSuccessHandler<
     TShape extends object,
-    TEvent extends PreventableEvent,
+    TEvent extends PreventableEvent
   > = (
     data: TShape,
     event: TEvent,
-    abortSignal: AbortSignal,
+    abortSignal: AbortSignal
   ) => void | Promise<void>;
 
   export type SubmitErrorHandler<TEvent extends PreventableEvent> = (
     issues: StandardSchemaV1.Issue[],
     event: TEvent,
-    abortSignal: AbortSignal,
+    abortSignal: AbortSignal
   ) => void | Promise<void>;
 }
 
@@ -60,7 +60,7 @@ export class FormController<TShape extends object> {
     valueChanged(
       path: Field.Paths<TShape>,
       newValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined,
-      oldValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined,
+      oldValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined
     ): void;
   }>();
 
@@ -100,7 +100,7 @@ export class FormController<TShape extends object> {
   _unsafeSetFieldValue<TPath extends Field.Paths<TShape>>(
     path: TPath,
     value: Field.GetValue<TShape, TPath>,
-    config?: { updateInitialValue?: boolean },
+    config?: { updateInitialValue?: boolean }
   ) {
     if (config?.updateInitialValue) {
       this._initialData = produce(this._initialData, (draft) => {
@@ -119,14 +119,16 @@ export class FormController<TShape extends object> {
       defaultValue?: Field.GetValue<TShape, TPath>;
       domElement?: HTMLElement;
       updateInitialValue?: boolean;
-    },
+    }
   ) {
     const field = new FormField(this, path);
+
+    const currentValue = Field.getValue(this._data as TShape, path);
 
     this._fields.set(path, field);
     this.events.emit("fieldBound", path);
 
-    if (config?.defaultValue != null) {
+    if (currentValue == null && config?.defaultValue != null) {
       this._unsafeSetFieldValue(path, config.defaultValue, {
         updateInitialValue: config.updateInitialValue ?? true,
       });
@@ -165,7 +167,7 @@ export class FormController<TShape extends object> {
 
     const paths = pathFragments.map((_, i) => {
       return Field.parsePath(
-        pathFragments.slice(0, i + 1),
+        pathFragments.slice(0, i + 1)
       ) as Field.Paths<TShape>;
     });
 
@@ -186,7 +188,7 @@ export class FormController<TShape extends object> {
 
   private async applyValidation<TPath extends Field.Paths<TShape>>(
     _result: StandardSchemaV1.Result<TShape>,
-    path: TPath,
+    path: TPath
   ) {
     const diff = Field.diff(
       this._issues,
@@ -196,7 +198,7 @@ export class FormController<TShape extends object> {
         if (issue.path == null) return false;
         const issuePath = Field.parsePath(issue.path);
         return issuePath === path || Field.isDescendant(path, issuePath);
-      },
+      }
     );
 
     removeBy(this._issues, (issue) => diff.removed.includes(issue));
@@ -218,7 +220,7 @@ export class FormController<TShape extends object> {
     if (this.getField(path) == null) this.bindField(path);
 
     const result = await this.validationSchema["~standard"].validate(
-      this._data,
+      this._data
     );
 
     this.events.emit("validationTriggered", path);
@@ -235,7 +237,7 @@ export class FormController<TShape extends object> {
     this.setStatus("validating");
 
     const result = await this.validationSchema["~standard"].validate(
-      this._data,
+      this._data
     );
 
     for (const path of this._fields.keys()) {
@@ -252,7 +254,7 @@ export class FormController<TShape extends object> {
 
   createSubmitHandler<TEvent extends Form.PreventableEvent>(
     onSuccess?: Form.SubmitSuccessHandler<TShape, TEvent>,
-    onError?: Form.SubmitErrorHandler<TEvent>,
+    onError?: Form.SubmitErrorHandler<TEvent>
   ) {
     return async (event: TEvent) => {
       if (event != null) {
