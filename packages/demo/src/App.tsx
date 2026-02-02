@@ -51,31 +51,31 @@ interface UserForm {
   inventory?: Inventory;
 }
 
-const obj = {
-  a: [
-    {
-      b: {
-        c: [{ a: 99 }],
-      },
-    },
-  ],
-  simple: [1],
-  foo: {
-    bar: ["a"],
-  },
-};
-console.log(Field.getValue(obj, "a"));
-console.log(Field.getValue(obj, "a[0]"));
-console.log(Field.getValue(obj, "a[1]"));
-console.log(Field.getValue(obj, "a[1].b"));
-console.log(Field.getValue(obj, "a[0].b.c"));
-console.log(Field.getValue(obj, "a[1].b.c"));
-console.log(Field.getValue(obj, "a[0].b.c[0]"));
-console.log(Field.getValue(obj, "a[0].b.c[1]"));
-console.log(Field.getValue(obj, "a[0].b.c[1].a"));
-console.log(Field.getValue(obj, "simple[0]"));
-console.log(Field.getValue(obj, "foo.bar[0]"));
-console.log(Field.getValue(obj, "foo.bar[11]"));
+// const obj = {
+//   a: [
+//     {
+//       b: {
+//         c: [{ a: 99 }],
+//       },
+//     },
+//   ],
+//   simple: [1],
+//   foo: {
+//     bar: ["a"],
+//   },
+// };
+// console.log(Field.getValue(obj, "a"));
+// console.log(Field.getValue(obj, "a[0]"));
+// console.log(Field.getValue(obj, "a[1]"));
+// console.log(Field.getValue(obj, "a[1].b"));
+// console.log(Field.getValue(obj, "a[0].b.c"));
+// console.log(Field.getValue(obj, "a[1].b.c"));
+// console.log(Field.getValue(obj, "a[0].b.c[0]"));
+// console.log(Field.getValue(obj, "a[0].b.c[1]"));
+// console.log(Field.getValue(obj, "a[0].b.c[1].a"));
+// console.log(Field.getValue(obj, "simple[0]"));
+// console.log(Field.getValue(obj, "foo.bar[0]"));
+// console.log(Field.getValue(obj, "foo.bar[11]"));
 
 const UserSchema = z.object({
   name: z.string().nonempty(),
@@ -152,9 +152,9 @@ function App() {
   //   include: ["name", "surname"],
   // });
 
-  const inventoryValues = useFormValuesObserver(form, {
-    include: ["inventory.contents"],
-  });
+  // const inventoryValues = useFormValuesObserver(form, {
+  //   include: ["inventory.contents"],
+  // });
 
   // console.log(formValues, formErrors);
 
@@ -327,21 +327,38 @@ function App() {
                 >
                   Remove Last
                 </button>
+                <button
+                  type="button"
+                  disabled={form.controller.isSubmitting}
+                  className="col-span-full"
+                  onClick={() => {
+                    field.modifyValue((inventory) => {
+                      const first = inventory!.contents.at(0)!;
+                      const last = inventory!.contents.at(-1)!;
+                      inventory!.contents[0] = last;
+                      inventory!.contents[inventory!.contents.length - 1] =
+                        first;
+                    });
+                    field.triggerValidation();
+                  }}
+                >
+                  Swap
+                </button>
               </div>
               <span className="text-wrap">{value?.contents.join(", ")}</span>
             </div>
           )}
         />
 
-        {form.controller._data.inventory?.contents.map((_, i) => (
+        {[form.controller._data.inventory?.contents].map((_, i) => (
           <SimpleField
             key={i}
             form={form}
             path={`inventory.contents[${i}]`}
             label={`Inventory Item #${i + 1}`}
             defaultValue={() => "Sword"}
-            overrideOnMount={false}
-            resetOnUnmount
+            overrideInitialValue={false}
+            unbindOnUnmount
             render={({ ref, value, handlers, field }) => (
               <input
                 ref={ref}

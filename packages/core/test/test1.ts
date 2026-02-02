@@ -25,13 +25,16 @@ interface UserForm {
 
 const formController = new FormController<UserForm>({});
 
-const nameField = formController.bindField("name");
-nameField.setValue("Foo");
+const nameField = formController.bindField("name", {
+  defaultValue: "Foo",
+  overrideInitialValue: true,
+});
 console.log(nameField.isTouched);
 console.log(nameField.isDirty);
 
 const addressField = formController.bindField("address", {
   defaultValue: { city: "", street: "" },
+  overrideInitialValue: true,
 });
 addressField.modifyValue((address) => {
   address!.city = "Foo City";
@@ -46,3 +49,4 @@ const inventory1Field = formController.bindField("inventory.contents[1]");
 inventory1Field.setValue("Sword");
 
 console.log("Data =", formController._data);
+console.log("Initial Data =", formController._initialData);

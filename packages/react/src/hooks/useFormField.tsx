@@ -6,11 +6,11 @@ import { composeFns } from "../utils/composeFns";
 
 export function useFormField<
   TShape extends object,
-  TPath extends Field.Paths<TShape>,
+  TPath extends Field.Paths<TShape>
 >(
   form: UseForm<TShape>,
   path: TPath,
-  bindingConfig?: Parameters<typeof form.controller.bindField<TPath>>[1],
+  bindingConfig?: Parameters<typeof form.controller.bindField<TPath>>[1]
 ) {
   const renderControl = useRenderControl();
 
@@ -34,8 +34,8 @@ export function useFormField<
       events.on("fieldUnbound", (_path) => {
         if (_path === path) setField(undefined);
       }),
-      events.on("valueChanged", (_path) => {
-        if (_path === path || Field.isDescendant(_path, path)) {
+      events.on("valueChanged", (changedPath) => {
+        if (changedPath === path || Field.isDescendant(changedPath, path)) {
           renderControl.forceRerender();
         }
       }),
@@ -45,9 +45,9 @@ export function useFormField<
       events.on("fieldDirtyUpdated", (_path) => {
         if (_path === path) renderControl.forceRerender();
       }),
-      events.on("validationIssuesUpdated", (_path) => {
+      events.on("fieldIssuesUpdated", (_path) => {
         if (_path === path) renderControl.forceRerender();
-      }),
+      })
     );
   }, []);
 

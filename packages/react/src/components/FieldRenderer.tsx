@@ -13,7 +13,7 @@ import { composeFns } from "../utils/composeFns";
 
 export interface RenderParams<
   TShape extends object,
-  TPath extends Field.Paths<TShape>,
+  TPath extends Field.Paths<TShape>
 > {
   ref: Ref<any | null>;
 
@@ -36,23 +36,23 @@ type DefaultValueProps<TValue> = undefined extends TValue
 
 export type FieldRendererProps<
   TShape extends object,
-  TPath extends Field.Paths<TShape>,
+  TPath extends Field.Paths<TShape>
 > = {
   form: UseForm<TShape>;
   path: TPath;
-  overrideOnMount?: boolean;
-  resetOnUnmount?: boolean;
+  overrideInitialValue?: boolean;
+  unbindOnUnmount?: boolean;
   render: (params: RenderParams<TShape, TPath>) => ReactNode;
 } & DefaultValueProps<Field.GetValue<TShape, TPath>>;
 
 export function FieldRenderer<
   TShape extends object,
-  TPath extends Field.Paths<TShape>,
+  TPath extends Field.Paths<TShape>
 >(props: FieldRendererProps<TShape, TPath>) {
   const elementRef = useRef<HTMLElement>(null);
 
   const field = useFormField(props.form, props.path, {
-    updateInitialValue: props.overrideOnMount ?? true,
+    overrideInitialValue: props.overrideInitialValue ?? true,
     defaultValue:
       typeof props.defaultValue === "function"
         ? (props.defaultValue as any)()
@@ -93,7 +93,7 @@ export function FieldRenderer<
         if (props.form.hookConfigs?.validateMode === "onChange") {
           props.form.controller.validateField(props.path);
         }
-      }),
+      })
     );
   }, []);
 
@@ -101,7 +101,7 @@ export function FieldRenderer<
     field.bindElement(elementRef.current!);
 
     return () => {
-      if (props.resetOnUnmount) {
+      if (props.unbindOnUnmount) {
         props.form.controller.unbindField(props.path);
       }
     };

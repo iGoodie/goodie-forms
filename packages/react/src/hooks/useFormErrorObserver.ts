@@ -9,7 +9,7 @@ export function useFormErrorObserver<TShape extends object>(
   form: UseForm<TShape>,
   options?: {
     include?: Field.Paths<TShape>[];
-  },
+  }
 ) {
   const renderControl = useRenderControl();
 
@@ -17,11 +17,11 @@ export function useFormErrorObserver<TShape extends object>(
     const { events } = form.controller;
 
     return composeFns(
-      events.on("validationIssuesUpdated", (path) => {
+      events.on("fieldIssuesUpdated", (path) => {
         if (options?.include?.includes?.(path) ?? true) {
           renderControl.forceRerender();
         }
-      }),
+      })
     );
   }, []);
 
@@ -33,6 +33,6 @@ export function useFormErrorObserver<TShape extends object>(
 
   return groupBy(
     filteredIssues,
-    (issue) => Field.parsePath(issue.path!) as Field.Paths<TShape>,
+    (issue) => Field.parsePath(issue.path!) as Field.Paths<TShape>
   );
 }

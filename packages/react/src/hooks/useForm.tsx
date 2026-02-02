@@ -10,34 +10,29 @@ export function useForm<TShape extends object>(
     revalidateMode?: "onChange" | "onBlur" | "onSubmit";
     watchIssues?: boolean;
     watchValues?: boolean;
-  },
+  }
 ) {
   const [controller] = useState(() => new FormController(formConfigs));
 
   const renderControl = useRenderControl();
 
-  const [, setIsSubmitting] = useState(() => controller.isSubmitting);
-  const [, setIsValid] = useState(() => controller.isValid);
-
   useEffect(() => {
     const noop = () => {};
 
     return composeFns(
-      controller.events.on("statusChanged", (state) => {
-        // Only re-render when submission state changes
-        setIsSubmitting(state === "submitting");
-        setIsValid(controller.isValid);
+      controller.events.on("submissionStatusChange", (state) => {
+        renderControl.forceRerender();
       }),
       hookConfigs?.watchIssues
-        ? controller.events.on("validationIssuesUpdated", () =>
-            renderControl.forceRerender(),
+        ? controller.events.on("fieldIssuesUpdated", () =>
+            renderControl.forceRerender()
           )
         : noop,
       hookConfigs?.watchValues
         ? controller.events.on("valueChanged", () =>
-            renderControl.forceRerender(),
+            renderControl.forceRerender()
           )
-        : noop,
+        : noop
     );
   }, [controller]);
 

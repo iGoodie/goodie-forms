@@ -12,12 +12,13 @@ export function FormDebug<TShape extends object>(props: {
     const { events } = props.formController;
 
     return flow(
-      events.on("statusChanged", () => renderControl.forceRerender()),
+      events.on("submissionStatusChange", () => renderControl.forceRerender()),
+      events.on("validationStatusChange", () => renderControl.forceRerender()),
       events.on("valueChanged", () => renderControl.forceRerender()),
       events.on("fieldBound", () => renderControl.forceRerender()),
       events.on("fieldUnbound", () => renderControl.forceRerender()),
       events.on("fieldTouchUpdated", () => renderControl.forceRerender()),
-      events.on("fieldDirtyUpdated", () => renderControl.forceRerender()),
+      events.on("fieldDirtyUpdated", () => renderControl.forceRerender())
     );
   }, []);
 
@@ -35,7 +36,7 @@ export function FormDebug<TShape extends object>(props: {
       </div>
 
       <div className="text-left flex flex-col gap-3">
-        <span className="opacity-60 font-bold">Initial/Rollback data</span>
+        <span className="opacity-60 font-bold">Initial data</span>
         <pre className="text-left">
           {JSON.stringify(props.formController._initialData, null, 2)}
         </pre>

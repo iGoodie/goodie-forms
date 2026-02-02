@@ -19,18 +19,18 @@ export namespace Field {
     ) => any
       ? never
       : NonNullable<TShape[K]> extends (infer U)[]
-        ? U extends object
-          ? K | `${K}[*]` | `${K}[*].${CanonicalPaths<NonNullable<U>>}`
-          : K | `${K}[*]`
-        : NonNullable<TShape[K]> extends object
-          ? K | `${K}.${CanonicalPaths<NonNullable<TShape[K]>>}`
-          : K;
+      ? U extends object
+        ? K | `${K}[*]` | `${K}[*].${CanonicalPaths<NonNullable<U>>}`
+        : K | `${K}[*]`
+      : NonNullable<TShape[K]> extends object
+      ? K | `${K}.${CanonicalPaths<NonNullable<TShape[K]>>}`
+      : K;
   }[keyof TShape & string];
 
   type ReplaceAll<
     TString extends string,
     TMatch extends string,
-    TReplace extends string | number,
+    TReplace extends string | number
   > = TString extends `${infer A}${TMatch}${infer B}`
     ? `${A}${TReplace}${ReplaceAll<B, TMatch, TReplace>}`
     : TString;
@@ -41,7 +41,7 @@ export namespace Field {
         b: {
           c: [{ a: 99 }];
         };
-      },
+      }
     ];
     simple: [1];
     foo: {
@@ -83,7 +83,7 @@ export namespace Field {
 
   type GetValueImpl<
     TShape,
-    TPath extends string,
+    TPath extends string
   > = TPath extends `${infer Head}.${infer Tail}`
     ? GetValueImpl<ResolveFragment<NonNullable<TShape>, Head>, Tail>
     : ResolveFragment<NonNullable<TShape>, TPath>;
@@ -92,24 +92,24 @@ export namespace Field {
     TPath extends `${infer A}[${infer B}]${infer Rest}`
       ? NormalizePath<`${A}.${B}${Rest}`>
       : TPath extends `.${infer R}`
-        ? NormalizePath<R>
-        : TPath;
+      ? NormalizePath<R>
+      : TPath;
 
   type ResolveFragment<
     TShape,
-    TFragment extends string,
+    TFragment extends string
   > = TFragment extends `${number}`
     ? TShape extends readonly (infer U)[]
       ? U
       : never
     : TFragment extends keyof TShape
-      ? TShape[TFragment]
-      : never;
+    ? TShape[TFragment]
+    : never;
 
   export function deepEqual(
     a: any,
     b: any,
-    customComparator?: (a: any, b: any) => boolean | undefined,
+    customComparator?: (a: any, b: any) => boolean | undefined
   ) {
     if (a === b) return true;
 
@@ -181,7 +181,7 @@ export namespace Field {
     prev: readonly T[],
     next: readonly T[],
     equals: (a: T, b: T) => boolean,
-    filter?: (a: T) => boolean,
+    filter?: (a: T) => boolean
   ) {
     const added: T[] = [];
     const removed: T[] = [];
@@ -254,7 +254,7 @@ export namespace Field {
   }
 
   export function parsePath(
-    fragments: readonly (PropertyKey | StandardSchemaV1.PathSegment)[],
+    fragments: readonly (PropertyKey | StandardSchemaV1.PathSegment)[]
   ) {
     let result = "";
 
@@ -294,7 +294,7 @@ export namespace Field {
 
   export function getValue<
     TShape extends object,
-    TPath extends Field.Paths<TShape>,
+    TPath extends Field.Paths<TShape>
   >(data: TShape, path: TPath): Field.GetValue<TShape, TPath> | undefined {
     if (data == null) return undefined;
 
@@ -312,20 +312,20 @@ export namespace Field {
 
   export function setValue<
     TShape extends object,
-    TPath extends Field.Paths<TShape>,
+    TPath extends Field.Paths<TShape>
   >(data: TShape, key: TPath, value: Field.GetValue<TShape, TPath>) {
     return modifyValue(data, key, () => value);
   }
 
   export function modifyValue<
     TShape extends object,
-    TPath extends Field.Paths<TShape>,
+    TPath extends Field.Paths<TShape>
   >(
     data: TShape,
     path: TPath,
     modifier: (
-      currentValue: Field.GetValue<TShape, TPath>,
-    ) => Field.GetValue<TShape, TPath> | void,
+      currentValue: Field.GetValue<TShape, TPath>
+    ) => Field.GetValue<TShape, TPath> | void
   ) {
     const pathFragments = parsePathFragments(path);
 
@@ -354,7 +354,7 @@ export namespace Field {
 
   export function deleteValue<
     TShape extends object,
-    TPath extends Field.Paths<TShape>,
+    TPath extends Field.Paths<TShape>
   >(data: TShape, path: TPath) {
     const pathFragments = parsePathFragments(path);
 
