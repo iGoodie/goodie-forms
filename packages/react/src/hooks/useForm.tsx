@@ -10,7 +10,7 @@ export function useForm<TShape extends object>(
     revalidateMode?: "onChange" | "onBlur" | "onSubmit";
     watchIssues?: boolean;
     watchValues?: boolean;
-  }
+  },
 ) {
   const [controller] = useState(() => new FormController(formConfigs));
 
@@ -20,19 +20,19 @@ export function useForm<TShape extends object>(
     const noop = () => {};
 
     return composeFns(
-      controller.events.on("submissionStatusChange", (state) => {
+      controller.events.on("submissionStatusChange", () => {
         renderControl.forceRerender();
       }),
       hookConfigs?.watchIssues
         ? controller.events.on("fieldIssuesUpdated", () =>
-            renderControl.forceRerender()
+            renderControl.forceRerender(),
           )
         : noop,
       hookConfigs?.watchValues
         ? controller.events.on("valueChanged", () =>
-            renderControl.forceRerender()
+            renderControl.forceRerender(),
           )
-        : noop
+        : noop,
     );
   }, [controller]);
 

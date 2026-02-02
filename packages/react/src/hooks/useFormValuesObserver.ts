@@ -12,27 +12,31 @@ export function useFormValuesObserver<TShape extends object>(
 ) {
   const renderControl = useRenderControl();
 
+  const observedValues =
+    options?.include == null
+      ? form.controller._data
+      : options.include.reduce((data, path) => {
+          const value = Field.getValue(form.controller._data as TShape, path)!;
+          Field.setValue(data, path, value);
+          return data;
+        }, {} as TShape);
+
   useEffect(() => {
     const { events } = form.controller;
 
     return composeFns(
-      events.on("valueChanged", (path) => {
-        if (
-          !options?.include?.some((include) =>
-            Field.isDescendant(path, include),
-          )
-        )
-          return;
-        renderControl.forceRerender();
+      events.on("valueChanged", (changedPath) => {
+        const watchingChange =
+          options?.include == null
+            ? true
+            : options.include.some(
+                (path) =>
+                  path === changedPath || Field.isDescendant(path, changedPath),
+              );
+        if (watchingChange) renderControl.forceRerender();
       }),
     );
   }, []);
 
-  return options?.include == null
-    ? form.controller._data
-    : options.include.reduce((data, path) => {
-        const value = Field.getValue(form.controller._data as TShape, path)!;
-        Field.setValue(data, path, value);
-        return data;
-      }, {} as TShape);
+  return observedValues;
 }

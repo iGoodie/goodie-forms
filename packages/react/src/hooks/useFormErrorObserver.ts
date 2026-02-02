@@ -9,9 +9,20 @@ export function useFormErrorObserver<TShape extends object>(
   form: UseForm<TShape>,
   options?: {
     include?: Field.Paths<TShape>[];
-  }
+  },
 ) {
   const renderControl = useRenderControl();
+
+  const filteredIssues = form.controller._issues.filter((issue) => {
+    if (options?.include == null) return true;
+    const path = Field.parsePath(issue.path!) as Field.Paths<TShape>;
+    return options.include.includes(path);
+  });
+
+  const observedIssues = groupBy(
+    filteredIssues,
+    (issue) => Field.parsePath(issue.path!) as Field.Paths<TShape>,
+  );
 
   useEffect(() => {
     const { events } = form.controller;
@@ -21,18 +32,9 @@ export function useFormErrorObserver<TShape extends object>(
         if (options?.include?.includes?.(path) ?? true) {
           renderControl.forceRerender();
         }
-      })
+      }),
     );
   }, []);
 
-  const filteredIssues = form.controller._issues.filter((issue) => {
-    if (options?.include == null) return true;
-    const path = Field.parsePath(issue.path!) as Field.Paths<TShape>;
-    return options.include.includes(path);
-  });
-
-  return groupBy(
-    filteredIssues,
-    (issue) => Field.parsePath(issue.path!) as Field.Paths<TShape>
-  );
+  return observedIssues;
 }
