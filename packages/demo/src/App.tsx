@@ -3,6 +3,7 @@
 import { FormController } from "@goodie-forms/core";
 import {
   useForm,
+  useFormField,
   useFormValuesObserver,
   useRenderControl,
 } from "@goodie-forms/react";
@@ -21,7 +22,7 @@ function vanillaTest() {
     async (data, event) => {
       //         ^?
       console.log("Infers type of event correctly", event);
-    },
+    }
   );
 }
 
@@ -135,7 +136,7 @@ function App() {
     {
       validateMode: "onChange",
       revalidateMode: "onChange",
-    },
+    }
   );
 
   // const nameField = useFormField(form, "name");
@@ -148,9 +149,11 @@ function App() {
   //   include: ["inventory"],
   // });
 
-  const formValues = useFormValuesObserver(form, {
-    include: ["name", "surname", "inventory"],
-  });
+  // const formValues = useFormValuesObserver(form, {
+  //   include: ["inventory"],
+  // });
+
+  const inventoryField = useFormField(form, "inventory");
 
   // const inventoryValues = useFormValuesObserver(form, {
   //   include: ["inventory.contents"],
@@ -174,10 +177,10 @@ function App() {
     },
     async (issues, event) => {
       console.log(
-        "Form has issues: " + issues.map((i) => i.message).join(", "),
+        "Form has issues: " + issues.map((i) => i.message).join(", ")
       );
       console.log(event);
-    },
+    }
   );
 
   // useEffect(() => {
@@ -319,7 +322,7 @@ function App() {
                   onClick={() => {
                     field.modifyValue((inventory) => {
                       inventory!.contents.splice(
-                        inventory!.contents.length - 1,
+                        inventory!.contents.length - 1
                       );
                     });
                     field.triggerValidation();
@@ -350,7 +353,7 @@ function App() {
           )}
         />
 
-        {formValues.inventory?.contents?.map((_, i) => (
+        {inventoryField?.value?.contents?.map((_, i) => (
           <SimpleField
             key={i}
             form={form}

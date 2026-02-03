@@ -35,47 +35,6 @@ export namespace Field {
     ? `${A}${TReplace}${ReplaceAll<B, TMatch, TReplace>}`
     : TString;
 
-  type Obj = {
-    a: [
-      {
-        b: {
-          c: [{ a: 99 }];
-        };
-      }
-    ];
-    simple: [1];
-    foo: {
-      bar: ["a"];
-    };
-  };
-
-  type ObjPaths1 = CanonicalPaths<Obj>;
-
-  type ObjPath = Paths<Obj>;
-
-  const paths: ObjPath[] = [
-    "a",
-    "a[0]",
-    "a[1]",
-    "a[0].b",
-    "a[1].b",
-    "a[0].b.c",
-    "a[1].b.c",
-    "a[0].b.c[0]",
-    "a[0].b.c[1]",
-    "a[0].b.c[1].a",
-    "simple[0]",
-    "foo.bar[0]",
-    "foo.bar[11]",
-
-    // @ts-expect-error
-    "simple[]",
-    // @ts-expect-error
-    "simple[0].boo",
-    // @ts-expect-error
-    "nonexistingField",
-  ];
-
   export type GetValue<TShape, TPath extends string> = GetValueImpl<
     TShape,
     NormalizePath<TPath>

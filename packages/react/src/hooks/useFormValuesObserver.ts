@@ -4,11 +4,14 @@ import { composeFns } from "../utils/composeFns";
 import type { UseForm } from "./useForm";
 import { useRenderControl } from "./useRenderControl";
 
-export function useFormValuesObserver<TShape extends object>(
+export function useFormValuesObserver<
+  TShape extends object,
+  TPaths extends Field.Paths<TShape>[] | undefined = undefined
+>(
   form: UseForm<TShape>,
   options?: {
-    include?: Field.Paths<TShape>[];
-  },
+    include?: TPaths;
+  }
 ) {
   const renderControl = useRenderControl();
 
@@ -31,10 +34,10 @@ export function useFormValuesObserver<TShape extends object>(
             ? true
             : options.include.some(
                 (path) =>
-                  path === changedPath || Field.isDescendant(path, changedPath),
+                  path === changedPath || Field.isDescendant(path, changedPath)
               );
         if (watchingChange) renderControl.forceRerender();
-      }),
+      })
     );
   }, []);
 
