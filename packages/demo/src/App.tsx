@@ -234,7 +234,7 @@ function App() {
           )}
         />
 
-        {/* <div className="flex flex-col p-2 border rounded-xl border-gray-700 focus-within:border-gray-400">
+        <div className="flex flex-col p-2 border rounded-xl border-gray-700 focus-within:border-gray-400">
           <button
             className="text-xs! justify-self-end self-end"
             type="button"
@@ -281,13 +281,14 @@ function App() {
                     <option value="Street #1">Street #1</option>
                     <option value="Street #3">Street #2</option>
                     <option value="Street #2">Street #3</option>
+                    <option value="Invalid">Invalid</option>
                   </select>
                   <span>Street: {value?.street}</span>
                 </div>
               )}
             />
           )}
-        </div> */}
+        </div>
 
         <SimpleField
           form={form}

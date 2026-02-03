@@ -10,14 +10,14 @@ import { useId, useRef } from "react";
 
 type Props<
   TShape extends object,
-  TPath extends Field.Paths<TShape>,
+  TPath extends Field.Paths<TShape>
 > = FieldRendererProps<TShape, TPath> & {
   label: string;
 };
 
 export function SimpleField<
   TShape extends object,
-  TPath extends Field.Paths<TShape>,
+  TPath extends Field.Paths<TShape>
 >(props: Props<TShape, TPath>) {
   const id = useId();
 

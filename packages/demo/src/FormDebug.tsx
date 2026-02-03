@@ -43,7 +43,17 @@ export function FormDebug<TShape extends object>(props: {
       </div>
 
       <pre className="text-left flex flex-col">
-        <span className="opacity-50">Fields</span>
+        <span className="opacity-50">Form State</span>
+        <span>
+          isValidating = {props.formController.isValidating.toString()}
+        </span>
+        <span>
+          isSubmitting = {props.formController.isSubmitting.toString()}
+        </span>
+
+        <hr className="my-10" />
+
+        <span className="opacity-50">Bound Fields</span>
         {[...props.formController._fields.values()].map((field, i) => (
           <span key={i}>{field.path}</span>
         ))}
