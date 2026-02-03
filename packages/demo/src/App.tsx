@@ -90,10 +90,10 @@ const UserSchema = z.object({
   inventory: z
     .custom<Inventory>((d) => d instanceof Inventory, "Invalid inventory")
     .superRefine((d, ctx) => {
-      if (d.contents.length < 1) {
+      if (d.contents.length % 2 !== 0) {
         ctx.addIssue({
           code: "custom",
-          message: "Requires at least 1 item",
+          message: "Requires an even amount of items",
         });
       }
 
