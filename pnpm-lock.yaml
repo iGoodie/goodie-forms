@@ -108,9 +108,6 @@ importers:
       '@goodie-forms/core':
         specifier: workspace:*
         version: link:../core
-      '@vitejs/plugin-react':
-        specifier: ^5.1.2
-        version: 5.1.2(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2))
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -124,6 +121,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.9)
+      '@vitejs/plugin-react':
+        specifier: ^5.1.2
+        version: 5.1.2(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(lightningcss@1.30.2))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
