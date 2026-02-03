@@ -29,7 +29,18 @@ export function SimpleField<
 
   return (
     <div className="flex flex-col gap-2 items-start">
-      <label htmlFor={id}>
+      <label
+        htmlFor={id}
+        className={
+          !field?.isValid
+            ? "text-red-400"
+            : field?.isDirty
+            ? "text-orange-300"
+            : field.isTouched
+            ? "text-blue-200"
+            : ""
+        }
+      >
         {props.label}{" "}
         <span className="opacity-50">(Render #{renderCount.current})</span>
       </label>
