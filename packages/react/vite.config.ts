@@ -16,7 +16,12 @@ export default defineConfig({
       fileName: "index",
     },
     rollupOptions: {
-      external: ["react", "react-dom", "@goodie-forms/core"],
+      external: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "@goodie-forms/core",
+      ],
     },
     sourcemap: true,
   },
