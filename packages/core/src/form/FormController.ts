@@ -11,9 +11,11 @@ enableMapSet();
 enableArrayMethods();
 
 export namespace Form {
-  export type FormConfigs<TShape extends object> = ConstructorParameters<
-    typeof FormController<TShape>
-  >[0];
+  export type FormConfigs<TShape extends object> = {
+    initialData?: DeepPartial<TShape>;
+    validationSchema?: StandardSchemaV1<unknown, TShape>;
+    equalityComparators?: Record<any, (a: any, b: any) => boolean>;
+  };
 
   export interface PreventableEvent {
     preventDefault(): void;
@@ -67,11 +69,7 @@ export class FormController<TShape extends object> {
     ): void;
   }>();
 
-  constructor(config: {
-    initialData?: DeepPartial<TShape>;
-    validationSchema?: StandardSchemaV1<unknown, TShape>;
-    equalityComparators?: Record<any, (a: any, b: any) => boolean>;
-  }) {
+  constructor(config: Form.FormConfigs<TShape>) {
     this.validationSchema = config.validationSchema;
     this.equalityComparators = config.equalityComparators;
     this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);

@@ -5,11 +5,14 @@ import { groupBy } from "../utils/groupBy";
 import type { UseForm } from "./useForm";
 import { useRenderControl } from "./useRenderControl";
 
-export function useFormErrorObserver<TShape extends object>(
+export function useFormErrorObserver<
+  TShape extends object,
+  TInclude extends Field.Paths<TShape>[] | undefined
+>(
   form: UseForm<TShape>,
   options?: {
-    include?: Field.Paths<TShape>[];
-  },
+    include?: TInclude;
+  }
 ) {
   const renderControl = useRenderControl();
 
@@ -19,9 +22,8 @@ export function useFormErrorObserver<TShape extends object>(
     return options.include.includes(path);
   });
 
-  const observedIssues = groupBy(
-    filteredIssues,
-    (issue) => Field.parsePath(issue.path!) as Field.Paths<TShape>,
+  const observedIssues = groupBy(filteredIssues, (issue) =>
+    Field.parsePath(issue.path!)
   );
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export function useFormErrorObserver<TShape extends object>(
         if (options?.include?.includes?.(path) ?? true) {
           renderControl.forceRerender();
         }
-      }),
+      })
     );
   }, []);
 
