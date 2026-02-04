@@ -315,28 +315,28 @@ export class FormController<TOutput extends object> {
 
 /* ---- TESTS ---------------- */
 
-interface User {
-  name: string;
-  address: {
-    city: string;
-    street: string;
-  };
-  friends: {
-    name: string;
-    tags: string[];
-  }[];
-  coords: [100, 200];
-}
+// interface User {
+//   name: string;
+//   address: {
+//     city: string;
+//     street: string;
+//   };
+//   friends: {
+//     name: string;
+//     tags: string[];
+//   }[];
+//   coords: [100, 200];
+// }
 
-const formController = new FormController<User>({});
-const fieldPathBuilder = new FieldPathBuilder<User>();
+// const formController = new FormController<User>({});
+// const fieldPathBuilder = new FieldPathBuilder<User>();
 
-formController.events.on("valueChanged", (fieldPath, value) => {
-  //                                                 ^?
-});
+// formController.events.on("valueChanged", (fieldPath, value) => {
+//   //                                                 ^?
+// });
 
-const path1 = fieldPathBuilder.fromProxy((data) => data.friends[0].tags[99]);
-const field1 = formController.getField(path1);
+// const path1 = fieldPathBuilder.fromProxy((data) => data.friends[0].tags[99]);
+// const field1 = formController.getField(path1);
 
-const path2 = fieldPathBuilder.fromStringPath("coords[1]");
-const field2 = formController.getField(path2);
+// const path2 = fieldPathBuilder.fromStringPath("coords[1]");
+// const field2 = formController.getField(path2);

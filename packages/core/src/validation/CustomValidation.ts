@@ -16,7 +16,7 @@ export type CustomValidationStrategy<TOutput extends object> = (
 
 export function customValidation<TOutput extends object>(
   strategy: CustomValidationStrategy<TOutput>,
-): StandardSchemaV1<TOutput, TOutput> {
+) {
   return {
     "~standard": {
       version: 1 as const,
@@ -33,7 +33,7 @@ export function customValidation<TOutput extends object>(
 
           return {
             issues: customIssues.map((i) => ({
-              path: FieldPath.fromStringPath(i.path),
+              path: FieldPath.fromStringPath(i.path as string),
               message: i.message,
             })),
           };
@@ -48,5 +48,5 @@ export function customValidation<TOutput extends object>(
         }
       },
     },
-  };
+  } as StandardSchemaV1<TOutput, TOutput>;
 }

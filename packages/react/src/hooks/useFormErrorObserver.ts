@@ -1,5 +1,5 @@
 import { FieldPath } from "@goodie-forms/core";
-import { groupBy } from "packages/react/src/utils/groupBy";
+import { groupBy } from "../utils/groupBy";
 import { useEffect } from "react";
 import { composeFns } from "../utils/composeFns";
 import type { UseForm } from "./useForm";

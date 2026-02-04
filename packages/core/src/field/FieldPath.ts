@@ -175,10 +175,9 @@ export namespace FieldPath {
     ? `${A}${TReplace}${ReplaceAll<B, TMatch, TReplace>}`
     : TString;
 
-  export type ParseStringPath<TStrPath extends string> = ParseStringPathImpl<
-    NormalizeStrPath<TStrPath>,
-    []
-  >;
+  export type ParseStringPath<TStrPath extends string> = string extends TStrPath
+    ? never
+    : ParseStringPathImpl<NormalizeStrPath<TStrPath>, []>;
 
   type ParseStringPathImpl<
     TStrPath extends string,
@@ -288,6 +287,6 @@ export namespace FieldPath {
   }
 }
 
-const x = {} as { foo: { bar: string[] } };
-FieldPath.setValue(x, FieldPath.fromStringPath("foo.bar[9]"), "C");
-console.log(x); // <-- { foo: { bar: [<9xempty>, "C"] } }
+// const x = {} as { foo: { bar: string[] } };
+// FieldPath.setValue(x, FieldPath.fromStringPath("foo.bar[9]"), "C");
+// console.log(x); // <-- { foo: { bar: [<9xempty>, "C"] } }

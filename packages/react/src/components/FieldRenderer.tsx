@@ -127,40 +127,40 @@ export function FieldRenderer<
 
 /* ---- TESTS ---------------- */
 
-function TestComp() {
-  const form = useForm<{ a?: { b: 99 } }>({});
+// function TestComp() {
+//   const form = useForm<{ a?: { b: 99 } }>({});
 
-  const jsx = (
-    <>
-      <FieldRenderer
-        form={form}
-        path={form.paths.fromProxy((data) => data.a.b)}
-        defaultValue={() => 99 as const}
-        render={({ ref, value, handlers, field }) => {
-          //            ^?
-          return <></>;
-        }}
-      />
+//   const jsx = (
+//     <>
+//       <FieldRenderer
+//         form={form}
+//         path={form.paths.fromProxy((data) => data.a.b)}
+//         defaultValue={() => 99 as const}
+//         render={({ ref, value, handlers, field }) => {
+//           //            ^?
+//           return <></>;
+//         }}
+//       />
 
-      {/* defaultField olmayabilir, çünkü "a" nullable */}
-      <FieldRenderer
-        form={form}
-        path={form.paths.fromProxy((data) => data.a)}
-        render={({ ref, value, handlers, field }) => {
-          //            ^?
-          return <></>;
-        }}
-      />
+//       {/* defaultField olmayabilir, çünkü "a" nullable */}
+//       <FieldRenderer
+//         form={form}
+//         path={form.paths.fromProxy((data) => data.a)}
+//         render={({ ref, value, handlers, field }) => {
+//           //            ^?
+//           return <></>;
+//         }}
+//       />
 
-      <FieldRenderer
-        form={form}
-        path={form.paths.fromStringPath("a.b")}
-        defaultValue={() => 99 as const}
-        render={({ ref, value, handlers, field }) => {
-          //            ^?
-          return <></>;
-        }}
-      />
-    </>
-  );
-}
+//       <FieldRenderer
+//         form={form}
+//         path={form.paths.fromStringPath("a.b")}
+//         defaultValue={() => 99 as const}
+//         render={({ ref, value, handlers, field }) => {
+//           //            ^?
+//           return <></>;
+//         }}
+//       />
+//     </>
+//   );
+// }

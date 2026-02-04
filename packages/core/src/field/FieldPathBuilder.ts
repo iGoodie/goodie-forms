@@ -49,9 +49,7 @@ export class FieldPathBuilder<TOutput extends object> {
   ) {
     return FieldPath.fromStringPath(
       stringPath,
-    ) as unknown as string extends TStrPath
-      ? never // <-- Do not evaluate before an actual TOutput is present
-      : FieldPath.ParseStringPath<TStrPath>;
+    ) as unknown as FieldPath.ParseStringPath<TStrPath>;
   }
 
   public fromProxy<TProxy extends FieldPathBuilder.Proxy<any, any>>(
@@ -63,72 +61,72 @@ export class FieldPathBuilder<TOutput extends object> {
 
 /* ---- TESTS ---------------- */
 
-interface User {
-  name: string;
-  address: {
-    city: string;
-    street: string;
-  };
-  friends: {
-    name: string;
-    tags: string[];
-  }[];
-  coords: [100, 200];
-}
+// interface User {
+//   name: string;
+//   address: {
+//     city: string;
+//     street: string;
+//   };
+//   friends: {
+//     name: string;
+//     tags: string[];
+//   }[];
+//   coords: [100, 200];
+// }
 
-const builder = new FieldPathBuilder<User>();
+// const builder = new FieldPathBuilder<User>();
 
-const data: User = {
-  name: "",
-  address: { city: "", street: "" },
-  friends: [{ name: "", tags: ["A", "B"] }],
-  coords: [100, 200] as const,
-};
+// const data: User = {
+//   name: "",
+//   address: { city: "", street: "" },
+//   friends: [{ name: "", tags: ["A", "B"] }],
+//   coords: [100, 200] as const,
+// };
 
-const path = builder.fromProxy((data) => data.friends[0].tags[1]);
-//    ^?
-const value = FieldPath.getValue(data, path);
-//    ^?
-console.log(path, "=", value);
+// const path = builder.fromProxy((data) => data.friends[0].tags[1]);
+// //    ^?
+// const value = FieldPath.getValue(data, path);
+// //    ^?
+// console.log(path, "=", value);
 
-const path2 = builder.fromStringPath("friends[0].tags[0]");
-//    ^?
-const value2 = FieldPath.getValue(data, path2);
-//    ^?
-console.log(path2, "=", value2);
+// const path2 = builder.fromStringPath("friends[0].tags[0]");
+// //    ^?
+// const value2 = FieldPath.getValue(data, path2);
+// //    ^?
+// console.log(path2, "=", value2);
 
-const path3 = builder.fromStringPath("coords[0]");
-//    ^?
-const value3 = FieldPath.getValue(data, path3);
-console.log(path3, "=", value3);
+// const path3 = builder.fromStringPath("coords[0]");
+// //    ^?
+// const value3 = FieldPath.getValue(data, path3);
+// console.log(path3, "=", value3);
 
-const path4 = builder.fromStringPath("coords[1]");
-//    ^?
-const value4 = FieldPath.getValue(data, path4);
-//    ^?
-console.log(path4, "=", value4);
+// const path4 = builder.fromStringPath("coords[1]");
+// //    ^?
+// const value4 = FieldPath.getValue(data, path4);
+// //    ^?
+// console.log(path4, "=", value4);
 
-type Shape = {
-  user?: {
-    profile?: { name?: string };
-    tags?: boolean[];
-  };
-};
+// type Shape = {
+//   user?: {
+//     profile?: { name?: string };
+//     tags?: boolean[];
+//   };
+// };
 
-type A = FieldPath.Resolve<Shape, ["user"]>;
-//   ^?
+// type A = FieldPath.Resolve<Shape, ["user"]>;
+// //   ^?
 
-type A2 = FieldPath.Resolve<Shape, ["user", "profile"]>;
-//   ^?
+// type A2 = FieldPath.Resolve<Shape, ["user", "profile"]>;
+// //   ^?
 
-type B = FieldPath.Resolve<Shape, ["user", "profile", "name"]>;
-//   ^?
+// type B = FieldPath.Resolve<Shape, ["user", "profile", "name"]>;
+// //   ^?
 
-type C = FieldPath.Resolve<Shape, ["user", "tags", number]>;
-//   ^?
+// type C = FieldPath.Resolve<Shape, ["user", "tags", number]>;
+// //   ^?
 
-type C2 = FieldPath.Resolve<Shape, ["user", "tags", 0]>;
-//   ^?
+// type C2 = FieldPath.Resolve<Shape, ["user", "tags", 0]>;
+// //   ^?
 
-type D = FieldPath.Resolve<Shape, ["user", "missing"]>;
-//   ^?
+// type D = FieldPath.Resolve<Shape, ["user", "missing"]>;
+// //   ^?
