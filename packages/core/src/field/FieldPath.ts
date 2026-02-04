@@ -14,10 +14,16 @@ export namespace FieldPath {
 
   type ResolveStep<TObject, TKey> =
     NonNullable<TObject> extends infer U
-      ? U extends readonly (infer E)[]
-        ? TKey extends number | `${number}`
-          ? E
-          : never
+      ? U extends readonly unknown[]
+        ? number extends U["length"]
+          ? TKey extends number | `${number}`
+            ? U[number]
+            : never
+          : TKey extends keyof U
+            ? U[TKey]
+            : TKey extends `${infer N extends number}`
+              ? U[N]
+              : never
         : TKey extends keyof U
           ? U[TKey]
           : never
