@@ -1,9 +1,6 @@
 {
   "name": "goodie-forms",
   "private": true,
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": {
     "name": "Taha Anılcan Metinyurt",
     "email": "igoodie@programmer.net",

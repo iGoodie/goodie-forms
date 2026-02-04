@@ -2,7 +2,7 @@ import { produce } from "immer";
 import { ensureImmerability } from "../utils/ensureImmerability";
 import { getId } from "../utils/getId";
 import { Field } from "./Field";
-import { FormController } from "./FormController";
+import { FormController } from "./+FormController";
 
 export class FormField<
   TShape extends object,

@@ -1,5 +1,5 @@
 import { Field } from "../form/Field";
-import { FormField } from "../form/FormField";
+import { FormField } from "./+FormField";
 import { Mixin } from "../types/Mixin";
 
 export type NonnullFormField<
