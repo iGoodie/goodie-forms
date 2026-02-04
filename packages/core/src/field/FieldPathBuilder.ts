@@ -48,52 +48,11 @@ export class FieldPathBuilder<TOutput extends object> {
   public buildFromPathString<TStrPath extends FieldPath.StringPaths<TOutput>>(
     stringPath: TStrPath,
   ) {
-    const result: Array<string | number> = [];
-
-    let i = 0;
-
-    while (i < stringPath.length) {
-      const char = stringPath[i];
-
-      // dot separator
-      if (char === ".") {
-        i++;
-        continue;
-      }
-
-      // bracket index: [123]
-      if (char === "[") {
-        i++; // skip '['
-        let num = "";
-
-        while (i < stringPath.length && stringPath[i] !== "]") {
-          num += stringPath[i];
-          i++;
-        }
-
-        i++; // skip ']'
-
-        if (!num || !/^\d+$/.test(num)) {
-          throw new Error(`Invalid array index in path: ${stringPath}`);
-        }
-
-        result.push(Number(num));
-        continue;
-      }
-
-      // identifier
-      let key = "";
-      while (i < stringPath.length && /[^\.\[]/.test(stringPath[i])) {
-        key += stringPath[i];
-        i++;
-      }
-
-      if (key) {
-        result.push(key);
-      }
-    }
-
-    return result as FieldPath.ParseStringPath<TStrPath>;
+    return FieldPath.parseFromString(
+      stringPath,
+    ) as unknown as string extends TStrPath
+      ? never // <-- Do not evaluate before an actual TOutput is present
+      : FieldPath.ParseStringPath<TStrPath>;
   }
 
   public buildFromProxy<TProxy extends FieldPathBuilder.Proxy<any, any>>(
@@ -115,6 +74,7 @@ interface User {
     name: string;
     tags: string[];
   }[];
+  coords: [100, 200];
 }
 
 const builder = new FieldPathBuilder<User>();
@@ -124,6 +84,7 @@ const data: User = {
   name: "",
   address: { city: "", street: "" },
   friends: [{ name: "", tags: ["A", "B"] }],
+  coords: [100, 200],
 };
 
 const pathProxy = proxy.friends[0].tags[1];
@@ -140,6 +101,11 @@ const value = FieldPath.getValue(data, path);
 const path2 = builder.buildFromPathString("friends[0].tags[0]");
 //    ^?
 const value2 = FieldPath.getValue(data, path2);
+//    ^?
+
+const path3 = builder.buildFromPathString("coords");
+//    ^?
+const value3 = FieldPath.getValue(data, path3);
 //    ^?
 
 console.log(pathProxy, "=", value);
