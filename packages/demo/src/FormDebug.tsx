@@ -1,10 +1,10 @@
-import { Field, type FormController } from "@goodie-forms/core";
+import { FieldPath, type FormController } from "@goodie-forms/core";
 import { useRenderControl } from "@goodie-forms/react";
 import flow from "lodash.flow";
 import { useEffect } from "react";
 
-export function FormDebug<TShape extends object>(props: {
-  formController: FormController<TShape>;
+export function FormDebug<TOutput extends object>(props: {
+  formController: FormController<TOutput>;
 }) {
   const renderControl = useRenderControl();
 
@@ -18,7 +18,7 @@ export function FormDebug<TShape extends object>(props: {
       events.on("fieldBound", () => renderControl.forceRerender()),
       events.on("fieldUnbound", () => renderControl.forceRerender()),
       events.on("fieldTouchUpdated", () => renderControl.forceRerender()),
-      events.on("fieldDirtyUpdated", () => renderControl.forceRerender())
+      events.on("fieldDirtyUpdated", () => renderControl.forceRerender()),
     );
   }, []);
 
@@ -55,7 +55,7 @@ export function FormDebug<TShape extends object>(props: {
 
         <span className="opacity-50">Bound Fields</span>
         {[...props.formController._fields.values()].map((field, i) => (
-          <span key={i}>{field.path}</span>
+          <span key={i}>{field.stringPath}</span>
         ))}
 
         <hr className="my-10" />
@@ -64,7 +64,7 @@ export function FormDebug<TShape extends object>(props: {
         {[...props.formController._fields.values()]
           .filter((field) => field.isTouched)
           .map((field, i) => (
-            <span key={i}>{field.path}</span>
+            <span key={i}>{field.stringPath}</span>
           ))}
 
         <hr className="my-10" />
@@ -73,7 +73,7 @@ export function FormDebug<TShape extends object>(props: {
         {[...props.formController._fields.values()]
           .filter((field) => field.isDirty)
           .map((field, i) => (
-            <span key={i}>{field.path}</span>
+            <span key={i}>{field.stringPath}</span>
           ))}
 
         <hr className="my-10" />
@@ -81,10 +81,12 @@ export function FormDebug<TShape extends object>(props: {
         <span className="opacity-50">Errors</span>
         {props.formController._issues.map((issue) => (
           <p
-            key={Field.parsePath(issue.path ?? [])}
+            key={FieldPath.toStringPath(FieldPath.normalize(issue.path))}
             className="inline text-wrap"
           >
-            <span className="mr-1">{Field.parsePath(issue.path ?? [])}</span>
+            <span className="mr-1">
+              {FieldPath.toStringPath(FieldPath.normalize(issue.path))}
+            </span>
             <span className="text-xs opacity-30">({issue.message})</span>
           </p>
         ))}

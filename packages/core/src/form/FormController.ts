@@ -1,19 +1,18 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
-import { enableArrayMethods, enableMapSet, produce } from "immer";
+import { produce } from "immer";
 import { createNanoEvents } from "nanoevents";
-import { Field } from "../form/Field";
+import { FieldPath } from "../field/FieldPath";
+import { FieldPathBuilder } from "../field/FieldPathBuilder";
+import { Reconsile } from "../field/Reconcile";
+import { FormField } from "../form/FormField";
 import { DeepPartial } from "../types/DeepPartial";
-import { removeBy } from "../utils/removeBy";
-import { FormField } from "./FormField";
 import { ensureImmerability } from "../utils/ensureImmerability";
+import { removeBy } from "../utils/removeBy";
 
-enableMapSet();
-enableArrayMethods();
-
-export namespace Form {
-  export type FormConfigs<TShape extends object> = {
-    initialData?: DeepPartial<TShape>;
-    validationSchema?: StandardSchemaV1<unknown, TShape>;
+export namespace FormController {
+  export type Configs<TOutput extends object> = {
+    initialData?: DeepPartial<TOutput>;
+    validationSchema?: StandardSchemaV1<unknown, TOutput>;
     equalityComparators?: Record<any, (a: any, b: any) => boolean>;
   };
 
@@ -22,57 +21,56 @@ export namespace Form {
   }
 
   export type SubmitSuccessHandler<
-    TShape extends object,
-    TEvent extends PreventableEvent
+    TOutput extends object,
+    TEvent extends PreventableEvent,
   > = (
-    data: TShape,
+    data: TOutput,
     event: TEvent,
-    abortSignal: AbortSignal
+    abortSignal: AbortSignal,
   ) => void | Promise<void>;
 
   export type SubmitErrorHandler<TEvent extends PreventableEvent> = (
     issues: StandardSchemaV1.Issue[],
     event: TEvent,
-    abortSignal: AbortSignal
+    abortSignal: AbortSignal,
   ) => void | Promise<void>;
 }
 
-// TODO: Rename TShape to TOutput, as it represents the targetted data shape on successful submission cb
-export class FormController<TShape extends object> {
+export class FormController<TOutput extends object> {
   _isValidating = false;
   _isSubmitting = false;
 
-  _fields = new Map<Field.Paths<TShape>, FormField<TShape, any>>();
-  _initialData: DeepPartial<TShape>;
-  _data: DeepPartial<TShape>;
+  _fields = new Map<string, FormField<TOutput, any>>();
+  _initialData: DeepPartial<TOutput>;
+  _data: DeepPartial<TOutput>;
   _issues: StandardSchemaV1.Issue[] = [];
 
   equalityComparators?: Record<any, (a: any, b: any) => boolean>;
-  validationSchema?: StandardSchemaV1<unknown, TShape>;
+  validationSchema?: StandardSchemaV1<unknown, TOutput>;
 
   public readonly events = createNanoEvents<{
     submissionStatusChange(isSubmitting: boolean): void;
     validationStatusChange(isValidating: boolean): void;
 
-    fieldBound(fieldPath: Field.Paths<TShape>): void;
-    fieldUnbound(fieldPath: Field.Paths<TShape>): void;
-    fieldTouchUpdated(path: Field.Paths<TShape>): void;
-    fieldDirtyUpdated(path: Field.Paths<TShape>): void;
-    fieldIssuesUpdated(fieldPath: Field.Paths<TShape>): void;
-    elementBound(fieldPath: Field.Paths<TShape>, el: HTMLElement): void;
-    elementUnbound(fieldPath: Field.Paths<TShape>): void;
-    validationTriggered(fieldPath: Field.Paths<TShape>): void;
+    fieldBound(fieldPath: FieldPath.Segments): void;
+    fieldUnbound(fieldPath: FieldPath.Segments): void;
+    fieldTouchUpdated(path: FieldPath.Segments): void;
+    fieldDirtyUpdated(path: FieldPath.Segments): void;
+    fieldIssuesUpdated(fieldPath: FieldPath.Segments): void;
+    elementBound(fieldPath: FieldPath.Segments, el: HTMLElement): void;
+    elementUnbound(fieldPath: FieldPath.Segments): void;
+    validationTriggered(fieldPath: FieldPath.Segments): void;
     valueChanged(
-      fieldPath: Field.Paths<TShape>,
-      newValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined,
-      oldValue: Field.GetValue<TShape, Field.Paths<TShape>> | undefined
+      fieldPath: FieldPath.Segments,
+      newValue: {} | undefined,
+      oldValue: {} | undefined,
     ): void;
   }>();
 
-  constructor(config: Form.FormConfigs<TShape>) {
+  constructor(config: FormController.Configs<TOutput>) {
     this.validationSchema = config.validationSchema;
     this.equalityComparators = config.equalityComparators;
-    this._initialData = config.initialData ?? ({} as DeepPartial<TShape>);
+    this._initialData = config.initialData ?? ({} as DeepPartial<TOutput>);
     this._data = produce(this._initialData, () => {});
   }
 
@@ -108,64 +106,66 @@ export class FormController<TShape extends object> {
     this.events.emit("submissionStatusChange", newStatus);
   }
 
-  _unsafeSetFieldValue<TPath extends Field.Paths<TShape>>(
+  _unsafeSetFieldValue<TPath extends FieldPath.Segments>(
     path: TPath,
-    value: Field.GetValue<TShape, TPath>,
-    config?: { updateInitialValue?: boolean }
+    value: FieldPath.Resolve<TOutput, TPath>,
+    config?: { updateInitialValue?: boolean },
   ) {
     ensureImmerability(value);
 
     if (config?.updateInitialValue === true) {
       this._initialData = produce(this._initialData, (draft) => {
-        Field.setValue(draft as TShape, path, value);
+        FieldPath.setValue(draft as TOutput, path, value);
       });
     }
+
     this._data = produce(this._data, (draft) => {
-      Field.setValue(draft as TShape, path, value);
+      FieldPath.setValue(draft as TOutput, path, value);
     });
   }
 
   // TODO: Rename to "register" ??
-  bindField<TPath extends Field.Paths<TShape>>(
+  bindField<TPath extends FieldPath.Segments>(
     path: TPath,
     config?: {
-      defaultValue?: Field.GetValue<TShape, TPath>;
+      defaultValue?: FieldPath.Resolve<TOutput, TPath>;
       domElement?: HTMLElement;
       overrideInitialValue?: boolean;
-    }
+    },
   ) {
-    let currentValue = Field.getValue(this._data as TShape, path);
+    let currentValue = FieldPath.getValue(this._data as TOutput, path);
 
     if (currentValue == null && config?.defaultValue != null) {
       this._unsafeSetFieldValue(path, config.defaultValue, {
         updateInitialValue: config.overrideInitialValue,
       });
-      currentValue = Field.getValue(this._data as TShape, path);
+      currentValue = FieldPath.getValue(this._data as TOutput, path);
     }
 
-    const initialValue = Field.getValue(this._initialData as TShape, path);
+    const initialValue = FieldPath.getValue(this._initialData as TOutput, path);
 
     const field = new FormField(this, path, {
-      isDirty: !Field.deepEqual(currentValue, initialValue),
+      isDirty: !Reconsile.deepEqual(currentValue, initialValue),
     });
 
     if (config?.domElement != null) {
       field.bindElement(config.domElement);
     }
 
-    this._fields.set(path, field);
-    this.events.emit("fieldBound", path);
+    this._fields.set(field.stringPath, field);
+    this.events.emit("fieldBound", field.path);
 
-    return field;
+    return field as FormField<TOutput, FieldPath.Resolve<TOutput, TPath>>;
   }
 
-  unbindField(path: Field.Paths<TShape>) {
-    this._fields.delete(path);
+  unbindField(path: FieldPath.Segments) {
+    const stringPath = FieldPath.toStringPath(path);
+    this._fields.delete(stringPath);
     this.events.emit("fieldUnbound", path);
   }
 
   // TODO: Add an option to keep dirty/touched fields as they are
-  reset(newInitialData?: DeepPartial<TShape>) {
+  reset(newInitialData?: DeepPartial<TOutput>) {
     this._data = this._initialData;
     this._issues = [];
 
@@ -179,43 +179,43 @@ export class FormController<TShape extends object> {
     }
   }
 
-  getAscendantFields<TPath extends Field.Paths<TShape>>(path: TPath) {
-    const pathFragments = Field.parsePathFragments(path);
-
-    const paths = pathFragments.map((_, i) => {
-      return Field.parsePath(
-        pathFragments.slice(0, i + 1)
-      ) as Field.Paths<TShape>;
+  getAscendantFields<TPath extends FieldPath.Segments>(path: TPath) {
+    const paths = path.map((_, i) => {
+      return path.slice(0, i + 1);
     });
 
     return paths.map((path) => this.getField(path)).filter((field) => !!field);
   }
 
-  getField<TPath extends Field.Paths<TShape>>(path: TPath) {
-    return this._fields.get(path) as FormField<TShape, TPath> | undefined;
+  getField<TPath extends FieldPath.Segments>(path: TPath) {
+    const stringPath = FieldPath.toStringPath(path);
+    return this._fields.get(stringPath) as
+      | FormField<TOutput, FieldPath.Resolve<TOutput, TPath>>
+      | undefined;
   }
 
-  clearFieldIssues<TPath extends Field.Paths<TShape>>(path: TPath) {
+  clearFieldIssues<TPath extends FieldPath.Segments>(path: TPath) {
     this._issues = this._issues.filter((issue) => {
-      if (issue.path == null) return true;
-      const issuePath = Field.parsePath(issue.path);
-      return issuePath !== path;
+      return !FieldPath.equals(FieldPath.normalize(issue.path), path);
     });
   }
 
-  private async applyValidation<TPath extends Field.Paths<TShape>>(
-    _result: StandardSchemaV1.Result<TShape>,
-    path: TPath
+  private async applyValidation<TPath extends FieldPath.Segments>(
+    _result: StandardSchemaV1.Result<TOutput>,
+    path: TPath,
   ) {
-    const diff = Field.diff(
+    const diff = Reconsile.diff(
       this._issues,
       _result.issues ?? [],
-      Field.deepEqual,
+      Reconsile.deepEqual,
       (issue) => {
         if (issue.path == null) return false;
-        const issuePath = Field.parsePath(issue.path);
-        return issuePath === path || Field.isDescendant(path, issuePath);
-      }
+        const issuePath = FieldPath.normalize(issue.path);
+        return (
+          FieldPath.equals(issuePath, path) ||
+          FieldPath.isDescendant(path, issuePath)
+        );
+      },
     );
 
     removeBy(this._issues, (issue) => diff.removed.includes(issue));
@@ -227,7 +227,7 @@ export class FormController<TShape extends object> {
     }
   }
 
-  async validateField<TPath extends Field.Paths<TShape>>(path: TPath) {
+  async validateField<TPath extends FieldPath.Segments>(path: TPath) {
     if (this._isValidating) return;
 
     if (this.validationSchema == null) return;
@@ -237,7 +237,7 @@ export class FormController<TShape extends object> {
     if (this.getField(path) == null) this.bindField(path);
 
     const result = await this.validationSchema["~standard"].validate(
-      this._data
+      this._data,
     );
 
     this.events.emit("validationTriggered", path);
@@ -254,24 +254,29 @@ export class FormController<TShape extends object> {
     this.setValidating(true);
 
     const result = await this.validationSchema["~standard"].validate(
-      this._data
+      this._data,
     );
 
-    for (const path of this._fields.keys()) {
+    for (const stringPath of this._fields.keys()) {
+      const path = FieldPath.fromStringPath(stringPath);
       this.events.emit("validationTriggered", path);
       this.applyValidation(result, path);
     }
 
     // Append non-registered issues too
-    const diff = Field.diff(this._issues, result.issues ?? [], Field.deepEqual);
+    const diff = Reconsile.diff(
+      this._issues,
+      result.issues ?? [],
+      Reconsile.deepEqual,
+    );
     diff.added.forEach((issue) => this._issues.push(issue));
 
     this.setValidating(false);
   }
 
-  createSubmitHandler<TEvent extends Form.PreventableEvent>(
-    onSuccess?: Form.SubmitSuccessHandler<TShape, TEvent>,
-    onError?: Form.SubmitErrorHandler<TEvent>
+  createSubmitHandler<TEvent extends FormController.PreventableEvent>(
+    onSuccess?: FormController.SubmitSuccessHandler<TOutput, TEvent>,
+    onError?: FormController.SubmitErrorHandler<TEvent>,
   ) {
     return async (event: TEvent) => {
       if (event != null) {
@@ -281,21 +286,22 @@ export class FormController<TShape extends object> {
       if (this._isValidating) return;
       if (this._isSubmitting) return;
 
+      // TODO? impl or cancel
       const abortController = new AbortController();
 
       await this.validateForm();
 
       if (this._issues.length === 0) {
         this.setSubmitting(true);
-        await onSuccess?.(this._data as TShape, event, abortController.signal);
+        await onSuccess?.(this._data as TOutput, event, abortController.signal);
         this.setSubmitting(false);
         return;
       }
 
       for (const issue of this._issues) {
         if (issue.path == null) continue;
-        const fieldPath = Field.parsePath(issue.path) as Field.Paths<TShape>;
-        const field = this.getField(fieldPath);
+        const issuePath = FieldPath.normalize(issue.path);
+        const field = this.getField(issuePath);
         if (field == null) continue;
         if (field.boundElement == null) continue;
         field.focus();
@@ -306,3 +312,31 @@ export class FormController<TShape extends object> {
     };
   }
 }
+
+/* ---- TESTS ---------------- */
+
+// interface User {
+//   name: string;
+//   address: {
+//     city: string;
+//     street: string;
+//   };
+//   friends: {
+//     name: string;
+//     tags: string[];
+//   }[];
+//   coords: [100, 200];
+// }
+
+// const formController = new FormController<User>({});
+// const fieldPathBuilder = new FieldPathBuilder<User>();
+
+// formController.events.on("valueChanged", (fieldPath, value) => {
+//   //                                                 ^?
+// });
+
+// const path1 = fieldPathBuilder.fromProxy((data) => data.friends[0].tags[99]);
+// const field1 = formController.getField(path1);
+
+// const path2 = fieldPathBuilder.fromStringPath("coords[1]");
+// const field2 = formController.getField(path2);

@@ -1,13 +1,11 @@
 import { produce } from "immer";
+import { FieldPath } from "../field/FieldPath";
+import { Reconsile } from "../field/Reconcile";
+import { FormController } from "../form/FormController";
 import { ensureImmerability } from "../utils/ensureImmerability";
 import { getId } from "../utils/getId";
-import { Field } from "./Field";
-import { FormController } from "./FormController";
 
-export class FormField<
-  TShape extends object,
-  TPath extends Field.Paths<TShape>
-> {
+export class FormField<TOutput extends object, TValue> {
   public readonly id = getId();
 
   protected target?: HTMLElement;
@@ -16,29 +14,31 @@ export class FormField<
   protected _isDirty = false;
 
   constructor(
-    public readonly controller: FormController<TShape>,
-    public readonly path: TPath,
+    public readonly controller: FormController<TOutput>,
+    public readonly path: FieldPath.Segments,
     initialState?: {
       isTouched?: boolean;
       isDirty?: boolean;
-    }
+    },
   ) {
     if (initialState?.isTouched) this._setTouched(true);
     if (initialState?.isDirty) this._setDirty(true);
   }
 
-  get value(): Field.GetValue<TShape, TPath> | undefined {
-    return Field.getValue<TShape, TPath>(
-      this.controller._data as TShape,
-      this.path
-    );
+  get canonicalPath() {
+    return FieldPath.toCanonicalPath(this.path);
   }
 
-  get initialValue(): Field.GetValue<TShape, TPath> | undefined {
-    return Field.getValue<TShape, TPath>(
-      this.controller._initialData as TShape,
-      this.path
-    );
+  get stringPath() {
+    return FieldPath.toStringPath(this.path);
+  }
+
+  get value(): TValue | undefined {
+    return FieldPath.getValue(this.controller._data, this.path);
+  }
+
+  get initialValue(): TValue | undefined {
+    return FieldPath.getValue(this.controller._initialData, this.path);
   }
 
   get boundElement() {
@@ -46,8 +46,8 @@ export class FormField<
   }
 
   get issues() {
-    return this.controller._issues.filter(
-      (issue) => Field.parsePath(issue.path ?? []) === this.path
+    return this.controller._issues.filter((issue) =>
+      FieldPath.equals(FieldPath.normalize(issue.path), this.path),
     );
   }
 
@@ -92,26 +92,24 @@ export class FormField<
   }
 
   bindElement(el: HTMLElement | undefined) {
-    if (el != null) this.controller.events.emit("elementBound", this.path, el);
-    else this.controller.events.emit("elementUnbound", this.path);
     this.target = el;
+    if (el != null) {
+      this.controller.events.emit("elementBound", this.path, el);
+    } else {
+      this.controller.events.emit("elementUnbound", this.path);
+    }
   }
 
-  setValue(
-    value: Field.GetValue<TShape, TPath>,
-    opts?: Parameters<typeof this.modifyValue>[1]
-  ) {
+  setValue(value: TValue, opts?: Parameters<typeof this.modifyValue>[1]) {
     return this.modifyValue(() => value, opts);
   }
 
   modifyValue(
-    modifier: (
-      currentValue: Field.GetValue<TShape, TPath> | undefined
-    ) => Field.GetValue<TShape, TPath> | void,
+    modifier: (currentValue: TValue | undefined) => TValue | void,
     opts?: {
       shouldTouch?: boolean;
       shouldMarkDirty?: boolean;
-    }
+    },
   ): void {
     if (opts?.shouldTouch == null || opts?.shouldTouch) {
       this.touch();
@@ -126,7 +124,7 @@ export class FormField<
     oldValues.forEach((v) => ensureImmerability(v));
 
     this.controller._data = produce(this.controller._data, (draft) => {
-      Field.modifyValue(draft as TShape, this.path, (oldValue) => {
+      FieldPath.modifyValue(draft as TOutput, this.path, (oldValue) => {
         return modifier(oldValue);
       });
     });
@@ -143,10 +141,10 @@ export class FormField<
       return this.controller.equalityComparators?.[ctorA]?.(a, b);
     };
 
-    const valueChanged = !Field.deepEqual(
+    const valueChanged = !Reconsile.deepEqual(
       oldValues[oldValues.length - 1],
       newValues[newValues.length - 1],
-      compareCustom
+      compareCustom,
     );
 
     if (valueChanged) {
@@ -156,16 +154,16 @@ export class FormField<
           "valueChanged",
           field.path,
           newValues[i],
-          oldValues[i]
+          oldValues[i],
         );
       }
     }
 
     if (opts?.shouldMarkDirty == null || opts?.shouldMarkDirty) {
-      const gotDirty = !Field.deepEqual(
+      const gotDirty = !Reconsile.deepEqual(
         initialValues[initialValues.length - 1],
         newValues[newValues.length - 1],
-        compareCustom
+        compareCustom,
       );
       this._setDirty(gotDirty);
     }

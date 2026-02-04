@@ -1,17 +1,17 @@
-import { Field } from "@goodie-forms/core";
+import { FieldPath } from "@goodie-forms/core";
 import { useEffect } from "react";
 import { composeFns } from "../utils/composeFns";
 import type { UseForm } from "./useForm";
 import { useRenderControl } from "./useRenderControl";
 
 export function useFormValuesObserver<
-  TShape extends object,
-  TPaths extends Field.Paths<TShape>[] | undefined = undefined
+  TOutput extends object,
+  TPaths extends FieldPath.Segments[] | undefined = undefined,
 >(
-  form: UseForm<TShape>,
+  form: UseForm<TOutput>,
   options?: {
     include?: TPaths;
-  }
+  },
 ) {
   const renderControl = useRenderControl();
 
@@ -19,10 +19,13 @@ export function useFormValuesObserver<
     options?.include == null
       ? form.controller._data
       : options.include.reduce((data, path) => {
-          const value = Field.getValue(form.controller._data as TShape, path)!;
-          Field.setValue(data, path, value);
+          const value = FieldPath.getValue(
+            form.controller._data as TOutput,
+            path,
+          )!;
+          FieldPath.setValue(data, path, value);
           return data;
-        }, {} as TShape);
+        }, {} as TOutput);
 
   useEffect(() => {
     const { events } = form.controller;
@@ -34,10 +37,11 @@ export function useFormValuesObserver<
             ? true
             : options.include.some(
                 (path) =>
-                  path === changedPath || Field.isDescendant(path, changedPath)
+                  FieldPath.equals(path, changedPath) ||
+                  FieldPath.isDescendant(path, changedPath),
               );
         if (watchingChange) renderControl.forceRerender();
-      })
+      }),
     );
   }, []);
 

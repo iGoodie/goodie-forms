@@ -1,22 +1,22 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
-import { Field } from "../form/Field";
 import { DeepPartial } from "../types/DeepPartial";
+import { FieldPath } from "../field/FieldPath";
 
-export type CustomValidationIssue<TShape extends object> = {
-  path: Field.Paths<TShape>;
+export type CustomValidationIssue<TOutput extends object> = {
+  path: FieldPath.StringPaths<TOutput>;
   message: string;
 };
 
-export type CustomValidationStrategy<TShape extends object> = (
-  data: DeepPartial<TShape>,
+export type CustomValidationStrategy<TOutput extends object> = (
+  data: DeepPartial<TOutput>,
 ) =>
   | void
-  | CustomValidationIssue<TShape>[]
-  | Promise<CustomValidationIssue<TShape>[] | void>;
+  | CustomValidationIssue<TOutput>[]
+  | Promise<CustomValidationIssue<TOutput>[] | void>;
 
-export function customValidation<TShape extends object>(
-  strategy: CustomValidationStrategy<TShape>,
-): StandardSchemaV1<TShape, TShape> {
+export function customValidation<TOutput extends object>(
+  strategy: CustomValidationStrategy<TOutput>,
+) {
   return {
     "~standard": {
       version: 1 as const,
@@ -25,15 +25,15 @@ export function customValidation<TShape extends object>(
 
       validate: async (input: unknown) => {
         try {
-          const customIssues = await strategy(input as DeepPartial<TShape>);
+          const customIssues = await strategy(input as DeepPartial<TOutput>);
 
           if (customIssues == null) {
-            return { value: input as TShape };
+            return { value: input as TOutput };
           }
 
           return {
             issues: customIssues.map((i) => ({
-              path: Field.parsePathFragments(i.path),
+              path: FieldPath.fromStringPath(i.path as string),
               message: i.message,
             })),
           };
@@ -48,5 +48,5 @@ export function customValidation<TShape extends object>(
         }
       },
     },
-  };
+  } as StandardSchemaV1<TOutput, TOutput>;
 }
