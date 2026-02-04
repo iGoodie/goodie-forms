@@ -1,4 +1,117 @@
 export namespace FieldPath {
+  export type Segments = readonly PropertyKey[];
+  export type CanonicalPath = string;
+  export type StringPath = string;
+
+  export function toCanonicalPath(path: Segments) {
+    return path.join(".") as CanonicalPath;
+  }
+
+  export function toStringPath(path: Segments) {
+    const normalizedPath = normalize(path);
+    let result = "";
+
+    for (const fragment of normalizedPath) {
+      if (typeof fragment === "number") {
+        result += `[${fragment}]`;
+      } else {
+        if (result.length > 0) {
+          result += ".";
+        }
+        result += fragment.toString();
+      }
+    }
+
+    return result;
+  }
+
+  export function fromStringPath<TStrPath extends string>(
+    stringPath: TStrPath,
+  ) {
+    const result: Array<string | number> = [];
+
+    let i = 0;
+
+    while (i < stringPath.length) {
+      const char = stringPath[i];
+
+      // dot separator
+      if (char === ".") {
+        i++;
+        continue;
+      }
+
+      // bracket index: [123]
+      if (char === "[") {
+        i++; // skip '['
+        let num = "";
+
+        while (i < stringPath.length && stringPath[i] !== "]") {
+          num += stringPath[i];
+          i++;
+        }
+
+        i++; // skip ']'
+
+        if (!num || !/^\d+$/.test(num)) {
+          throw new Error(`Invalid array index in path: ${stringPath}`);
+        }
+
+        result.push(Number(num));
+        continue;
+      }
+
+      // identifier
+      let key = "";
+      while (i < stringPath.length && /[^\.\[]/.test(stringPath[i])) {
+        key += stringPath[i];
+        i++;
+      }
+
+      if (key) {
+        result.push(key);
+      }
+    }
+
+    return result as FieldPath.ParseStringPath<TStrPath>;
+  }
+
+  export function normalize<T extends readonly any[] | undefined>(path: T) {
+    return path?.map((segment) => {
+      if (typeof segment === "string") return segment;
+      if (typeof segment === "number") return segment;
+      if (typeof segment === "symbol") return segment;
+      if (typeof segment === "object" && "key" in segment) {
+        if (typeof segment === "string") return segment;
+        if (typeof segment === "number") return segment;
+        if (typeof segment === "symbol") return segment;
+        return segment.key;
+      }
+    }) as Segments;
+  }
+
+  export function equals(path1?: Segments, path2?: Segments) {
+    if (path1 === path2) return true;
+    if (path1 == null) return false;
+    if (path2 == null) return false;
+    if (path1.length !== path2.length) return false;
+    for (let i = 0; i < path1.length; i++) {
+      if (path1[i] !== path2[i]) return false;
+    }
+    return true;
+  }
+  export function isDescendant(parentPath: Segments, childPath: Segments) {
+    if (parentPath.length >= childPath.length) return false;
+
+    for (let i = 0; i < parentPath.length; i++) {
+      if (parentPath[i] !== childPath[i]) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   type Unfoldable<T> = T & { _____foldMark?: never } & {};
 
   export type Resolve<
@@ -98,57 +211,6 @@ export namespace FieldPath {
           ? K
           : never;
 
-  export function parseFromString<TStrPath extends string>(
-    stringPath: TStrPath,
-  ) {
-    const result: Array<string | number> = [];
-
-    let i = 0;
-
-    while (i < stringPath.length) {
-      const char = stringPath[i];
-
-      // dot separator
-      if (char === ".") {
-        i++;
-        continue;
-      }
-
-      // bracket index: [123]
-      if (char === "[") {
-        i++; // skip '['
-        let num = "";
-
-        while (i < stringPath.length && stringPath[i] !== "]") {
-          num += stringPath[i];
-          i++;
-        }
-
-        i++; // skip ']'
-
-        if (!num || !/^\d+$/.test(num)) {
-          throw new Error(`Invalid array index in path: ${stringPath}`);
-        }
-
-        result.push(Number(num));
-        continue;
-      }
-
-      // identifier
-      let key = "";
-      while (i < stringPath.length && /[^\.\[]/.test(stringPath[i])) {
-        key += stringPath[i];
-        i++;
-      }
-
-      if (key) {
-        result.push(key);
-      }
-    }
-
-    return result as FieldPath.ParseStringPath<TStrPath>;
-  }
-
   export function getValue<
     TObject extends object,
     const TPath extends readonly PropertyKey[],
@@ -227,5 +289,5 @@ export namespace FieldPath {
 }
 
 const x = {} as { foo: { bar: string[] } };
-FieldPath.setValue(x, FieldPath.parseFromString("foo.bar[9]"), "C");
+FieldPath.setValue(x, FieldPath.fromStringPath("foo.bar[9]"), "C");
 console.log(x); // <-- { foo: { bar: [<9xempty>, "C"] } }

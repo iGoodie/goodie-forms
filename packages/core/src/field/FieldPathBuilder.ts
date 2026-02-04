@@ -7,8 +7,10 @@ export namespace FieldPathBuilder {
     TObject,
     TPath extends readonly PropertyKey[],
   > = TObject extends readonly (infer E)[]
-    ? Proxy<E, [...TPath, number]> & {
+    ? {
         [K in number]: Proxy<E, [...TPath, K]>;
+      } & {
+        [resolverCall]: TPath;
       }
     : TObject extends object
       ? {
@@ -41,14 +43,10 @@ export class FieldPathBuilder<TOutput extends object> {
     }) as any;
   }
 
-  public createPathProxy() {
-    return FieldPathBuilder.wrap<TOutput, []>([]);
-  }
-
-  public buildFromPathString<TStrPath extends FieldPath.StringPaths<TOutput>>(
+  public buildFromStringPath<TStrPath extends FieldPath.StringPaths<TOutput>>(
     stringPath: TStrPath,
   ) {
-    return FieldPath.parseFromString(
+    return FieldPath.fromStringPath(
       stringPath,
     ) as unknown as string extends TStrPath
       ? never // <-- Do not evaluate before an actual TOutput is present
@@ -56,9 +54,9 @@ export class FieldPathBuilder<TOutput extends object> {
   }
 
   public buildFromProxy<TProxy extends FieldPathBuilder.Proxy<any, any>>(
-    pathProxy: TProxy,
+    consumer: (data: FieldPathBuilder.Proxy<TOutput, []>) => TProxy,
   ): TProxy[typeof resolverCall] {
-    return pathProxy[resolverCall];
+    return consumer(FieldPathBuilder.wrap<TOutput, []>([]))[resolverCall];
   }
 }
 
@@ -78,7 +76,6 @@ interface User {
 }
 
 const builder = new FieldPathBuilder<User>();
-const proxy = builder.createPathProxy();
 
 const data: User = {
   name: "",
@@ -87,33 +84,28 @@ const data: User = {
   coords: [100, 200] as const,
 };
 
-const pathProxy = proxy.friends[0].tags[1];
-type X1 = typeof pathProxy;
-//   ^?
-type X2 = X1[typeof resolverCall];
-//   ^?
-
-const path = builder.buildFromProxy(pathProxy);
+const path = builder.buildFromProxy((data) => data.friends[0].tags[1]);
 //    ^?
 const value = FieldPath.getValue(data, path);
 //    ^?
+console.log(path, "=", value);
 
-const path2 = builder.buildFromPathString("friends[0].tags[0]");
+const path2 = builder.buildFromStringPath("friends[0].tags[0]");
 //    ^?
 const value2 = FieldPath.getValue(data, path2);
 //    ^?
+console.log(path2, "=", value2);
 
-const path3 = builder.buildFromPathString("coords[0]");
+const path3 = builder.buildFromStringPath("coords[0]");
 //    ^?
 const value3 = FieldPath.getValue(data, path3);
+console.log(path3, "=", value3);
 
-const path4 = builder.buildFromPathString("coords[1]");
+const path4 = builder.buildFromStringPath("coords[1]");
 //    ^?
 const value4 = FieldPath.getValue(data, path4);
 //    ^?
-
-console.log(pathProxy, "=", value);
-console.log(path2, "=", value2);
+console.log(path4, "=", value4);
 
 type Shape = {
   user?: {
