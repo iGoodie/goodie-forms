@@ -141,67 +141,65 @@ export class FieldPathBuilder<TShape extends object> {
     return current;
   }
 
-  public resolve<TProxy extends FieldPathBuilder.Proxy<any, any>>(
-    pathProxy: TProxy
-  ): TProxy[typeof resolverCall] {
-    return pathProxy[resolverCall];
-  }
-
   public createPathProxy() {
     return FieldPathBuilder.wrap<TShape, []>([]);
   }
 
-  public createPathFromString() {
-    return <TStrPath extends FieldPath.StringPaths<TShape>>(
-      stringPath: TStrPath
-    ): FieldPath.ParseStringPath<TStrPath> => {
-      const result: Array<string | number> = [];
+  public buildFromPathString<TStrPath extends FieldPath.StringPaths<TShape>>(
+    stringPath: TStrPath
+  ) {
+    const result: Array<string | number> = [];
 
-      let i = 0;
+    let i = 0;
 
-      while (i < stringPath.length) {
-        const char = stringPath[i];
+    while (i < stringPath.length) {
+      const char = stringPath[i];
 
-        // dot separator
-        if (char === ".") {
-          i++;
-          continue;
-        }
-
-        // bracket index: [123]
-        if (char === "[") {
-          i++; // skip '['
-          let num = "";
-
-          while (i < stringPath.length && stringPath[i] !== "]") {
-            num += stringPath[i];
-            i++;
-          }
-
-          i++; // skip ']'
-
-          if (!num || !/^\d+$/.test(num)) {
-            throw new Error(`Invalid array index in path: ${stringPath}`);
-          }
-
-          result.push(num);
-          continue;
-        }
-
-        // identifier
-        let key = "";
-        while (i < stringPath.length && /[^\.\[]/.test(stringPath[i])) {
-          key += stringPath[i];
-          i++;
-        }
-
-        if (key) {
-          result.push(key);
-        }
+      // dot separator
+      if (char === ".") {
+        i++;
+        continue;
       }
 
-      return result as FieldPath.ParseStringPath<TStrPath>;
-    };
+      // bracket index: [123]
+      if (char === "[") {
+        i++; // skip '['
+        let num = "";
+
+        while (i < stringPath.length && stringPath[i] !== "]") {
+          num += stringPath[i];
+          i++;
+        }
+
+        i++; // skip ']'
+
+        if (!num || !/^\d+$/.test(num)) {
+          throw new Error(`Invalid array index in path: ${stringPath}`);
+        }
+
+        result.push(num);
+        continue;
+      }
+
+      // identifier
+      let key = "";
+      while (i < stringPath.length && /[^\.\[]/.test(stringPath[i])) {
+        key += stringPath[i];
+        i++;
+      }
+
+      if (key) {
+        result.push(key);
+      }
+    }
+
+    return result as FieldPath.ParseStringPath<TStrPath>;
+  }
+
+  public buildFromProxy<TProxy extends FieldPathBuilder.Proxy<any, any>>(
+    pathProxy: TProxy
+  ): TProxy[typeof resolverCall] {
+    return pathProxy[resolverCall];
   }
 }
 
@@ -221,7 +219,6 @@ interface User {
 
 const builder = new FieldPathBuilder<User>();
 const proxy = builder.createPathProxy();
-const pathFromString = builder.createPathFromString();
 
 const data: User = {
   name: "",
@@ -235,14 +232,14 @@ type X1 = typeof pathProxy;
 type X2 = X1[typeof resolverCall];
 //   ^?
 
-const path = builder.resolve(pathProxy);
+const path = builder.buildFromProxy(pathProxy);
 //    ^?
 const value = FieldPathBuilder.getValue(data, path);
 //    ^?
 
-const path2 = pathFromString("friends[0].tags[0]");
+const path2 = builder.buildFromPathString("friends[0].tags[0]");
 //    ^?
-const value2 = FieldPathBuilder.getValue(data, path);
+const value2 = FieldPathBuilder.getValue(data, path2);
 //    ^?
 
 console.log(pathProxy, "=", value);
