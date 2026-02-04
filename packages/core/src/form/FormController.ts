@@ -335,9 +335,7 @@ formController.events.on("valueChanged", (fieldPath, value) => {
   //                                                 ^?
 });
 
-const path1 = fieldPathBuilder.fromProxy(
-  (data) => data.friends[0].tags[99],
-);
+const path1 = fieldPathBuilder.fromProxy((data) => data.friends[0].tags[99]);
 const field1 = formController.getField(path1);
 
 const path2 = fieldPathBuilder.fromStringPath("coords[1]");

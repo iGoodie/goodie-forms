@@ -72,7 +72,7 @@ export class FormField<TOutput extends object, TValue> {
       for (let i = ascendantFields.length - 1; i >= 0; i--) {
         const field = ascendantFields[i];
         if (field == null) continue;
-        this.controller.events.emit("fieldTouchUpdated", field.stringPath);
+        this.controller.events.emit("fieldTouchUpdated", field.path);
       }
     }
   }
@@ -86,7 +86,7 @@ export class FormField<TOutput extends object, TValue> {
       for (let i = ascendantFields.length - 1; i >= 0; i--) {
         const field = ascendantFields[i];
         if (field == null) continue;
-        this.controller.events.emit("fieldDirtyUpdated", field.stringPath);
+        this.controller.events.emit("fieldDirtyUpdated", field.path);
       }
     }
   }
@@ -94,9 +94,9 @@ export class FormField<TOutput extends object, TValue> {
   bindElement(el: HTMLElement | undefined) {
     this.target = el;
     if (el != null) {
-      this.controller.events.emit("elementBound", this.stringPath, el);
+      this.controller.events.emit("elementBound", this.path, el);
     } else {
-      this.controller.events.emit("elementUnbound", this.stringPath);
+      this.controller.events.emit("elementUnbound", this.path);
     }
   }
 
@@ -152,7 +152,7 @@ export class FormField<TOutput extends object, TValue> {
         const field = ascendantFields[i];
         this.controller.events.emit(
           "valueChanged",
-          field.stringPath,
+          field.path,
           newValues[i],
           oldValues[i],
         );

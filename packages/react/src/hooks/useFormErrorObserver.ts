@@ -1,4 +1,3 @@
-import { Field } from "@goodie-forms/core";
 import { useEffect } from "react";
 import { composeFns } from "../utils/composeFns";
 import { groupBy } from "../utils/groupBy";
@@ -7,12 +6,12 @@ import { useRenderControl } from "./useRenderControl";
 
 export function useFormErrorObserver<
   TShape extends object,
-  TInclude extends Field.Paths<TShape>[] | undefined
+  TInclude extends Field.Paths<TShape>[] | undefined,
 >(
   form: UseForm<TShape>,
   options?: {
     include?: TInclude;
-  }
+  },
 ) {
   const renderControl = useRenderControl();
 
@@ -23,7 +22,7 @@ export function useFormErrorObserver<
   });
 
   const observedIssues = groupBy(filteredIssues, (issue) =>
-    Field.parsePath(issue.path!)
+    Field.parsePath(issue.path!),
   );
 
   useEffect(() => {
@@ -34,7 +33,7 @@ export function useFormErrorObserver<
         if (options?.include?.includes?.(path) ?? true) {
           renderControl.forceRerender();
         }
-      })
+      }),
     );
   }, []);
 

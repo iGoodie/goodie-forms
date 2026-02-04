@@ -27,8 +27,6 @@ export function useFormField<
 
     setField(form.controller.getField(path));
 
-    const stringPath = FieldPath.toStringPath(path);
-
     return composeFns(
       events.on("fieldBound", (_path) => {
         if (!FieldPath.equals(_path, path)) return;

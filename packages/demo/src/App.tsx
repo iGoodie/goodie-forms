@@ -1,12 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { FormController } from "@goodie-forms/core";
-import {
-  useForm,
-  useFormField,
-  useFormValuesObserver,
-  useRenderControl,
-} from "@goodie-forms/react";
+import { useForm, useFormField, useRenderControl } from "@goodie-forms/react";
 import z from "zod";
 import { FormDebug } from "./FormDebug";
 import { SimpleField } from "./SimpleField";
@@ -22,7 +17,7 @@ function vanillaTest() {
     async (data, event) => {
       //         ^?
       console.log("Infers type of event correctly", event);
-    }
+    },
   );
 }
 
@@ -136,7 +131,7 @@ function App() {
     {
       validateMode: "onChange",
       revalidateMode: "onChange",
-    }
+    },
   );
 
   // const nameField = useFormField(form, "name");
@@ -153,7 +148,10 @@ function App() {
   //   include: ["inventory"],
   // });
 
-  const inventoryField = useFormField(form, "inventory");
+  const inventoryField = useFormField(
+    form,
+    form.paths.fromStringPath("inventory"),
+  );
 
   // const inventoryValues = useFormValuesObserver(form, {
   //   include: ["inventory.contents"],
@@ -177,10 +175,10 @@ function App() {
     },
     async (issues, event) => {
       console.log(
-        "Form has issues: " + issues.map((i) => i.message).join(", ")
+        "Form has issues: " + issues.map((i) => i.message).join(", "),
       );
       console.log(event);
-    }
+    },
   );
 
   // useEffect(() => {
@@ -200,8 +198,8 @@ function App() {
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <SimpleField
-          form={form.controller._data}
-          path="name"
+          form={form}
+          path={form.paths.fromStringPath("name")}
           label="User Name"
           defaultValue="foo"
           render={({ ref, value, handlers }) => (
@@ -218,7 +216,7 @@ function App() {
 
         <SimpleField
           form={form}
-          path="surname"
+          path={form.paths.fromStringPath("surname")}
           label="User Lastname"
           defaultValue=""
           render={({ ref, value, handlers, field }) => (
@@ -245,7 +243,7 @@ function App() {
           {!hidden && (
             <SimpleField
               form={form}
-              path="address"
+              path={form.paths.fromStringPath("address")}
               label="Address"
               defaultValue={{ city: "Foo", street: "Sesame Street" }}
               render={({ ref, value, handlers, field }) => (
@@ -292,7 +290,7 @@ function App() {
 
         <SimpleField
           form={form}
-          path="inventory"
+          path={form.paths.fromStringPath("inventory")}
           label="Inventory"
           defaultValue={() => new Inventory()}
           render={({ ref, value, handlers, field }) => (
@@ -323,7 +321,7 @@ function App() {
                   onClick={() => {
                     field.modifyValue((inventory) => {
                       inventory!.contents.splice(
-                        inventory!.contents.length - 1
+                        inventory!.contents.length - 1,
                       );
                     });
                     field.triggerValidation();
@@ -358,7 +356,7 @@ function App() {
           <SimpleField
             key={i}
             form={form}
-            path={`inventory.contents[${i}]`}
+            path={form.paths.fromStringPath(`inventory.contents[${i}]`)}
             label={`Inventory Item #${i + 1}`}
             defaultValue={() => "Sword"}
             overrideInitialValue={false}

@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/refs */
 
-import { type Field } from "@goodie-forms/core";
+import type { FieldPath } from "@goodie-forms/core";
 import {
   FieldRenderer,
   useFormField,
@@ -9,16 +9,16 @@ import {
 import { useId, useRef } from "react";
 
 type Props<
-  TShape extends object,
-  TPath extends Field.Paths<TShape>
-> = FieldRendererProps<TShape, TPath> & {
+  TOutput extends object,
+  TPath extends FieldPath.Segments,
+> = FieldRendererProps<TOutput, TPath> & {
   label: string;
 };
 
 export function SimpleField<
-  TShape extends object,
-  TPath extends Field.Paths<TShape>
->(props: Props<TShape, TPath>) {
+  TOutput extends object,
+  TPath extends FieldPath.Segments,
+>(props: Props<TOutput, TPath>) {
   const id = useId();
 
   const field = useFormField(props.form, props.path);
@@ -35,10 +35,10 @@ export function SimpleField<
           !field?.isValid
             ? "text-red-400"
             : field?.isDirty
-            ? "text-orange-300"
-            : field.isTouched
-            ? "text-blue-200"
-            : ""
+              ? "text-orange-300"
+              : field.isTouched
+                ? "text-blue-200"
+                : ""
         }
       >
         {props.label}{" "}
