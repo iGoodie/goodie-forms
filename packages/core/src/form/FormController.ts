@@ -10,9 +10,9 @@ import { ensureImmerability } from "../utils/ensureImmerability";
 import { removeBy } from "../utils/removeBy";
 
 export namespace FormController {
-  export type Configs<TShape extends object> = {
-    initialData?: DeepPartial<TShape>;
-    validationSchema?: StandardSchemaV1<unknown, TShape>;
+  export type Configs<TOutput extends object> = {
+    initialData?: DeepPartial<TOutput>;
+    validationSchema?: StandardSchemaV1<unknown, TOutput>;
     equalityComparators?: Record<any, (a: any, b: any) => boolean>;
   };
 
@@ -21,10 +21,10 @@ export namespace FormController {
   }
 
   export type SubmitSuccessHandler<
-    TShape extends object,
+    TOutput extends object,
     TEvent extends PreventableEvent,
   > = (
-    data: TShape,
+    data: TOutput,
     event: TEvent,
     abortSignal: AbortSignal,
   ) => void | Promise<void>;
