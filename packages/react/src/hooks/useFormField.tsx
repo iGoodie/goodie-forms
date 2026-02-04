@@ -1,16 +1,16 @@
-import { Field } from "@goodie-forms/core";
+import { FieldPath } from "@goodie-forms/core";
 import { useEffect, useState } from "react";
 import { UseForm } from "../hooks/useForm";
 import { useRenderControl } from "../hooks/useRenderControl";
 import { composeFns } from "../utils/composeFns";
 
 export function useFormField<
-  TShape extends object,
-  TPath extends Field.Paths<TShape>
+  TOutput extends object,
+  TPath extends FieldPath.Segments,
 >(
-  form: UseForm<TShape>,
+  form: UseForm<TOutput>,
   path: TPath,
-  bindingConfig?: Parameters<typeof form.controller.bindField<TPath>>[1]
+  bindingConfig?: Parameters<typeof form.controller.bindField<TPath>>[1],
 ) {
   const renderControl = useRenderControl();
 
@@ -27,27 +27,37 @@ export function useFormField<
 
     setField(form.controller.getField(path));
 
+    const stringPath = FieldPath.toStringPath(path);
+
     return composeFns(
       events.on("fieldBound", (_path) => {
-        if (_path === path) setField(form.controller.getField(path));
+        if (!FieldPath.equals(_path, path)) return;
+        setField(form.controller.getField(path));
       }),
       events.on("fieldUnbound", (_path) => {
-        if (_path === path) setField(undefined);
+        if (!FieldPath.equals(_path, path)) return;
+        setField(undefined);
       }),
       events.on("valueChanged", (changedPath) => {
-        if (changedPath === path || Field.isDescendant(changedPath, path)) {
+        if (
+          FieldPath.equals(changedPath, path) ||
+          FieldPath.isDescendant(changedPath, path)
+        ) {
           renderControl.forceRerender();
         }
       }),
       events.on("fieldTouchUpdated", (_path) => {
-        if (_path === path) renderControl.forceRerender();
+        if (!FieldPath.equals(_path, path)) return;
+        renderControl.forceRerender();
       }),
       events.on("fieldDirtyUpdated", (_path) => {
-        if (_path === path) renderControl.forceRerender();
+        if (!FieldPath.equals(_path, path)) return;
+        renderControl.forceRerender();
       }),
       events.on("fieldIssuesUpdated", (_path) => {
-        if (_path === path) renderControl.forceRerender();
-      })
+        if (!FieldPath.equals(_path, path)) return;
+        renderControl.forceRerender();
+      }),
     );
   }, []);
 

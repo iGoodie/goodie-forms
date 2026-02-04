@@ -1,18 +1,19 @@
-import { FormController, type Form } from "@goodie-forms/core";
+import { FieldPathBuilder, FormController } from "@goodie-forms/core";
 import { useEffect, useState } from "react";
-import { composeFns } from "../utils/composeFns";
 import { useRenderControl } from "../hooks/useRenderControl";
+import { composeFns } from "../utils/composeFns";
 
-export function useForm<TShape extends object>(
-  formConfigs: Form.FormConfigs<TShape>,
+export function useForm<TOutput extends object>(
+  formConfigs: FormController.Configs<TOutput>,
   hookConfigs?: {
     validateMode?: "onChange" | "onBlur" | "onSubmit";
     revalidateMode?: "onChange" | "onBlur" | "onSubmit";
     watchIssues?: boolean;
     watchValues?: boolean;
-  }
+  },
 ) {
   const [controller] = useState(() => new FormController(formConfigs));
+  const [paths] = useState(() => new FieldPathBuilder<TOutput>());
 
   const renderControl = useRenderControl();
 
@@ -25,31 +26,25 @@ export function useForm<TShape extends object>(
       }),
       hookConfigs?.watchIssues
         ? controller.events.on("fieldIssuesUpdated", () =>
-            renderControl.forceRerender()
+            renderControl.forceRerender(),
           )
         : noop,
       hookConfigs?.watchValues
         ? controller.events.on("valueChanged", () =>
-            renderControl.forceRerender()
+            renderControl.forceRerender(),
           )
-        : noop
+        : noop,
     );
   }, [controller]);
 
   return {
     formConfigs,
+    paths,
     hookConfigs,
     controller,
-  } as UseForm<TShape>;
+  };
 }
 
-export type UseForm<TShape extends object> = {
-  formConfigs: Form.FormConfigs<TShape>;
-  hookConfigs?: {
-    validateMode?: "onChange" | "onBlur" | "onSubmit";
-    revalidateMode?: "onChange" | "onBlur" | "onSubmit";
-    watchIssues?: boolean;
-    watchValues?: boolean;
-  };
-  controller: FormController<TShape>;
-};
+export type UseForm<TOutput extends object> = ReturnType<
+  typeof useForm<TOutput>
+>;

@@ -3,24 +3,25 @@ import { FieldPath } from "./FieldPath";
 const resolverCall = Symbol("PathResolver");
 
 export namespace FieldPathBuilder {
-  export type Proxy<
-    TObject,
-    TPath extends readonly PropertyKey[],
-  > = TObject extends readonly (infer E)[]
-    ? {
-        [K in number]: Proxy<E, [...TPath, K]>;
-      } & {
-        [resolverCall]: TPath;
-      }
-    : TObject extends object
+  export type Proxy<TObject, TPath extends readonly PropertyKey[]> =
+    NonNullable<TObject> extends readonly (infer E)[]
       ? {
-          [K in keyof TObject]-?: Proxy<TObject[K], [...TPath, K]>;
+          [K in number]: Proxy<NonNullable<E>, [...TPath, K]>;
         } & {
           [resolverCall]: TPath;
         }
-      : {
-          [resolverCall]: TPath;
-        };
+      : NonNullable<TObject> extends object
+        ? {
+            [K in keyof TObject]-?: Proxy<
+              NonNullable<TObject[K]>,
+              [...TPath, K]
+            >;
+          } & {
+            [resolverCall]: TPath;
+          }
+        : {
+            [resolverCall]: TPath;
+          };
 }
 
 export class FieldPathBuilder<TOutput extends object> {
@@ -43,7 +44,7 @@ export class FieldPathBuilder<TOutput extends object> {
     }) as any;
   }
 
-  public buildFromStringPath<TStrPath extends FieldPath.StringPaths<TOutput>>(
+  public fromStringPath<TStrPath extends FieldPath.StringPaths<TOutput>>(
     stringPath: TStrPath,
   ) {
     return FieldPath.fromStringPath(
@@ -53,7 +54,7 @@ export class FieldPathBuilder<TOutput extends object> {
       : FieldPath.ParseStringPath<TStrPath>;
   }
 
-  public buildFromProxy<TProxy extends FieldPathBuilder.Proxy<any, any>>(
+  public fromProxy<TProxy extends FieldPathBuilder.Proxy<any, any>>(
     consumer: (data: FieldPathBuilder.Proxy<TOutput, []>) => TProxy,
   ): TProxy[typeof resolverCall] {
     return consumer(FieldPathBuilder.wrap<TOutput, []>([]))[resolverCall];
@@ -84,24 +85,24 @@ const data: User = {
   coords: [100, 200] as const,
 };
 
-const path = builder.buildFromProxy((data) => data.friends[0].tags[1]);
+const path = builder.fromProxy((data) => data.friends[0].tags[1]);
 //    ^?
 const value = FieldPath.getValue(data, path);
 //    ^?
 console.log(path, "=", value);
 
-const path2 = builder.buildFromStringPath("friends[0].tags[0]");
+const path2 = builder.fromStringPath("friends[0].tags[0]");
 //    ^?
 const value2 = FieldPath.getValue(data, path2);
 //    ^?
 console.log(path2, "=", value2);
 
-const path3 = builder.buildFromStringPath("coords[0]");
+const path3 = builder.fromStringPath("coords[0]");
 //    ^?
 const value3 = FieldPath.getValue(data, path3);
 console.log(path3, "=", value3);
 
-const path4 = builder.buildFromStringPath("coords[1]");
+const path4 = builder.fromStringPath("coords[1]");
 //    ^?
 const value4 = FieldPath.getValue(data, path4);
 //    ^?

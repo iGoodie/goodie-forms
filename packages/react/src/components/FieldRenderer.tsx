@@ -1,4 +1,9 @@
-import { Field, FormField, NonnullFormField } from "@goodie-forms/core";
+import {
+  FieldPath,
+  FieldPathBuilder,
+  FormField,
+  NonnullFormField,
+} from "@goodie-forms/core";
 import {
   ChangeEvent,
   FocusEvent,
@@ -6,20 +11,16 @@ import {
   Ref,
   useEffect,
   useRef,
+  useState,
 } from "react";
-import { UseForm } from "../hooks/useForm";
+import { useForm, UseForm } from "../hooks/useForm";
 import { useFormField } from "../hooks/useFormField";
 import { composeFns } from "../utils/composeFns";
 
-type ShapeOf<TForm> = TForm extends UseForm<infer TShape> ? TShape : never;
-
-export interface RenderParams<
-  TShape extends object,
-  TPath extends Field.Paths<TShape>
-> {
+export interface RenderParams<TOutput extends object, TValue> {
   ref: Ref<any | null>;
-  
-  value: Field.GetValue<TShape, TPath> | undefined;
+
+  value: TValue | undefined;
 
   handlers: {
     onChange: (event: ChangeEvent<EventTarget>) => void;
@@ -27,9 +28,9 @@ export interface RenderParams<
     onBlur: (event: FocusEvent) => void;
   };
 
-  field: undefined extends Field.GetValue<TShape, TPath>
-    ? FormField<TShape, TPath>
-    : NonnullFormField<TShape, TPath>;
+  field: undefined extends TValue
+    ? FormField<TOutput, TValue>
+    : NonnullFormField<TOutput, TValue>;
 }
 
 type DefaultValueProps<TValue> = undefined extends TValue
@@ -37,20 +38,24 @@ type DefaultValueProps<TValue> = undefined extends TValue
   : { defaultValue: TValue | (() => TValue) };
 
 export type FieldRendererProps<
-  TForm extends UseForm<any>,
-  TPath extends Field.Paths<ShapeOf<TForm>>
+  TOutput extends object,
+  TPath extends FieldPath.Segments,
 > = {
-  form: TForm;
+  form: UseForm<TOutput>;
   path: TPath;
   overrideInitialValue?: boolean;
   unbindOnUnmount?: boolean;
-  render: (params: RenderParams<ShapeOf<TForm>, TPath>) => ReactNode;
-} & DefaultValueProps<Field.GetValue<ShapeOf<TForm>, TPath>>;
+  render: (
+    params: RenderParams<TOutput, FieldPath.Resolve<TOutput, NoInfer<TPath>>>,
+  ) => ReactNode;
+} & DefaultValueProps<FieldPath.Resolve<TOutput, NoInfer<TPath>>>;
 
 export function FieldRenderer<
-  TForm extends UseForm<any>,
-  TPath extends Field.Paths<ShapeOf<TForm>>
->(props: FieldRendererProps<TForm, TPath>) {
+  TOutput extends object,
+  const TPath extends FieldPath.Segments,
+>(props: FieldRendererProps<TOutput, TPath>) {
+  type TValue = FieldPath.Resolve<TOutput, TPath>;
+
   const elementRef = useRef<HTMLElement>(null);
 
   const field = useFormField(props.form, props.path, {
@@ -61,13 +66,13 @@ export function FieldRenderer<
         : props.defaultValue,
   })!;
 
-  const handlers: RenderParams<ShapeOf<TForm>, TPath>["handlers"] = {
+  const handlers: RenderParams<TOutput, TValue>["handlers"] = {
     onChange(event) {
       const { target } = event;
       if (target !== field.boundElement) return;
       if (!("value" in target)) return;
       if (typeof target.value !== "string") return;
-      field.setValue(target.value as Field.GetValue<ShapeOf<TForm>, TPath>, {
+      field.setValue(target.value as TValue, {
         shouldTouch: true,
         shouldMarkDirty: true,
       });
@@ -89,13 +94,18 @@ export function FieldRenderer<
     const { events } = props.form.controller;
 
     return composeFns(
-      events.on("valueChanged", (path) => {
-        if (path !== props.path && !Field.isDescendant(path, props.path))
+      events.on("valueChanged", (_path) => {
+        if (
+          !FieldPath.equals(_path, props.path) &&
+          !FieldPath.isDescendant(_path, props.path)
+        ) {
           return;
+        }
+
         if (props.form.hookConfigs?.validateMode === "onChange") {
           props.form.controller.validateField(props.path);
         }
-      })
+      }),
     );
   }, []);
 
@@ -117,6 +127,46 @@ export function FieldRenderer<
         handlers: handlers,
         field: field as any,
       })}
+    </>
+  );
+}
+
+/* ---- TESTS ---------------- */
+
+function TestComp() {
+  const form = useForm<{ a?: { b: 99 } }>({});
+
+  const jsx = (
+    <>
+      <FieldRenderer
+        form={form}
+        path={form.paths.fromProxy((data) => data.a.b)}
+        defaultValue={() => 99 as const}
+        render={({ ref, value, handlers, field }) => {
+          //            ^?
+          return <></>;
+        }}
+      />
+
+      {/* defaultField olmayabilir, çünkü "a" nullable */}
+      <FieldRenderer
+        form={form}
+        path={form.paths.fromProxy((data) => data.a)}
+        render={({ ref, value, handlers, field }) => {
+          //            ^?
+          return <></>;
+        }}
+      />
+
+      <FieldRenderer
+        form={form}
+        path={form.paths.fromStringPath("a.b")}
+        defaultValue={() => 99 as const}
+        render={({ ref, value, handlers, field }) => {
+          //            ^?
+          return <></>;
+        }}
+      />
     </>
   );
 }

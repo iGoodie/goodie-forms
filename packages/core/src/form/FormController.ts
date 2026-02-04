@@ -52,16 +52,16 @@ export class FormController<TOutput extends object> {
     submissionStatusChange(isSubmitting: boolean): void;
     validationStatusChange(isValidating: boolean): void;
 
-    fieldBound(fieldPath: string): void;
-    fieldUnbound(fieldPath: string): void;
-    fieldTouchUpdated(path: string): void;
-    fieldDirtyUpdated(path: string): void;
-    fieldIssuesUpdated(fieldPath: string): void;
-    elementBound(fieldPath: string, el: HTMLElement): void;
-    elementUnbound(fieldPath: string): void;
-    validationTriggered(fieldPath: string): void;
+    fieldBound(fieldPath: FieldPath.Segments): void;
+    fieldUnbound(fieldPath: FieldPath.Segments): void;
+    fieldTouchUpdated(path: FieldPath.Segments): void;
+    fieldDirtyUpdated(path: FieldPath.Segments): void;
+    fieldIssuesUpdated(fieldPath: FieldPath.Segments): void;
+    elementBound(fieldPath: FieldPath.Segments, el: HTMLElement): void;
+    elementUnbound(fieldPath: FieldPath.Segments): void;
+    validationTriggered(fieldPath: FieldPath.Segments): void;
     valueChanged(
-      fieldPath: string,
+      fieldPath: FieldPath.Segments,
       newValue: {} | undefined,
       oldValue: {} | undefined,
     ): void;
@@ -153,15 +153,15 @@ export class FormController<TOutput extends object> {
     }
 
     this._fields.set(field.stringPath, field);
-    this.events.emit("fieldBound", field.stringPath);
+    this.events.emit("fieldBound", field.path);
 
-    return field;
+    return field as FormField<TOutput, FieldPath.Resolve<TOutput, TPath>>;
   }
 
   unbindField(path: FieldPath.Segments) {
     const stringPath = FieldPath.toStringPath(path);
     this._fields.delete(stringPath);
-    this.events.emit("fieldUnbound", stringPath);
+    this.events.emit("fieldUnbound", path);
   }
 
   // TODO: Add an option to keep dirty/touched fields as they are
@@ -223,7 +223,7 @@ export class FormController<TOutput extends object> {
     diff.added.forEach((issue) => this._issues.push(issue));
 
     if (diff.added.length !== 0 || diff.removed.length !== 0) {
-      this.events.emit("fieldIssuesUpdated", FieldPath.toStringPath(path));
+      this.events.emit("fieldIssuesUpdated", path);
     }
   }
 
@@ -240,7 +240,7 @@ export class FormController<TOutput extends object> {
       this._data,
     );
 
-    this.events.emit("validationTriggered", FieldPath.toStringPath(path));
+    this.events.emit("validationTriggered", path);
     this.applyValidation(result, path);
 
     this.setValidating(false);
@@ -259,7 +259,7 @@ export class FormController<TOutput extends object> {
 
     for (const stringPath of this._fields.keys()) {
       const path = FieldPath.fromStringPath(stringPath);
-      this.events.emit("validationTriggered", stringPath);
+      this.events.emit("validationTriggered", path);
       this.applyValidation(result, path);
     }
 
@@ -335,10 +335,10 @@ formController.events.on("valueChanged", (fieldPath, value) => {
   //                                                 ^?
 });
 
-const path1 = fieldPathBuilder.buildFromProxy(
+const path1 = fieldPathBuilder.fromProxy(
   (data) => data.friends[0].tags[99],
 );
 const field1 = formController.getField(path1);
 
-const path2 = fieldPathBuilder.buildFromStringPath("coords[1]");
+const path2 = fieldPathBuilder.fromStringPath("coords[1]");
 const field2 = formController.getField(path2);

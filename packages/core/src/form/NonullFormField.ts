@@ -1,17 +1,11 @@
-import { Field } from "../form/Field";
-import { FormField } from "./+FormField";
+import { FormField } from "./FormField";
 import { Mixin } from "../types/Mixin";
 
-export type NonnullFormField<
-  TShape extends object,
-  TPath extends Field.Paths<TShape>,
-> = Mixin<
-  FormField<TShape, TPath>,
+export type NonnullFormField<TOutput extends object, TValue> = Mixin<
+  FormField<TOutput, TValue>,
   {
     modifyValue: (
-      modifier: (
-        currentValue: Field.GetValue<TShape, TPath>,
-      ) => Field.GetValue<TShape, TPath> | void,
+      modifier: (currentValue: TValue) => TValue | void,
       opts?: {
         shouldTouch?: boolean;
         shouldMarkDirty?: boolean;
