@@ -28,14 +28,14 @@ export class FormField<
   }
 
   get value(): Field.GetValue<TShape, TPath> | undefined {
-    return Field.getValue<TShape, TPath>(
+    return Field._getValue<TShape, TPath>(
       this.controller._data as TShape,
       this.path
     );
   }
 
   get initialValue(): Field.GetValue<TShape, TPath> | undefined {
-    return Field.getValue<TShape, TPath>(
+    return Field._getValue<TShape, TPath>(
       this.controller._initialData as TShape,
       this.path
     );

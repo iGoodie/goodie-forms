@@ -134,16 +134,16 @@ export class FormController<TShape extends object> {
       overrideInitialValue?: boolean;
     }
   ) {
-    let currentValue = Field.getValue(this._data as TShape, path);
+    let currentValue = Field._getValue(this._data as TShape, path);
 
     if (currentValue == null && config?.defaultValue != null) {
       this._unsafeSetFieldValue(path, config.defaultValue, {
         updateInitialValue: config.overrideInitialValue,
       });
-      currentValue = Field.getValue(this._data as TShape, path);
+      currentValue = Field._getValue(this._data as TShape, path);
     }
 
-    const initialValue = Field.getValue(this._initialData as TShape, path);
+    const initialValue = Field._getValue(this._initialData as TShape, path);
 
     const field = new FormField(this, path, {
       isDirty: !Field.deepEqual(currentValue, initialValue),

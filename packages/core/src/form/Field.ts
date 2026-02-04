@@ -1,5 +1,8 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
 
+/** @deprecated This approach has performance issues.
+ * Switching to proxy based path declaration,
+ * so TPath is not carried anywhere other than path declaring time. */
 export namespace Field {
   type Unfoldable<T> = T & { _____foldMark?: never } & {};
 
@@ -251,7 +254,7 @@ export namespace Field {
     return true;
   }
 
-  export function getValue<
+  export function _getValue<
     TShape extends object,
     TPath extends Field.Paths<TShape>
   >(data: TShape, path: TPath): Field.GetValue<TShape, TPath> | undefined {
@@ -262,6 +265,20 @@ export namespace Field {
     let current: any = data;
 
     for (const pathFragment of pathFragments) {
+      if (current == null) return undefined;
+      current = current[pathFragment];
+    }
+
+    return current;
+  }
+
+  export function getValue<TShape extends object, TPath extends PropertyKey[]>(
+    data: TShape,
+    path: TPath
+  ) {
+    let current: any = data;
+
+    for (const pathFragment of path) {
       if (current == null) return undefined;
       current = current[pathFragment];
     }

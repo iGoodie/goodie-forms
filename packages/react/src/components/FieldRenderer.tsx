@@ -11,12 +11,14 @@ import { UseForm } from "../hooks/useForm";
 import { useFormField } from "../hooks/useFormField";
 import { composeFns } from "../utils/composeFns";
 
+type ShapeOf<TForm> = TForm extends UseForm<infer TShape> ? TShape : never;
+
 export interface RenderParams<
   TShape extends object,
   TPath extends Field.Paths<TShape>
 > {
   ref: Ref<any | null>;
-
+  
   value: Field.GetValue<TShape, TPath> | undefined;
 
   handlers: {
@@ -35,20 +37,20 @@ type DefaultValueProps<TValue> = undefined extends TValue
   : { defaultValue: TValue | (() => TValue) };
 
 export type FieldRendererProps<
-  TShape extends object,
-  TPath extends Field.Paths<TShape>
+  TForm extends UseForm<any>,
+  TPath extends Field.Paths<ShapeOf<TForm>>
 > = {
-  form: UseForm<TShape>;
+  form: TForm;
   path: TPath;
   overrideInitialValue?: boolean;
   unbindOnUnmount?: boolean;
-  render: (params: RenderParams<TShape, TPath>) => ReactNode;
-} & DefaultValueProps<Field.GetValue<TShape, TPath>>;
+  render: (params: RenderParams<ShapeOf<TForm>, TPath>) => ReactNode;
+} & DefaultValueProps<Field.GetValue<ShapeOf<TForm>, TPath>>;
 
 export function FieldRenderer<
-  TShape extends object,
-  TPath extends Field.Paths<TShape>
->(props: FieldRendererProps<TShape, TPath>) {
+  TForm extends UseForm<any>,
+  TPath extends Field.Paths<ShapeOf<TForm>>
+>(props: FieldRendererProps<TForm, TPath>) {
   const elementRef = useRef<HTMLElement>(null);
 
   const field = useFormField(props.form, props.path, {
@@ -59,13 +61,13 @@ export function FieldRenderer<
         : props.defaultValue,
   })!;
 
-  const handlers: RenderParams<TShape, TPath>["handlers"] = {
+  const handlers: RenderParams<ShapeOf<TForm>, TPath>["handlers"] = {
     onChange(event) {
       const { target } = event;
       if (target !== field.boundElement) return;
       if (!("value" in target)) return;
       if (typeof target.value !== "string") return;
-      field.setValue(target.value as Field.GetValue<TShape, TPath>, {
+      field.setValue(target.value as Field.GetValue<ShapeOf<TForm>, TPath>, {
         shouldTouch: true,
         shouldMarkDirty: true,
       });

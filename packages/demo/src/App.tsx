@@ -200,7 +200,7 @@ function App() {
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <SimpleField
-          form={form}
+          form={form.controller._data}
           path="name"
           label="User Name"
           defaultValue="foo"
