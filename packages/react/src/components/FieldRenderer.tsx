@@ -62,7 +62,7 @@ export function FieldRenderer<
       onChange(arg) {
         let newValue: TValue;
 
-        if ("target" in arg) {
+        if (typeof arg === "object" && "target" in arg) {
           const { target } = arg;
           if (target !== field.boundElement) return;
           if (!("value" in target)) return;
