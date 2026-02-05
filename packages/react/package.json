@@ -1,6 +1,6 @@
 {
   "name": "@goodie-forms/react",
-  "version": "1.2.0-alpha",
+  "version": "1.2.1-alpha",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
