@@ -5,11 +5,11 @@ import { useFormField } from "../hooks/useFormField";
 import { composeFns } from "../utils/composeFns";
 
 export interface RenderParams<TOutput extends object, TValue> {
-  ref: Ref<any | null>;
+  fieldProps: {
+    ref: Ref<any | null>;
 
-  value: TValue | undefined;
+    value: TValue | undefined;
 
-  handlers: {
     onChange: (event: ChangeEvent<EventTarget> | TValue) => void;
     onFocus: () => void;
     onBlur: () => void;
@@ -55,37 +55,43 @@ export function FieldRenderer<
         : props.defaultValue,
   })!;
 
-  const handlers: RenderParams<TOutput, TValue>["handlers"] = {
-    onChange(arg) {
-      let newValue: TValue;
+  const renderedJsx = props.render({
+    fieldProps: {
+      ref: elementRef,
+      value: field.value,
+      onChange(arg) {
+        let newValue: TValue;
 
-      if ("target" in arg) {
-        const { target } = arg;
-        if (target !== field.boundElement) return;
-        if (!("value" in target)) return;
-        if (typeof target.value !== "string") return;
-        newValue = target.value as TValue;
-      } else {
-        newValue = arg;
-      }
+        if ("target" in arg) {
+          const { target } = arg;
+          if (target !== field.boundElement) return;
+          if (!("value" in target)) return;
+          if (typeof target.value !== "string") return;
+          newValue = target.value as TValue;
+        } else {
+          newValue = arg;
+        }
 
-      field.setValue(newValue, {
-        shouldTouch: true,
-        shouldMarkDirty: true,
-      });
+        field.setValue(newValue, {
+          shouldTouch: true,
+          shouldMarkDirty: true,
+        });
+      },
+      onFocus() {
+        field.touch();
+      },
+      onBlur() {
+        if (
+          props.form.hookConfigs?.validateMode === "onBlur" ||
+          props.form.hookConfigs?.validateMode === "onChange"
+        ) {
+          props.form.controller.validateField(props.path);
+        }
+      },
     },
-    onFocus() {
-      field.touch();
-    },
-    onBlur() {
-      if (
-        props.form.hookConfigs?.validateMode === "onBlur" ||
-        props.form.hookConfigs?.validateMode === "onChange"
-      ) {
-        props.form.controller.validateField(props.path);
-      }
-    },
-  };
+    field: field as any,
+    form: props.form,
+  });
 
   useEffect(() => {
     const { events } = props.form.controller;
@@ -116,17 +122,7 @@ export function FieldRenderer<
     };
   }, []);
 
-  return (
-    <>
-      {props.render({
-        ref: elementRef,
-        value: field.value,
-        handlers: handlers,
-        field: field as any,
-        form: props.form,
-      })}
-    </>
-  );
+  return <>{renderedJsx}</>;
 }
 
 /* ---- TESTS ---------------- */
@@ -140,9 +136,9 @@ export function FieldRenderer<
 //         form={form}
 //         path={form.paths.fromProxy((data) => data.a.b)}
 //         defaultValue={() => 99 as const}
-//         render={({ ref, value, handlers, field }) => {
+//         render={({ fieldProps, field }) => {
 //           //            ^?
-//           return <></>;
+//           return <input {...fieldProps} />;
 //         }}
 //       />
 
