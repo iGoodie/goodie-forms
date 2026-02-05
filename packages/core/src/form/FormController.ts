@@ -144,8 +144,10 @@ export class FormController<TOutput extends object> {
 
     const initialValue = FieldPath.getValue(this._initialData as TOutput, path);
 
+    const valueChanged = !Reconsile.deepEqual(currentValue, initialValue);
+
     const field = new FormField(this, path, {
-      isDirty: !Reconsile.deepEqual(currentValue, initialValue),
+      isDirty: valueChanged,
     });
 
     if (config?.domElement != null) {
@@ -154,6 +156,10 @@ export class FormController<TOutput extends object> {
 
     this._fields.set(field.stringPath, field);
     this.events.emit("fieldBound", field.path);
+
+    if (valueChanged) {
+      this.events.emit("valueChanged", field.path, currentValue, initialValue);
+    }
 
     return field as FormField<TOutput, FieldPath.Resolve<TOutput, TPath>>;
   }
