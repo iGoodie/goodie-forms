@@ -202,11 +202,9 @@ function App() {
           path={form.paths.fromStringPath("name")}
           label="User Name"
           defaultValue="foo"
-          render={({ ref, value, handlers }) => (
+          render={({ fieldProps }) => (
             <input
-              ref={ref}
-              {...handlers}
-              value={value}
+              {...fieldProps}
               disabled={form.controller.isSubmitting}
               type="text"
               placeholder="John"
@@ -219,11 +217,9 @@ function App() {
           path={form.paths.fromStringPath("surname")}
           label="User Lastname"
           defaultValue=""
-          render={({ ref, value, handlers, field }) => (
+          render={({ fieldProps, field }) => (
             <input
-              ref={ref}
-              {...handlers}
-              value={value}
+              {...fieldProps}
               disabled={form.controller.isSubmitting}
               onChange={(e) => field.setValue(e.target.value)}
               type="text"
@@ -246,8 +242,8 @@ function App() {
               path={form.paths.fromStringPath("address")}
               label="Address"
               defaultValue={{ city: "Foo", street: "Sesame Street" }}
-              render={({ ref, value, handlers, field }) => (
-                <div ref={ref} {...handlers} className="flex flex-col gap-2">
+              render={({ fieldProps, field }) => (
+                <div {...fieldProps} className="flex flex-col gap-2">
                   <button
                     type="button"
                     disabled={form.controller.isSubmitting}
@@ -262,12 +258,12 @@ function App() {
                   >
                     Random City
                   </button>
-                  <span>City: {value?.city}</span>
+                  <span>City: {fieldProps.value?.city}</span>
 
                   <hr className="border border-gray-700" />
 
                   <select
-                    value={value?.street}
+                    value={fieldProps.value?.street}
                     disabled={form.controller.isSubmitting}
                     onChange={(e) =>
                       field.modifyValue((address) => {
@@ -281,7 +277,7 @@ function App() {
                     <option value="Street #2">Street #3</option>
                     <option value="Invalid">Invalid</option>
                   </select>
-                  <span>Street: {value?.street}</span>
+                  <span>Street: {fieldProps.value?.street}</span>
                 </div>
               )}
             />
@@ -293,10 +289,9 @@ function App() {
           path={form.paths.fromStringPath("inventory")}
           label="Inventory"
           defaultValue={() => new Inventory()}
-          render={({ ref, value, handlers, field }) => (
+          render={({ fieldProps, field }) => (
             <div
-              ref={ref}
-              {...handlers}
+              {...fieldProps}
               className="flex flex-col gap-2 p-2 border rounded-xl border-gray-700 focus-within:border-gray-400"
             >
               <div className="grid grid-cols-2 gap-1">
@@ -347,7 +342,9 @@ function App() {
                   Swap
                 </button>
               </div>
-              <span className="text-wrap">{value?.contents.join(", ")}</span>
+              <span className="text-wrap">
+                {fieldProps.value?.contents.join(", ")}
+              </span>
             </div>
           )}
         />
@@ -361,11 +358,9 @@ function App() {
             defaultValue={() => "Sword"}
             overrideInitialValue={false}
             unbindOnUnmount
-            render={({ ref, value, handlers, field }) => (
+            render={({ fieldProps, field }) => (
               <input
-                ref={ref}
-                {...handlers}
-                value={value ?? ""}
+                {...fieldProps}
                 disabled={form.controller.isSubmitting}
                 onChange={(e) => field.setValue(e.target.value)}
                 type="text"
