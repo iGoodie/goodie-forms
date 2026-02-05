@@ -1,13 +1,6 @@
 import { FieldPath, FormField, NonnullFormField } from "@goodie-forms/core";
-import {
-  ChangeEvent,
-  FocusEvent,
-  ReactNode,
-  Ref,
-  useEffect,
-  useRef,
-} from "react";
-import { useForm, UseForm } from "../hooks/useForm";
+import { ChangeEvent, ReactNode, Ref, useEffect, useRef } from "react";
+import { UseForm } from "../hooks/useForm";
 import { useFormField } from "../hooks/useFormField";
 import { composeFns } from "../utils/composeFns";
 
@@ -17,14 +10,16 @@ export interface RenderParams<TOutput extends object, TValue> {
   value: TValue | undefined;
 
   handlers: {
-    onChange: (event: ChangeEvent<EventTarget>) => void;
-    onFocus: (event: FocusEvent) => void;
-    onBlur: (event: FocusEvent) => void;
+    onChange: (event: ChangeEvent<EventTarget> | TValue) => void;
+    onFocus: () => void;
+    onBlur: () => void;
   };
 
   field: undefined extends TValue
     ? FormField<TOutput, TValue>
     : NonnullFormField<TOutput, TValue>;
+
+  form: UseForm<TOutput>;
 }
 
 type DefaultValueProps<TValue> = undefined extends TValue
@@ -61,12 +56,20 @@ export function FieldRenderer<
   })!;
 
   const handlers: RenderParams<TOutput, TValue>["handlers"] = {
-    onChange(event) {
-      const { target } = event;
-      if (target !== field.boundElement) return;
-      if (!("value" in target)) return;
-      if (typeof target.value !== "string") return;
-      field.setValue(target.value as TValue, {
+    onChange(arg) {
+      let newValue: TValue;
+
+      if ("target" in arg) {
+        const { target } = arg;
+        if (target !== field.boundElement) return;
+        if (!("value" in target)) return;
+        if (typeof target.value !== "string") return;
+        newValue = target.value as TValue;
+      } else {
+        newValue = arg;
+      }
+
+      field.setValue(newValue, {
         shouldTouch: true,
         shouldMarkDirty: true,
       });
@@ -120,6 +123,7 @@ export function FieldRenderer<
         value: field.value,
         handlers: handlers,
         field: field as any,
+        form: props.form,
       })}
     </>
   );

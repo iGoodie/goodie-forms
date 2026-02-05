@@ -4,6 +4,7 @@ import { composeFns } from "../utils/composeFns";
 import type { UseForm } from "./useForm";
 import { useRenderControl } from "./useRenderControl";
 
+/** @deprecated */
 export function useFormValuesObserver<
   TOutput extends object,
   TPaths extends FieldPath.Segments[] | undefined = undefined,
