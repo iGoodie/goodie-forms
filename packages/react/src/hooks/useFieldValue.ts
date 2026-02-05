@@ -1,8 +1,8 @@
 import { FieldPath } from "@goodie-forms/core";
-import { UseForm } from "packages/react/src/hooks/useForm";
-import { useRenderControl } from "packages/react/src/hooks/useRenderControl";
-import { composeFns } from "packages/react/src/utils/composeFns";
 import { useEffect } from "react";
+import { UseForm } from "../hooks/useForm";
+import { useRenderControl } from "../hooks/useRenderControl";
+import { composeFns } from "../utils/composeFns";
 
 export function useFieldValue<
   TOutput extends object,
