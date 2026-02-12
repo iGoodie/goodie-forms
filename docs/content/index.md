@@ -7,13 +7,15 @@ seo:
 ---
 
 ::u-page-hero
+
 #title
-An unopinionated modern form state and data management library
+<div class="flex flex-col items-center text-center">
+  <NuxtImg src="/logo.svg" height="200" class="mb-6" />
+  <span>The form lib you needed</span>
+</div>
 
 #description
-Ship fast, flexible, and SEO-optimized documentation with beautiful design out of the box.
-
-Docus brings the best of the Nuxt ecosystem into one CLI.
+An unopinionated modern form state and data management library
 
 #links
   :::u-button
@@ -31,7 +33,7 @@ Docus brings the best of the Nuxt ecosystem into one CLI.
   color: neutral
   icon: simple-icons-github
   size: xl
-  to: https://github.com/nuxt-content/docus
+  to: https://github.com/iGoodie/goodie-forms
   variant: outline
   ---
   Star on GitHub

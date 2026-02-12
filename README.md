@@ -5,7 +5,7 @@
 
 <!-- Slogan -->
 <p align="center">
-   A modern form state and data management library
+   An unopinionated modern form state and data management library
 </p>
 <!-- Badges -->
 <p align="center">

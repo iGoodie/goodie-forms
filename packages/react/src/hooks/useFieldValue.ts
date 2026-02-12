@@ -19,8 +19,11 @@ export function useFieldValue<
           renderControl.forceRerender();
         }
       }),
-      form.controller.events.on("valueChanged", (fieldPath) => {
-        if (FieldPath.equals(path, fieldPath)) {
+      form.controller.events.on("valueChanged", (changedPath) => {
+        if (
+          FieldPath.equals(changedPath, path) ||
+          FieldPath.isDescendant(changedPath, path)
+        ) {
           renderControl.forceRerender();
         }
       }),

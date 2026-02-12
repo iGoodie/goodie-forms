@@ -3,3 +3,10 @@ packages:
   - demo/*
   - tests/*
   - packages/*
+
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - better-sqlite3
+  - esbuild
+  - sharp
+  - vue-demi
