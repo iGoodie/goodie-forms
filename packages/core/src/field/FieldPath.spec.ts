@@ -46,18 +46,73 @@ const person: Person = {
 
 /* ------------------------------ */
 
-test("resolves string paths", () => {
+test("resolves field types by path", () => {
+  type Shape = {
+    user?: {
+      profile?: { name?: string };
+      tags?: boolean[];
+    };
+  };
+
+  type typeTests = [
+    Expect<
+      Equal<
+        FieldPath.Resolve<Shape, ["user"]>,
+        { profile?: { name?: string }; tags?: boolean[] } | undefined
+      >
+    >,
+
+    Expect<
+      Equal<
+        FieldPath.Resolve<Shape, ["user", "profile"]>,
+        { name?: string } | undefined
+      >
+    >,
+
+    Expect<
+      Equal<
+        FieldPath.Resolve<Shape, ["user", "profile", "name"]>,
+        string | undefined
+      >
+    >,
+
+    Expect<
+      Equal<
+        FieldPath.Resolve<Shape, ["user", "tags", number]>,
+        //
+        boolean
+      >
+    >,
+
+    Expect<
+      Equal<
+        FieldPath.Resolve<Shape, ["user", "tags", 0]>,
+        //
+        boolean
+      >
+    >,
+
+    Expect<
+      Equal<
+        FieldPath.Resolve<Shape, ["user", "missing"]>,
+        //
+        never
+      >
+    >,
+  ];
+});
+
+test("parses string paths", () => {
   type PersonPaths = FieldPath.StringPaths<Person>;
 
-  expect(FieldPath.fromStringPath("a.b")).toStrictEqual(["a", "b"]);
-  expect(FieldPath.fromStringPath("a.b.c")).toStrictEqual(["a", "b", "c"]);
-  expect(FieldPath.fromStringPath("a[99].b.c[3]")).toStrictEqual([
-    "a",
-    99,
-    "b",
-    "c",
-    3,
-  ]);
+  const path1 = FieldPath.fromStringPath("a.b");
+  expect(path1).toStrictEqual(["a", "b"]);
+
+  const path2 = FieldPath.fromStringPath("a.b.c");
+  expect(path2).toStrictEqual(["a", "b", "c"]);
+
+  const path3 = FieldPath.fromStringPath("a[99].b.c[3]");
+  expect(path3).toStrictEqual(["a", 99, "b", "c", 3]);
 
   type typeTests = [
     Expect<
