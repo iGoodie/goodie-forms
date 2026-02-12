@@ -3,9 +3,10 @@ import { produce } from "immer";
 import { createNanoEvents } from "nanoevents";
 import { FieldPath } from "../field/FieldPath";
 import { FieldPathBuilder } from "../field/FieldPathBuilder";
-import { Reconsile } from "../field/Reconcile";
+import { Reconcile } from "../field/Reconcile";
 import { FormField } from "../form/FormField";
-import { DeepPartial } from "../types/DeepPartial";
+import { DeepPartial, DeepReadonly } from "../types/DeepHelpers";
+import { Suppliable, supply } from "../types/Suppliable";
 import { ensureImmerability } from "../utils/ensureImmerability";
 import { removeBy } from "../utils/removeBy";
 
@@ -22,27 +23,28 @@ export namespace FormController {
 
   export type SubmitSuccessHandler<
     TOutput extends object,
-    TEvent extends PreventableEvent,
-  > = (
-    data: TOutput,
-    event: TEvent,
-    abortSignal: AbortSignal,
-  ) => void | Promise<void>;
+    TEvent extends PreventableEvent | null | undefined,
+  > = (data: DeepReadonly<TOutput>, event: TEvent) => void | Promise<void>;
 
-  export type SubmitErrorHandler<TEvent extends PreventableEvent> = (
-    issues: StandardSchemaV1.Issue[],
-    event: TEvent,
-    abortSignal: AbortSignal,
-  ) => void | Promise<void>;
+  export type SubmitErrorHandler<
+    TEvent extends PreventableEvent | null | undefined,
+  > = (issues: StandardSchemaV1.Issue[], event: TEvent) => void | Promise<void>;
 }
 
 export class FormController<TOutput extends object> {
-  _isValidating = false;
-  _isSubmitting = false;
+  private _isValidating = false;
+  private _isSubmitting = false;
+  private _triedSubmitting = false;
 
+  private pathBuilder = new FieldPathBuilder<TOutput>();
+
+  /** @internal use `this.data` instead */
   _fields = new Map<string, FormField<TOutput, any>>();
+  /** @internal use `this.initialData` instead */
   _initialData: DeepPartial<TOutput>;
+  /** @internal use `this.data` instead */
   _data: DeepPartial<TOutput>;
+  /** @internal use `this.issues` instead */
   _issues: StandardSchemaV1.Issue[] = [];
 
   equalityComparators?: Record<any, (a: any, b: any) => boolean>;
@@ -52,8 +54,8 @@ export class FormController<TOutput extends object> {
     submissionStatusChange(isSubmitting: boolean): void;
     validationStatusChange(isValidating: boolean): void;
 
-    fieldBound(fieldPath: FieldPath.Segments): void;
-    fieldUnbound(fieldPath: FieldPath.Segments): void;
+    fieldRegistered(fieldPath: FieldPath.Segments): void;
+    fieldUnregistered(fieldPath: FieldPath.Segments): void;
     fieldTouchUpdated(path: FieldPath.Segments): void;
     fieldDirtyUpdated(path: FieldPath.Segments): void;
     fieldIssuesUpdated(fieldPath: FieldPath.Segments): void;
@@ -72,6 +74,22 @@ export class FormController<TOutput extends object> {
     this.equalityComparators = config.equalityComparators;
     this._initialData = config.initialData ?? ({} as DeepPartial<TOutput>);
     this._data = produce(this._initialData, () => {});
+  }
+
+  get data(): DeepReadonly<DeepPartial<TOutput>> {
+    return this._data;
+  }
+
+  get initialData(): DeepReadonly<DeepPartial<TOutput>> {
+    return this._initialData;
+  }
+
+  get issues(): readonly StandardSchemaV1.Issue[] {
+    return this._issues;
+  }
+
+  get path() {
+    return this.pathBuilder;
   }
 
   get isDirty() {
@@ -94,6 +112,10 @@ export class FormController<TOutput extends object> {
     return this._isSubmitting;
   }
 
+  get triedSubmitting() {
+    return this._triedSubmitting;
+  }
+
   protected setValidating(newStatus: boolean) {
     if (this._isValidating === newStatus) return;
     this._isValidating = newStatus;
@@ -106,56 +128,51 @@ export class FormController<TOutput extends object> {
     this.events.emit("submissionStatusChange", newStatus);
   }
 
-  _unsafeSetFieldValue<TPath extends FieldPath.Segments>(
-    path: TPath,
-    value: FieldPath.Resolve<TOutput, TPath>,
-    config?: { updateInitialValue?: boolean },
-  ) {
-    ensureImmerability(value);
-
-    if (config?.updateInitialValue === true) {
-      this._initialData = produce(this._initialData, (draft) => {
-        FieldPath.setValue(draft as TOutput, path, value);
-      });
-    }
-
-    this._data = produce(this._data, (draft) => {
-      FieldPath.setValue(draft as TOutput, path, value);
-    });
-  }
-
-  // TODO: Rename to "register" ??
-  bindField<TPath extends FieldPath.Segments>(
+  registerField<TPath extends FieldPath.Segments>(
     path: TPath,
     config?: {
-      defaultValue?: FieldPath.Resolve<TOutput, TPath>;
-      domElement?: HTMLElement;
+      /**
+       * Used to set value at **path** in **data**, if it's missing.
+       */
+      defaultValue?: Suppliable<FieldPath.Resolve<TOutput, TPath>>;
+      /**
+       * Whether value in **initialData** should also be changed, if **defaultValue** is used or not
+       *
+       * If this is set to `true` and **defaultValue** is used; **initialData** will be modified
+       */
       overrideInitialValue?: boolean;
     },
   ) {
     let currentValue = FieldPath.getValue(this._data as TOutput, path);
 
     if (currentValue == null && config?.defaultValue != null) {
-      this._unsafeSetFieldValue(path, config.defaultValue, {
-        updateInitialValue: config.overrideInitialValue,
+      const defaultValue = supply(config.defaultValue);
+
+      ensureImmerability(defaultValue);
+
+      if (config?.overrideInitialValue === true) {
+        this._initialData = produce(this._initialData, (draft) => {
+          FieldPath.setValue(draft as TOutput, path, defaultValue);
+        });
+      }
+
+      this._data = produce(this._data, (draft) => {
+        FieldPath.setValue(draft as TOutput, path, defaultValue);
       });
+
       currentValue = FieldPath.getValue(this._data as TOutput, path);
     }
 
     const initialValue = FieldPath.getValue(this._initialData as TOutput, path);
 
-    const valueChanged = !Reconsile.deepEqual(currentValue, initialValue);
+    const valueChanged = !Reconcile.deepEqual(currentValue, initialValue);
 
-    const field = new FormField(this, path, {
+    const field = new FormField(this, path, config?.defaultValue, {
       isDirty: valueChanged,
     });
 
-    if (config?.domElement != null) {
-      field.bindElement(config.domElement);
-    }
-
     this._fields.set(field.stringPath, field);
-    this.events.emit("fieldBound", field.path);
+    this.events.emit("fieldRegistered", field.path);
 
     if (valueChanged) {
       this.events.emit("valueChanged", field.path, currentValue, initialValue);
@@ -164,16 +181,17 @@ export class FormController<TOutput extends object> {
     return field as FormField<TOutput, FieldPath.Resolve<TOutput, TPath>>;
   }
 
-  unbindField(path: FieldPath.Segments) {
+  unregisterField(path: FieldPath.Segments) {
     const stringPath = FieldPath.toStringPath(path);
     this._fields.delete(stringPath);
-    this.events.emit("fieldUnbound", path);
+    this.events.emit("fieldUnregistered", path);
   }
 
   // TODO: Add an option to keep dirty/touched fields as they are
   reset(newInitialData?: DeepPartial<TOutput>) {
     this._data = this._initialData;
     this._issues = [];
+    this._triedSubmitting = false;
 
     for (const field of this._fields.values()) {
       field.reset();
@@ -210,10 +228,10 @@ export class FormController<TOutput extends object> {
     _result: StandardSchemaV1.Result<TOutput>,
     path: TPath,
   ) {
-    const diff = Reconsile.diff(
+    const diff = Reconcile.arrayDiff(
       this._issues,
       _result.issues ?? [],
-      Reconsile.deepEqual,
+      Reconcile.deepEqual,
       (issue) => {
         if (issue.path == null) return false;
         const issuePath = FieldPath.normalize(issue.path);
@@ -240,7 +258,7 @@ export class FormController<TOutput extends object> {
 
     this.setValidating(true);
 
-    if (this.getField(path) == null) this.bindField(path);
+    if (this.getField(path) == null) this.registerField(path);
 
     const result = await this.validationSchema["~standard"].validate(
       this._data,
@@ -270,17 +288,19 @@ export class FormController<TOutput extends object> {
     }
 
     // Append non-registered issues too
-    const diff = Reconsile.diff(
+    const diff = Reconcile.arrayDiff(
       this._issues,
       result.issues ?? [],
-      Reconsile.deepEqual,
+      Reconcile.deepEqual,
     );
     diff.added.forEach((issue) => this._issues.push(issue));
 
     this.setValidating(false);
   }
 
-  createSubmitHandler<TEvent extends FormController.PreventableEvent>(
+  createSubmitHandler<
+    TEvent extends FormController.PreventableEvent | null | undefined,
+  >(
     onSuccess?: FormController.SubmitSuccessHandler<TOutput, TEvent>,
     onError?: FormController.SubmitErrorHandler<TEvent>,
   ) {
@@ -292,14 +312,13 @@ export class FormController<TOutput extends object> {
       if (this._isValidating) return;
       if (this._isSubmitting) return;
 
-      // TODO? impl or cancel
-      const abortController = new AbortController();
+      this._triedSubmitting = true;
 
       await this.validateForm();
 
       if (this._issues.length === 0) {
         this.setSubmitting(true);
-        await onSuccess?.(this._data as TOutput, event, abortController.signal);
+        await onSuccess?.(this._data as TOutput, event);
         this.setSubmitting(false);
         return;
       }
@@ -313,12 +332,13 @@ export class FormController<TOutput extends object> {
         field.focus();
         break;
       }
-      await onError?.(this._issues, event, abortController.signal);
+      await onError?.(this._issues, event);
       this.setSubmitting(false);
     };
   }
 }
 
+// TODO: Move to a proper test file
 /* ---- TESTS ---------------- */
 
 // interface User {

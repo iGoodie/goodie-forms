@@ -1,4 +1,4 @@
-import { FieldPathBuilder, FormController } from "@goodie-forms/core";
+import { FormController } from "@goodie-forms/core";
 import { useEffect, useState } from "react";
 import { useRenderControl } from "../hooks/useRenderControl";
 import { composeFns } from "../utils/composeFns";
@@ -13,7 +13,6 @@ export function useForm<TOutput extends object>(
   },
 ) {
   const [controller] = useState(() => new FormController(formConfigs));
-  const [paths] = useState(() => new FieldPathBuilder<TOutput>());
 
   const renderControl = useRenderControl();
 
@@ -39,9 +38,9 @@ export function useForm<TOutput extends object>(
 
   return {
     formConfigs,
-    paths,
     hookConfigs,
     controller,
+    path: controller.path,
   };
 }
 

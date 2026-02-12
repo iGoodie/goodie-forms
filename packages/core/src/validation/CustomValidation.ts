@@ -1,5 +1,5 @@
 import { StandardSchemaV1 } from "@standard-schema/spec";
-import { DeepPartial } from "../types/DeepPartial";
+import { DeepPartial } from "../types/DeepHelpers";
 import { FieldPath } from "../field/FieldPath";
 
 export type CustomValidationIssue<TOutput extends object> = {

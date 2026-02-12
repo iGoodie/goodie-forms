@@ -14,7 +14,7 @@ export function useFieldValue<
 
   useEffect(() => {
     return composeFns(
-      form.controller.events.on("fieldBound", (fieldPath) => {
+      form.controller.events.on("fieldRegistered", (fieldPath) => {
         if (FieldPath.equals(path, fieldPath)) {
           renderControl.forceRerender();
         }

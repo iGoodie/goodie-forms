@@ -1,4 +1,9 @@
-import { FieldPath, FormField, NonnullFormField } from "@goodie-forms/core";
+import {
+  DeepReadonly,
+  FieldPath,
+  FormField,
+  Suppliable,
+} from "@goodie-forms/core";
 import { ChangeEvent, ReactNode, Ref, useEffect, useRef } from "react";
 import { UseForm } from "../hooks/useForm";
 import { useFormField } from "../hooks/useFormField";
@@ -8,36 +13,34 @@ export interface RenderParams<TOutput extends object, TValue> {
   fieldProps: {
     ref: Ref<any | null>;
 
-    value: TValue | undefined;
+    value: DeepReadonly<TValue> | undefined;
 
     onChange: (event: ChangeEvent<EventTarget> | TValue) => void;
     onFocus: () => void;
     onBlur: () => void;
   };
 
-  field: undefined extends TValue
-    ? FormField<TOutput, TValue>
-    : NonnullFormField<TOutput, TValue>;
+  field: FormField<TOutput, TValue>;
 
   form: UseForm<TOutput>;
 }
 
 type DefaultValueProps<TValue> = undefined extends TValue
-  ? { defaultValue?: TValue | (() => TValue) }
-  : { defaultValue: TValue | (() => TValue) };
+  ? { defaultValue?: Suppliable<TValue> }
+  : { defaultValue: Suppliable<TValue> };
 
 export type FieldRendererProps<
   TOutput extends object,
   TPath extends FieldPath.Segments,
-> = {
+> = DefaultValueProps<FieldPath.Resolve<TOutput, TPath>> & {
   form: UseForm<TOutput>;
   path: TPath;
   overrideInitialValue?: boolean;
   unbindOnUnmount?: boolean;
   render: (
-    params: RenderParams<TOutput, FieldPath.Resolve<TOutput, NoInfer<TPath>>>,
+    params: RenderParams<TOutput, FieldPath.Resolve<TOutput, TPath>>,
   ) => ReactNode;
-} & DefaultValueProps<FieldPath.Resolve<TOutput, NoInfer<TPath>>>;
+};
 
 export function FieldRenderer<
   TOutput extends object,
@@ -49,10 +52,7 @@ export function FieldRenderer<
 
   const field = useFormField(props.form, props.path, {
     overrideInitialValue: props.overrideInitialValue ?? true,
-    defaultValue:
-      typeof props.defaultValue === "function"
-        ? (props.defaultValue as any)()
-        : props.defaultValue,
+    defaultValue: props.defaultValue,
   })!;
 
   const renderedJsx = props.render({
@@ -117,7 +117,7 @@ export function FieldRenderer<
 
     return () => {
       if (props.unbindOnUnmount) {
-        props.form.controller.unbindField(props.path);
+        props.form.controller.unregisterField(props.path);
       }
     };
   }, []);

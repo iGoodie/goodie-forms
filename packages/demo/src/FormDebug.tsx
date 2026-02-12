@@ -15,8 +15,8 @@ export function FormDebug<TOutput extends object>(props: {
       events.on("submissionStatusChange", () => renderControl.forceRerender()),
       events.on("validationStatusChange", () => renderControl.forceRerender()),
       events.on("valueChanged", () => renderControl.forceRerender()),
-      events.on("fieldBound", () => renderControl.forceRerender()),
-      events.on("fieldUnbound", () => renderControl.forceRerender()),
+      events.on("fieldRegistered", () => renderControl.forceRerender()),
+      events.on("fieldUnregistered", () => renderControl.forceRerender()),
       events.on("fieldTouchUpdated", () => renderControl.forceRerender()),
       events.on("fieldDirtyUpdated", () => renderControl.forceRerender()),
     );
@@ -53,7 +53,7 @@ export function FormDebug<TOutput extends object>(props: {
 
         <hr className="my-10" />
 
-        <span className="opacity-50">Bound Fields</span>
+        <span className="opacity-50">Registered Fields</span>
         {[...props.formController._fields.values()].map((field, i) => (
           <span key={i}>{field.stringPath}</span>
         ))}

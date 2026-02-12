@@ -210,6 +210,44 @@ export namespace FieldPath {
           ? K
           : never;
 
+  export function walkPath<
+    TObject extends object,
+    const TPath extends FieldPath.Segments,
+  >(object: TObject, path: TPath): { target: any; key: PropertyKey };
+  export function walkPath<
+    TObject extends object,
+    const TPath extends FieldPath.Segments,
+  >(
+    object: TObject,
+    path: TPath,
+    opts: { returnOnEmptyBranch: true },
+  ): { target: any; key: PropertyKey | null };
+  export function walkPath<
+    TObject extends object,
+    const TPath extends FieldPath.Segments,
+  >(object: TObject, path: TPath, opts?: { returnOnEmptyBranch?: boolean }) {
+    let current: any = object;
+
+    for (let i = 0; i < path.length - 1; i++) {
+      const pathFragment = path[i];
+      const nextFragment = path[i + 1];
+
+      if (current[pathFragment] == null) {
+        if (opts?.returnOnEmptyBranch) return { target: null, key: null };
+        current[pathFragment] = typeof nextFragment === "number" ? [] : {};
+      }
+
+      current = current[pathFragment];
+    }
+
+    const lastFragment = path[path.length - 1];
+
+    return {
+      target: current,
+      key: lastFragment,
+    };
+  }
+
   export function getValue<
     TObject extends object,
     const TPath extends readonly PropertyKey[],
@@ -230,8 +268,9 @@ export namespace FieldPath {
   export function setValue<
     TObject extends object,
     const TPath extends readonly PropertyKey[],
-  >(object: TObject, key: TPath, value: FieldPath.Resolve<TObject, TPath>) {
-    return FieldPath.modifyValue(object, key, () => value);
+  >(object: TObject, path: TPath, value: FieldPath.Resolve<TObject, TPath>) {
+    const { target, key } = walkPath(object, path);
+    target[key] = value;
   }
 
   export function modifyValue<
@@ -241,52 +280,28 @@ export namespace FieldPath {
     object: TObject,
     path: TPath,
     modifier: (
-      currentValue: FieldPath.Resolve<TObject, TPath>,
-    ) => FieldPath.Resolve<TObject, TPath> | void,
+      currentValue: FieldPath.Resolve<TObject, TPath> | undefined,
+    ) => void,
   ) {
-    let current: any = object;
-
-    for (let i = 0; i < path.length - 1; i++) {
-      const pathFragment = path[i];
-      const nextFragment = path[i + 1];
-
-      if (current[pathFragment] == null) {
-        current[pathFragment] = typeof nextFragment === "number" ? [] : {};
-      }
-
-      current = current[pathFragment];
-    }
-
-    const lastFragment = path[path.length - 1];
-
-    const oldValue = current[lastFragment];
-    const newValue = modifier(oldValue);
-
-    if (newValue !== undefined) {
-      current[lastFragment] = newValue;
-    }
+    const { target, key } = walkPath(object, path);
+    modifier(target[key]);
   }
 
   export function deleteValue<
     TObject extends object,
     TPath extends readonly PropertyKey[],
   >(object: TObject, path: TPath) {
-    let current: any = object;
+    const { target, key } = walkPath(object, path, {
+      returnOnEmptyBranch: true,
+    });
 
-    for (let i = 0; i < path.length - 1; i++) {
-      const pathFragment = path[i];
+    if (key == null) return;
 
-      if (current[pathFragment] == null) return;
-
-      current = current[pathFragment];
-    }
-
-    const lastFragment = path[path.length - 1];
-
-    delete current[lastFragment];
+    delete target[key];
   }
 }
 
+// TODO: Move to a proper test file
 // const x = {} as { foo: { bar: string[] } };
 // FieldPath.setValue(x, FieldPath.fromStringPath("foo.bar[9]"), "C");
 // console.log(x); // <-- { foo: { bar: [<9xempty>, "C"] } }

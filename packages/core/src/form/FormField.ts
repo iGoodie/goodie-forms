@@ -1,6 +1,6 @@
 import { Draft, produce } from "immer";
 import { FieldPath } from "../field/FieldPath";
-import { Reconsile } from "../field/Reconcile";
+import { Reconcile } from "../field/Reconcile";
 import { FormController } from "../form/FormController";
 import { DeepReadonly } from "../types/DeepHelpers";
 import { Suppliable, supply } from "../types/Suppliable";
@@ -67,6 +67,16 @@ export class FormField<TOutput extends object, TValue> {
     return this.issues.length === 0;
   }
 
+  ensureDefault(opts?: Parameters<typeof this.modifyData>[1]) {
+    if (this.value == null && this.defaultValue != null) {
+      const defaultValue = supply(this.defaultValue);
+
+      if (defaultValue != null) {
+        this.setValue(defaultValue, opts);
+      }
+    }
+  }
+
   protected _setTouched(isTouched: boolean) {
     const changed = this._isTouched !== isTouched;
     this._isTouched = isTouched;
@@ -111,14 +121,14 @@ export class FormField<TOutput extends object, TValue> {
     }
   }
 
-  private produceValue(
+  private modifyData(
     draftConsumer: (draft: Draft<typeof this.controller.data>) => void,
     opts?: {
       shouldTouch?: boolean;
       shouldMarkDirty?: boolean;
     },
   ) {
-    if (opts?.shouldTouch == null || opts?.shouldTouch) {
+    if (opts?.shouldTouch == null || opts?.shouldTouch === true) {
       this.touch();
     }
 
@@ -144,7 +154,7 @@ export class FormField<TOutput extends object, TValue> {
       return this.controller.equalityComparators?.[ctorA]?.(a, b);
     };
 
-    const valueChanged = !Reconsile.deepEqual(
+    const valueChanged = !Reconcile.deepEqual(
       oldValues[oldValues.length - 1],
       newValues[newValues.length - 1],
       compareCustom,
@@ -163,7 +173,7 @@ export class FormField<TOutput extends object, TValue> {
     }
 
     if (opts?.shouldMarkDirty == null || opts?.shouldMarkDirty) {
-      const gotDirty = !Reconsile.deepEqual(
+      const gotDirty = !Reconcile.deepEqual(
         initialValues[initialValues.length - 1],
         newValues[newValues.length - 1],
         compareCustom,
@@ -172,19 +182,19 @@ export class FormField<TOutput extends object, TValue> {
     }
   }
 
-  setValue(value: TValue, opts?: Parameters<typeof this.produceValue>[1]) {
-    return this.produceValue((draft) => {
-      FieldPath.setValue(draft as TOutput, this.path, value as never);
+  setValue(value: TValue, opts?: Parameters<typeof this.modifyData>[1]) {
+    return this.modifyData((data) => {
+      FieldPath.setValue(data as TOutput, this.path, value as never);
     }, opts);
   }
 
   modifyValue(
-    modifier: (currentValue: TValue | undefined) => void,
-    opts?: Parameters<typeof this.produceValue>[1],
+    modifier: (currentValue: TValue) => undefined,
+    opts?: Parameters<typeof this.modifyData>[1],
   ): void {
-    return this.produceValue((draft) => {
-      FieldPath.modifyValue(draft as TOutput, this.path, (oldValue) => {
-        return modifier(oldValue as TValue);
+    return this.modifyData((data) => {
+      FieldPath.modifyValue(data as TOutput, this.path, (oldValue) => {
+        modifier(oldValue as TValue);
       });
     }, opts);
   }
@@ -199,7 +209,6 @@ export class FormField<TOutput extends object, TValue> {
   }
 
   markDirty() {
-    this.touch();
     this._setDirty(true);
   }
 
@@ -207,14 +216,17 @@ export class FormField<TOutput extends object, TValue> {
     this.controller.validateField(this.path);
   }
 
-  focus(opts?: { shouldTouch?: boolean }) {
+  focus(opts?: {
+    shouldTouch?: boolean;
+    scrollOptions?: ScrollIntoViewOptions;
+  }) {
     if (opts?.shouldTouch == null || opts.shouldTouch) {
       this.target?.addEventListener("focus", () => this.touch(), {
         once: true,
       });
     }
 
-    this.target?.scrollIntoView();
+    this.target?.scrollIntoView(opts?.scrollOptions);
     this.target?.focus();
   }
 }

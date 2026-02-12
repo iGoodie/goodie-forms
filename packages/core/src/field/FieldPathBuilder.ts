@@ -44,21 +44,28 @@ export class FieldPathBuilder<TOutput extends object> {
     }) as any;
   }
 
-  public fromStringPath<TStrPath extends FieldPath.StringPaths<TOutput>>(
+  public of<TStrPath extends FieldPath.StringPaths<TOutput>>(
     stringPath: TStrPath,
-  ) {
-    return FieldPath.fromStringPath(
-      stringPath,
-    ) as unknown as FieldPath.ParseStringPath<TStrPath>;
-  }
+  ): FieldPath.ParseStringPath<TStrPath>;
 
-  public fromProxy<TProxy extends FieldPathBuilder.Proxy<any, any>>(
+  public of<TProxy extends FieldPathBuilder.Proxy<any, any>>(
     consumer: (data: FieldPathBuilder.Proxy<TOutput, []>) => TProxy,
-  ): TProxy[typeof resolverCall] {
-    return consumer(FieldPathBuilder.wrap<TOutput, []>([]))[resolverCall];
+  ): TProxy[typeof resolverCall];
+
+  public of(
+    arg:
+      | FieldPath.StringPaths<TOutput>
+      | ((data: FieldPathBuilder.Proxy<TOutput, []>) => any),
+  ) {
+    if (typeof arg === "function") {
+      return arg(FieldPathBuilder.wrap<TOutput, []>([]))[resolverCall];
+    }
+
+    return FieldPath.fromStringPath(arg as any);
   }
 }
 
+// TODO: Move to a proper test file
 /* ---- TESTS ---------------- */
 
 // interface User {

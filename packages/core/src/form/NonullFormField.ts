@@ -1,6 +1,7 @@
 import { FormField } from "./FormField";
 import { Mixin } from "../types/Mixin";
 
+/** @deprecated */
 export type NonnullFormField<TOutput extends object, TValue> = Mixin<
   FormField<TOutput, TValue>,
   {

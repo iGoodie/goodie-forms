@@ -1,8 +1,29 @@
-import { FieldPath } from "@goodie-forms/core";
+import { FieldPath, FormField } from "@goodie-forms/core";
 import { useEffect, useState } from "react";
 import { UseForm } from "../hooks/useForm";
 import { useRenderControl } from "../hooks/useRenderControl";
 import { composeFns } from "../utils/composeFns";
+
+/** TODO: doc */
+export function useFormField<
+  TOutput extends object,
+  TPath extends FieldPath.Segments,
+>(
+  form: UseForm<TOutput>,
+  path: TPath,
+): FormField<TOutput, FieldPath.Resolve<TOutput, TPath>> | undefined;
+
+/** TODO: doc */
+export function useFormField<
+  TOutput extends object,
+  TPath extends FieldPath.Segments,
+>(
+  form: UseForm<TOutput>,
+  path: TPath,
+  bindingConfig: Parameters<typeof form.controller.registerField<TPath>>[1],
+): FormField<TOutput, FieldPath.Resolve<TOutput, TPath>>;
+
+/* --------------------------------- */
 
 export function useFormField<
   TOutput extends object,
@@ -10,14 +31,14 @@ export function useFormField<
 >(
   form: UseForm<TOutput>,
   path: TPath,
-  bindingConfig?: Parameters<typeof form.controller.bindField<TPath>>[1],
+  bindingConfig?: Parameters<typeof form.controller.registerField<TPath>>[1],
 ) {
   const renderControl = useRenderControl();
 
   const [field, setField] = useState(() => {
     let field = form.controller.getField(path);
     if (field == null && bindingConfig != null) {
-      field = form.controller.bindField(path, bindingConfig);
+      field = form.controller.registerField(path, bindingConfig);
     }
     return field;
   });
@@ -28,11 +49,11 @@ export function useFormField<
     setField(form.controller.getField(path));
 
     return composeFns(
-      events.on("fieldBound", (_path) => {
+      events.on("fieldRegistered", (_path) => {
         if (!FieldPath.equals(_path, path)) return;
         setField(form.controller.getField(path));
       }),
-      events.on("fieldUnbound", (_path) => {
+      events.on("fieldUnregistered", (_path) => {
         if (!FieldPath.equals(_path, path)) return;
         setField(undefined);
       }),

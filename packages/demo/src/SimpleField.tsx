@@ -17,7 +17,7 @@ type Props<
 
 export function SimpleField<
   TOutput extends object,
-  TPath extends FieldPath.Segments,
+  const TPath extends FieldPath.Segments,
 >(props: Props<TOutput, TPath>) {
   const id = useId();
 
@@ -32,13 +32,15 @@ export function SimpleField<
       <label
         htmlFor={id}
         className={
-          !field?.isValid
-            ? "text-red-400"
-            : field?.isDirty
-              ? "text-orange-300"
-              : field.isTouched
-                ? "text-blue-200"
-                : ""
+          field == null
+            ? ""
+            : !field.isValid
+              ? "text-red-400"
+              : field.isDirty
+                ? "text-orange-300"
+                : field.isTouched
+                  ? "text-blue-200"
+                  : ""
         }
       >
         {props.label}{" "}

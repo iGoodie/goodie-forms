@@ -6,7 +6,7 @@ import z from "zod";
 import { FormDebug } from "./FormDebug";
 import { SimpleField } from "./SimpleField";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import "./App.css";
 import "./tailwind.css";
 
@@ -102,7 +102,8 @@ const UserSchema = z.object({
           });
         }
       }
-    }),
+    })
+    .optional(),
 }) satisfies z.ZodType<UserForm>;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -148,10 +149,10 @@ function App() {
   //   include: ["inventory"],
   // });
 
-  const inventoryField = useFormField(
-    form,
-    form.paths.fromStringPath("inventory"),
-  );
+  const inventoryField = useFormField(form, form.path.of("inventory"), {
+    defaultValue: () => new Inventory(),
+    overrideInitialValue: true,
+  });
 
   // const inventoryValues = useFormValuesObserver(form, {
   //   include: ["inventory.contents"],
@@ -161,7 +162,7 @@ function App() {
 
   const [hidden, setHidden] = useState(false);
 
-  const handleSubmit = form.controller.createSubmitHandler(
+  const handleSubmit = form.controller.createSubmitHandler<FormEvent>(
     async (data, event) => {
       const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
       await sleep(2_000);
@@ -199,7 +200,7 @@ function App() {
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <SimpleField
           form={form}
-          path={form.paths.fromStringPath("name")}
+          path={form.path.of("name")}
           label="User Name"
           defaultValue="foo"
           render={({ fieldProps }) => (
@@ -214,16 +215,24 @@ function App() {
 
         <SimpleField
           form={form}
-          path={form.paths.fromStringPath("surname")}
+          path={form.path.of("surname")}
           label="User Lastname"
           defaultValue=""
-          render={({ fieldProps, field }) => (
+          render={({ fieldProps, form }) => (
             <input
               {...fieldProps}
-              disabled={form.controller.isSubmitting}
-              onChange={(e) => field.setValue(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+
+                if (value.endsWith("x")) {
+                  inventoryField.setValue(undefined);
+                }
+
+                fieldProps.onChange(e);
+              }}
               type="text"
               placeholder="Doe"
+              disabled={form.controller.isSubmitting}
             />
           )}
         />
@@ -239,15 +248,16 @@ function App() {
           {!hidden && (
             <SimpleField
               form={form}
-              path={form.paths.fromStringPath("address")}
+              path={form.path.of("address")}
               label="Address"
-              defaultValue={{ city: "Foo", street: "Sesame Street" }}
+              defaultValue={() => ({ city: "Foo", street: "Sesame Street" })}
               render={({ fieldProps, field }) => (
                 <div {...fieldProps} className="flex flex-col gap-2">
                   <button
                     type="button"
                     disabled={form.controller.isSubmitting}
                     onClick={() => {
+                      console.log(field);
                       field.modifyValue((address) => {
                         address.city =
                           Math.random() <= 0.5
@@ -286,7 +296,7 @@ function App() {
 
         <SimpleField
           form={form}
-          path={form.paths.fromStringPath("inventory")}
+          path={form.path.of("inventory")}
           label="Inventory"
           defaultValue={() => new Inventory()}
           render={({ fieldProps, field }) => (
@@ -299,12 +309,13 @@ function App() {
                   type="button"
                   disabled={form.controller.isSubmitting}
                   onClick={() => {
+                    field.ensureDefault();
                     field.modifyValue((inventory) => {
                       const items = ["Gem", "Sword", "Bow", "Arrow"];
                       const item =
                         items[Math.floor(Math.random() * items.length)];
                       inventory!.push(item);
-                      return inventory;
+                      console.log(inventory);
                     });
                   }}
                 >
@@ -319,7 +330,6 @@ function App() {
                         inventory!.contents.length - 1,
                       );
                     });
-                    field.triggerValidation();
                   }}
                 >
                   Remove Last
@@ -330,13 +340,13 @@ function App() {
                   className="col-span-full"
                   onClick={() => {
                     field.modifyValue((inventory) => {
+                      if (inventory!.contents.length < 2) return;
                       const first = inventory!.contents.at(0)!;
                       const last = inventory!.contents.at(-1)!;
                       inventory!.contents[0] = last;
                       inventory!.contents[inventory!.contents.length - 1] =
                         first;
                     });
-                    field.triggerValidation();
                   }}
                 >
                   Swap
@@ -353,7 +363,7 @@ function App() {
           <SimpleField
             key={i}
             form={form}
-            path={form.paths.fromStringPath(`inventory.contents[${i}]`)}
+            path={form.path.of(`inventory.contents[${i}]`)}
             label={`Inventory Item #${i + 1}`}
             defaultValue={() => "Sword"}
             overrideInitialValue={false}

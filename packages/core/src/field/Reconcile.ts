@@ -1,4 +1,4 @@
-export namespace Reconsile {
+export namespace Reconcile {
   export function deepEqual(
     a: any,
     b: any,
@@ -70,7 +70,7 @@ export namespace Reconsile {
     return true;
   }
 
-  export function diff<T>(
+  export function arrayDiff<T>(
     prev: readonly T[],
     next: readonly T[],
     equals: (a: T, b: T) => boolean,
