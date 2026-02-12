@@ -8,5 +8,5 @@ export * from "./form/NonullFormField";
 
 export * from "./validation/CustomValidation";
 
-export * from "./types/DeepPartial";
+export * from "./types/DeepHelpers";
 export * from "./types/Mixin";

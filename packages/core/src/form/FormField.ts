@@ -1,7 +1,9 @@
-import { produce } from "immer";
+import { Draft, produce } from "immer";
 import { FieldPath } from "../field/FieldPath";
 import { Reconsile } from "../field/Reconcile";
 import { FormController } from "../form/FormController";
+import { DeepReadonly } from "../types/DeepHelpers";
+import { Suppliable, supply } from "../types/Suppliable";
 import { ensureImmerability } from "../utils/ensureImmerability";
 import { getId } from "../utils/getId";
 
@@ -13,9 +15,11 @@ export class FormField<TOutput extends object, TValue> {
   protected _isTouched = false;
   protected _isDirty = false;
 
+  /** @internal register via `FormController::registerField` instead */
   constructor(
     public readonly controller: FormController<TOutput>,
     public readonly path: FieldPath.Segments,
+    public readonly defaultValue?: Suppliable<TValue>,
     initialState?: {
       isTouched?: boolean;
       isDirty?: boolean;
@@ -33,12 +37,12 @@ export class FormField<TOutput extends object, TValue> {
     return FieldPath.toStringPath(this.path);
   }
 
-  get value(): TValue | undefined {
-    return FieldPath.getValue(this.controller._data, this.path);
+  get value(): DeepReadonly<TValue> | undefined {
+    return FieldPath.getValue(this.controller.data, this.path);
   }
 
-  get initialValue(): TValue | undefined {
-    return FieldPath.getValue(this.controller._initialData, this.path);
+  get initialValue(): DeepReadonly<TValue> | undefined {
+    return FieldPath.getValue(this.controller.initialData, this.path);
   }
 
   get boundElement() {
@@ -92,25 +96,28 @@ export class FormField<TOutput extends object, TValue> {
   }
 
   bindElement(el: HTMLElement | undefined) {
-    this.target = el;
     if (el != null) {
+      this.target = el;
       this.controller.events.emit("elementBound", this.path, el);
     } else {
+      this.unbindElement();
+    }
+  }
+
+  unbindElement() {
+    if (this.target != null) {
+      this.target = undefined;
       this.controller.events.emit("elementUnbound", this.path);
     }
   }
 
-  setValue(value: TValue, opts?: Parameters<typeof this.modifyValue>[1]) {
-    return this.modifyValue(() => value, opts);
-  }
-
-  modifyValue(
-    modifier: (currentValue: TValue | undefined) => TValue | void,
+  private produceValue(
+    draftConsumer: (draft: Draft<typeof this.controller.data>) => void,
     opts?: {
       shouldTouch?: boolean;
       shouldMarkDirty?: boolean;
     },
-  ): void {
+  ) {
     if (opts?.shouldTouch == null || opts?.shouldTouch) {
       this.touch();
     }
@@ -123,11 +130,7 @@ export class FormField<TOutput extends object, TValue> {
     const oldValues = ascendantFields.map((field) => field?.value);
     oldValues.forEach((v) => ensureImmerability(v));
 
-    this.controller._data = produce(this.controller._data, (draft) => {
-      FieldPath.modifyValue(draft as TOutput, this.path, (oldValue) => {
-        return modifier(oldValue);
-      });
-    });
+    this.controller._data = produce(this.controller._data, draftConsumer);
 
     const newValues = ascendantFields.map((field) => field?.value);
     newValues.forEach((v) => ensureImmerability(v));
@@ -167,6 +170,23 @@ export class FormField<TOutput extends object, TValue> {
       );
       this._setDirty(gotDirty);
     }
+  }
+
+  setValue(value: TValue, opts?: Parameters<typeof this.produceValue>[1]) {
+    return this.produceValue((draft) => {
+      FieldPath.setValue(draft as TOutput, this.path, value as never);
+    }, opts);
+  }
+
+  modifyValue(
+    modifier: (currentValue: TValue | undefined) => void,
+    opts?: Parameters<typeof this.produceValue>[1],
+  ): void {
+    return this.produceValue((draft) => {
+      FieldPath.modifyValue(draft as TOutput, this.path, (oldValue) => {
+        return modifier(oldValue as TValue);
+      });
+    }, opts);
   }
 
   reset() {
