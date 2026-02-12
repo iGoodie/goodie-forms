@@ -1,9 +1,16 @@
+/// <reference types="vitest/config" />
+
 import { defineConfig } from "vite";
 
 import dts from "vite-plugin-dts";
 
 export default defineConfig({
-  plugins: [dts({ entryRoot: "src" })],
+  plugins: [
+    dts({
+      entryRoot: "src",
+      exclude: ["**/*.spec.ts"],
+    }),
+  ],
   build: {
     lib: {
       entry: "src/index.ts",
@@ -16,6 +23,7 @@ export default defineConfig({
     sourcemap: true,
   },
   test: {
+    name: "@goodie-forms/core",
     typecheck: {
       enabled: true,
     },
