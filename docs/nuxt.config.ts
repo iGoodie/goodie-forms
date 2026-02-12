@@ -5,4 +5,13 @@ export default defineNuxtConfig({
     documentDriven: true,
     navigation: true,
   },
+  icon: {
+    customCollections: [
+      {
+        prefix: "goodie",
+        dir: "./assets/icons",
+        normalizeIconName: false,
+      },
+    ],
+  },
 });

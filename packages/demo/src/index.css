@@ -6,6 +6,13 @@
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
+  /* background: linear-gradient(
+    160deg,
+    #0b0b22 0%,
+    #111133 50%,
+    #1a1a4f 75%,
+    #2c2c63 100%
+  ); */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

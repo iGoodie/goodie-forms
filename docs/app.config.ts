@@ -1,6 +1,6 @@
 export default defineAppConfig({
   header: {
-    title:"@goodie-forms"
+    title: "@goodie-forms",
   },
   socials: {
     discord: "https://discord.gg/KNxxdvN",

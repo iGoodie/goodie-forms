@@ -10,7 +10,7 @@ seo:
 
 #title
 <div class="flex flex-col items-center text-center">
-  <NuxtImg src="/logo.svg" height="200" class="mb-6" />
+  <img id="index-logo" src="/logo.svg" height="200" class="mb-6" />
   <span>The form lib you needed</span>
 </div>
 
@@ -45,7 +45,7 @@ An unopinionated modern form state and data management library
 Shipped with many features
 
 #features
-  :::u-page-feature
+  <!-- :::u-page-feature
   ---
   icon: i-simple-icons-nuxt
   target: _blank
@@ -56,9 +56,9 @@ Shipped with many features
   
   #description
   Optimized by the most famous Vue framework. Docus gives you everything you need to build fast, performant, and SEO-friendly websites.
-  :::
+  ::: -->
 
-  :::u-page-feature
+  <!-- :::u-page-feature
   ---
   icon: i-simple-icons-nuxt
   target: _blank
@@ -69,9 +69,9 @@ Shipped with many features
   
   #description
   Beautiful out of the box, minimal by design but highly customizable. Docus leverages Nuxt UI to give you the best docs writing experience with zero boilerplate, just focus on your content.
-  :::
+  ::: -->
 
-  :::u-page-feature
+  <!-- :::u-page-feature
   ---
   icon: i-simple-icons-nuxt
   target: _blank
@@ -82,9 +82,9 @@ Shipped with many features
   
   #description
   The only thing you need to take care about is writing your content. Write your pages in Markdown and extend with MDC syntax to embed Nuxt UI or custom Vue components. Structure, routing, and rendering are handled for you.
-  :::
+  ::: -->
 
-  :::u-page-feature
+  <!-- :::u-page-feature
   ---
   icon: i-simple-icons-nuxt
   target: _blank
@@ -95,9 +95,9 @@ Shipped with many features
   
   #description
   Update colors, social links, header logos and component styles globally using the `app.config.ts`, no direct code modifications required.
-  :::
+  ::: -->
 
-  :::u-page-feature
+  <!-- :::u-page-feature
   ---
   icon: i-simple-icons-nuxt
   target: _blank
@@ -108,9 +108,9 @@ Shipped with many features
   
   #description
   Edit your content in production with zero Markdown knowledge required. Let your non technical colleagues collaborate on the documentation and integrate Vue components without code skills.
-  :::
+  ::: -->
 
-  :::u-page-feature
+  <!-- :::u-page-feature
   ---
   icon: i-simple-icons-nuxt
   target: _blank
@@ -121,5 +121,5 @@ Shipped with many features
   
   #description
   Only focus on ordering your content, Docus handles the search modal and auto-generates the side navigation for you.
-  :::
+  ::: -->
 ::
