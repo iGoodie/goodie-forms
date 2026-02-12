@@ -15,4 +15,12 @@ export default defineConfig({
     },
     sourcemap: true,
   },
+  test: {
+    typecheck: {
+      enabled: true,
+    },
+    coverage: {
+      provider: "v8",
+    },
+  },
 });

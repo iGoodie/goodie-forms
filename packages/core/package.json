@@ -15,15 +15,20 @@
   ],
   "scripts": {
     "build": "vite build",
-    "prepack": "npm run build"
+    "test": "tsc --noEmit && vitest run",
+    "test:watch": "vitest",
+    "prepack": "npm run test && npm run build"
   },
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.0.18",
+    "type-testing": "^0.2.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vite-plugin-dts": "^4.5.4"
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@standard-schema/spec": "^1.1.0",

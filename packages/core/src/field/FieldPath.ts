@@ -112,7 +112,8 @@ export namespace FieldPath {
     return true;
   }
 
-  type Unfoldable<T> = T & { _____foldMark?: never } & {};
+  /** @internal used to mark and prevent array types, so IntellSense can suggest and accept array indices */
+  export type _Unfoldable<T> = T & { _____foldMark?: never } & {};
 
   export type Resolve<
     TObject,
@@ -150,7 +151,7 @@ export namespace FieldPath {
     TCanonicalStringPaths extends `${string}[*]${string}`
       ?
           | ReplaceAll<TCanonicalStringPaths, "[*]", "[0]">
-          | Unfoldable<ReplaceAll<TCanonicalStringPaths, "[*]", `[${number}]`>>
+          | _Unfoldable<ReplaceAll<TCanonicalStringPaths, "[*]", `[${number}]`>>
       : TCanonicalStringPaths;
 
   type CanonicalStringPaths<TObject extends object> = {
@@ -300,8 +301,3 @@ export namespace FieldPath {
     delete target[key];
   }
 }
-
-// TODO: Move to a proper test file
-// const x = {} as { foo: { bar: string[] } };
-// FieldPath.setValue(x, FieldPath.fromStringPath("foo.bar[9]"), "C");
-// console.log(x); // <-- { foo: { bar: [<9xempty>, "C"] } }
