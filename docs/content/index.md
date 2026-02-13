@@ -1,125 +1,89 @@
 ---
 seo:
-  title: Write beautiful docs with Markdown
-  description: Ship fast, flexible, and SEO-optimized documentation with beautiful
-    design out of the box. Docus brings together the best of the Nuxt ecosystem.
-    Powered by Nuxt UI.
+  title: Goodie Forms - An unopinionated modern form state and data management library
+  description: 
+    Goodie Forms is a modern, unopinionated form state and data management library for TypeScript apps. 
+    Create flexible, type-safe forms with complete control over validation and state.
 ---
 
 ::u-page-hero
-
 #title
-<div class="flex flex-col items-center text-center">
-  <img id="index-logo" src="/logo.svg" height="200" class="mb-6" />
-  <span>The form lib you needed</span>
-</div>
+  <div class="flex flex-col items-center text-center">
+    <img id="index-logo" src="/logo.svg" height="200" class="mb-6" />
+    <span>The form lib you needed</span>
+  </div>
 
 #description
 An unopinionated modern form state and data management library
 
 #links
-  :::u-button
-  ---
-  color: neutral
-  size: xl
-  to: /getting-started/installation
-  trailing-icon: i-lucide-arrow-right
-  ---
-  Get started
-  :::
+:::u-button
+---
+color: neutral
+size: xl
+to: /getting-started/installation
+trailing-icon: i-lucide-arrow-right
+---
+Get started
+:::
 
-  :::u-button
-  ---
-  color: neutral
-  icon: simple-icons-github
-  size: xl
-  to: https://github.com/iGoodie/goodie-forms
-  variant: outline
-  ---
-  Star on GitHub
-  :::
+:::u-button
+---
+color: neutral
+icon: simple-icons-github
+size: xl
+to: https://github.com/iGoodie/goodie-forms
+variant: outline
+---
+Star on GitHub
+:::
 ::
 
 ::u-page-section
 #title
-Shipped with many features
+Available For
 
 #features
-  <!-- :::u-page-feature
-  ---
-  icon: i-simple-icons-nuxt
-  target: _blank
-  to: https://nuxt.com
-  ---
-  #title
-  Built with [Nuxt 4]{.text-primary}
-  
-  #description
-  Optimized by the most famous Vue framework. Docus gives you everything you need to build fast, performant, and SEO-friendly websites.
-  ::: -->
+:::u-page-feature
+---
+icon: mdi:language-javascript
+target: _blank
+to: https://developer.mozilla.org/en-US/docs/Web/JavaScript
+---
 
-  <!-- :::u-page-feature
-  ---
-  icon: i-simple-icons-nuxt
-  target: _blank
-  to: https://ui.nuxt.com/
-  ---
-  #title
-  Powered by [Nuxt UI]{.text-primary}
-  
-  #description
-  Beautiful out of the box, minimal by design but highly customizable. Docus leverages Nuxt UI to give you the best docs writing experience with zero boilerplate, just focus on your content.
-  ::: -->
+#title
+@goodie-form/core [JavaScript]{.text-primary}
 
-  <!-- :::u-page-feature
-  ---
-  icon: i-simple-icons-nuxt
-  target: _blank
-  to: https://content.nuxt.com
-  ---
-  #title
-  Enhanced Markdown syntax by [Nuxt Content]{.text-primary}
-  
-  #description
-  The only thing you need to take care about is writing your content. Write your pages in Markdown and extend with MDC syntax to embed Nuxt UI or custom Vue components. Structure, routing, and rendering are handled for you.
-  ::: -->
+#description
+With FormController, it is possible to manage your form states and attach DOM elements.
+:::
 
-  <!-- :::u-page-feature
-  ---
-  icon: i-simple-icons-nuxt
-  target: _blank
-  to: https://nuxt.com/docs/guide/directory-structure/app-config
-  ---
-  #title
-  Customize with [Nuxt App Config]{.text-primary}
-  
-  #description
-  Update colors, social links, header logos and component styles globally using the `app.config.ts`, no direct code modifications required.
-  ::: -->
+:::u-page-feature
+---
+icon: mdi:react
+target: _blank
+to: https://react.dev/
+---
 
-  <!-- :::u-page-feature
-  ---
-  icon: i-simple-icons-nuxt
-  target: _blank
-  to: https://content.nuxt.com/studio
-  ---
-  #title
-  Edit in production with [Nuxt Studio]{.text-primary}
-  
-  #description
-  Edit your content in production with zero Markdown knowledge required. Let your non technical colleagues collaborate on the documentation and integrate Vue components without code skills.
-  ::: -->
+#title
+@goodie-form/react - [React]{.text-primary}
 
-  <!-- :::u-page-feature
-  ---
-  icon: i-simple-icons-nuxt
-  target: _blank
-  to: https://ui.nuxt.com/components/content-search
-  ---
-  #title
-  Built-in navigation and [full-text search]{.text-primary}
-  
-  #description
-  Only focus on ordering your content, Docus handles the search modal and auto-generates the side navigation for you.
-  ::: -->
+#description
+With exposed hooks, it is possible to use Goodie Forms without leaving your React environment.
+:::
+
+:::u-page-feature
+---
+icon: mdi:vuejs
+target: _blank
+to: https://react.dev/
+---
+
+#title
+@goodie-form/vue - [Vue]{.text-primary}
+
+#description
+\[WIP] Not available yet.
+:::
 ::
+
