@@ -38,7 +38,7 @@ export class FormController<TOutput extends object> {
 
   private pathBuilder = new FieldPathBuilder<TOutput>();
 
-  /** @internal use `this.data` instead */
+  /** @internal use `this.getFields` instead */
   _fields = new Map<string, FormField<TOutput, any>>();
   /** @internal use `this.initialData` instead */
   _initialData: DeepPartial<TOutput>;
@@ -220,6 +220,10 @@ export class FormController<TOutput extends object> {
     return this._fields.get(stringPath) as
       | FormField<TOutput, FieldPath.Resolve<TOutput, TPath>>
       | undefined;
+  }
+
+  getFields() {
+    return this._fields.values()
   }
 
   clearFieldIssues<TPath extends FieldPath.Segments>(path: TPath) {

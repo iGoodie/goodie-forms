@@ -21,7 +21,7 @@ An unopinionated modern form state and data management library
 ---
 color: neutral
 size: xl
-to: /getting-started/installation
+to: /core/quick-start
 trailing-icon: i-lucide-arrow-right
 ---
 Get started
