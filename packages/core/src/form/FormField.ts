@@ -28,11 +28,7 @@ export class FormField<TOutput extends object, TValue> {
     if (initialState?.isTouched) this._setTouched(true);
     if (initialState?.isDirty) this._setDirty(true);
   }
-
-  get canonicalPath() {
-    return FieldPath.toCanonicalPath(this.path);
-  }
-
+  
   get stringPath() {
     return FieldPath.toStringPath(this.path);
   }

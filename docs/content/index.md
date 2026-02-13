@@ -10,33 +10,76 @@ seo:
 #title
   <div class="flex flex-col items-center text-center">
     <img id="index-logo" src="/logo.svg" height="200" class="mb-6" />
-    <span>The form lib you needed</span>
+    <span>The form library you needed</span>
   </div>
 
 #description
 An unopinionated modern form state and data management library
 
 #links
-:::u-button
----
-color: neutral
-size: xl
-to: /core/quick-start
-trailing-icon: i-lucide-arrow-right
----
-Get started
-:::
+<div class="flex flex-col items-center gap-6">
+  <div class="flex item-center gap-4">
 
-:::u-button
----
-color: neutral
-icon: simple-icons-github
-size: xl
-to: https://github.com/iGoodie/goodie-forms
-variant: outline
----
-Star on GitHub
-:::
+    :::u-button
+    ---
+    color: neutral
+    size: xl
+    to: /core/quick-start
+    trailing-icon: i-lucide-arrow-right
+    ---
+    Get started
+    :::
+
+    :::u-button
+    ---
+    color: neutral
+    size: xl
+    to: /core/quick-start
+    trailing-icon: mdi:react
+    ---
+    Get started with React
+    :::
+
+    :::u-button
+    ---
+    color: neutral
+    size: xl
+    to: /core/quick-start
+    trailing-icon: mdi:vuejs
+    ---
+    Get started with Vue
+    :::
+
+  </div>
+
+  <div class="flex item-center gap-4">
+
+    :::u-button
+    ---
+    color: neutral
+    icon: simple-icons-github
+    size: xl
+    to: https://github.com/iGoodie/goodie-forms
+    variant: outline
+    ---
+    Star on GitHub
+    :::
+
+    :::u-button
+    ---
+    color: neutral
+    icon: simple-icons-github
+    size: xl
+    to: https://github.com/iGoodie/goodie-forms/fork
+    variant: outline
+    ---
+    Contribute on GitHub
+    :::
+
+  </div>
+
+</div>
+
 ::
 
 ::u-page-section

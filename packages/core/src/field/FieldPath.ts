@@ -1,11 +1,6 @@
 export namespace FieldPath {
   export type Segments = readonly PropertyKey[];
-  export type CanonicalPath = string;
   export type StringPath = string;
-
-  export function toCanonicalPath(path: Segments) {
-    return path.join(".") as CanonicalPath;
-  }
 
   export function toStringPath(path: Segments) {
     const normalizedPath = normalize(path);
@@ -115,13 +110,10 @@ export namespace FieldPath {
   /** @internal used to mark and prevent array types, so IntellSense can suggest and accept array indices */
   export type _Unfoldable<T> = T & { _____foldMark?: never } & {};
 
-  export type Resolve<
-    TObject,
-    TPath extends readonly PropertyKey[],
-  > = TPath extends []
+  export type Resolve<TObject, TPath extends Segments> = TPath extends []
     ? TObject
     : TPath extends readonly [infer Prop, ...infer Rest]
-      ? Rest extends readonly PropertyKey[]
+      ? Rest extends Segments
         ? Resolve<ResolveStep<TObject, Prop>, Rest>
         : never
       : never;
