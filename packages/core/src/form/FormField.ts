@@ -212,7 +212,7 @@ export class FormField<TOutput extends object, TValue> {
     this._setDirty(true);
   }
 
-  triggerValidation() {
+  validate() {
     this.controller.validateField(this.path);
   }
 

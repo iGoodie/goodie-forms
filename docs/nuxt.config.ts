@@ -4,6 +4,25 @@ export default defineNuxtConfig({
   content: {
     documentDriven: true,
     navigation: true,
+    build: {
+      markdown: {
+        highlight: {
+          langs: [
+            "json",
+            "js",
+            "ts",
+            "tsx",
+            "html",
+            "css",
+            "vue",
+            "shell",
+            "mdc",
+            "md",
+            "yaml",
+          ],
+        },
+      },
+    },
   },
   icon: {
     customCollections: [
