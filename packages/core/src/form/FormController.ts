@@ -183,7 +183,7 @@ export class FormController<TOutput extends object> {
 
   unregisterField(path: FieldPath.Segments) {
     const stringPath = FieldPath.toStringPath(path);
-    
+
     if (!this._fields.has(stringPath)) return false;
 
     this._fields.delete(stringPath);
@@ -191,7 +191,6 @@ export class FormController<TOutput extends object> {
     return true;
   }
 
-  // TODO: Add an option to keep dirty/touched fields as they are
   reset(newInitialData?: DeepPartial<TOutput>) {
     this._data = this._initialData;
     this._issues = [];
@@ -206,6 +205,9 @@ export class FormController<TOutput extends object> {
       this._data = produce(this._initialData, () => {});
     }
   }
+
+  // TODO: resetGracefully(newInitialData?: DeepPartial<TOutput>)
+  // TODO: ^ Keeps dirty/touched fields as they are
 
   getAscendantFields<TPath extends FieldPath.Segments>(path: TPath) {
     const paths = path.map((_, i) => {
@@ -223,7 +225,7 @@ export class FormController<TOutput extends object> {
   }
 
   getFields() {
-    return this._fields.values()
+    return this._fields.values();
   }
 
   clearFieldIssues<TPath extends FieldPath.Segments>(path: TPath) {
@@ -259,25 +261,6 @@ export class FormController<TOutput extends object> {
     }
   }
 
-  async validateField<TPath extends FieldPath.Segments>(path: TPath) {
-    if (this._isValidating) return;
-
-    if (this.validationSchema == null) return;
-
-    this.setValidating(true);
-
-    if (this.getField(path) == null) this.registerField(path);
-
-    const result = await this.validationSchema["~standard"].validate(
-      this._data,
-    );
-
-    this.events.emit("validationTriggered", path);
-    this.applyValidation(result, path);
-
-    this.setValidating(false);
-  }
-
   async validateForm() {
     if (this._isValidating) return;
 
@@ -302,6 +285,25 @@ export class FormController<TOutput extends object> {
       Reconcile.deepEqual,
     );
     diff.added.forEach((issue) => this._issues.push(issue));
+
+    this.setValidating(false);
+  }
+
+  async validateField<TPath extends FieldPath.Segments>(path: TPath) {
+    if (this._isValidating) return;
+
+    if (this.validationSchema == null) return;
+
+    this.setValidating(true);
+
+    if (this.getField(path) == null) this.registerField(path);
+
+    const result = await this.validationSchema["~standard"].validate(
+      this._data,
+    );
+
+    this.events.emit("validationTriggered", path);
+    this.applyValidation(result, path);
 
     this.setValidating(false);
   }

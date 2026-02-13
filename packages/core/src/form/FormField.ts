@@ -28,7 +28,7 @@ export class FormField<TOutput extends object, TValue> {
     if (initialState?.isTouched) this._setTouched(true);
     if (initialState?.isDirty) this._setDirty(true);
   }
-  
+
   get stringPath() {
     return FieldPath.toStringPath(this.path);
   }
@@ -115,6 +115,10 @@ export class FormField<TOutput extends object, TValue> {
       this.target = undefined;
       this.controller.events.emit("elementUnbound", this.path);
     }
+  }
+
+  clearIssues() {
+    return this.controller.clearFieldIssues(this.path);
   }
 
   private modifyData(
