@@ -1,0 +1,16 @@
+- Impl FieldValues<T extends FormField> type
+- Wrap TOutput with DeepReadonly before passing to onSubmit
+- Wrap FormField.value with DeepReadonly too
+- Expose combineForms/composeForms hook
+- FormController::reset() won't trigger any events
+- Make FormController.createSubmitHandler accept nullable TEvent
+- Impl ability to set a value undefined via FormField::setValue or FormField::modifyValue
+- Impl revalidateMode
+
+- Fix:
+export function useFieldValue<
+  TOutput extends object,
+  TPath extends FieldPath.Segments,
+>(form: UseForm<TOutput>, path: TPath) {
+  return useFormField(form, path)?.value
+}
