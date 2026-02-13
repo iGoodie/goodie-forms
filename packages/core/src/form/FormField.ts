@@ -151,7 +151,7 @@ export class FormField<TOutput extends object, TValue> {
       const ctorA = a.constructor;
       const ctorB = b.constructor;
       if (ctorA !== ctorB) return;
-      return this.controller.equalityComparators?.[ctorA]?.(a, b);
+      return this.controller.equalityComparators?.get(ctorA)?.(a, b);
     };
 
     const valueChanged = !Reconcile.deepEqual(

@@ -14,7 +14,7 @@ export namespace FormController {
   export type Configs<TOutput extends object> = {
     initialData?: DeepPartial<TOutput>;
     validationSchema?: StandardSchemaV1<unknown, TOutput>;
-    equalityComparators?: Record<any, (a: any, b: any) => boolean>;
+    equalityComparators?: Map<any, (a: any, b: any) => boolean>;
   };
 
   export interface PreventableEvent {
@@ -47,7 +47,7 @@ export class FormController<TOutput extends object> {
   /** @internal use `this.issues` instead */
   _issues: StandardSchemaV1.Issue[] = [];
 
-  equalityComparators?: Record<any, (a: any, b: any) => boolean>;
+  equalityComparators?: Map<any, (a: any, b: any) => boolean>;
   validationSchema?: StandardSchemaV1<unknown, TOutput>;
 
   public readonly events = createNanoEvents<{
@@ -183,8 +183,12 @@ export class FormController<TOutput extends object> {
 
   unregisterField(path: FieldPath.Segments) {
     const stringPath = FieldPath.toStringPath(path);
+    
+    if (!this._fields.has(stringPath)) return false;
+
     this._fields.delete(stringPath);
     this.events.emit("fieldUnregistered", path);
+    return true;
   }
 
   // TODO: Add an option to keep dirty/touched fields as they are
