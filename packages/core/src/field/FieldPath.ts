@@ -243,7 +243,7 @@ export namespace FieldPath {
 
   export function getValue<
     TObject extends object,
-    const TPath extends readonly PropertyKey[],
+    const TPath extends Segments,
   >(
     object: TObject,
     path: TPath,
@@ -260,7 +260,7 @@ export namespace FieldPath {
 
   export function setValue<
     TObject extends object,
-    const TPath extends readonly PropertyKey[],
+    const TPath extends Segments,
   >(object: TObject, path: TPath, value: FieldPath.Resolve<TObject, TPath>) {
     const { target, key } = walkPath(object, path);
     target[key] = value;
@@ -268,7 +268,7 @@ export namespace FieldPath {
 
   export function modifyValue<
     TObject extends object,
-    const TPath extends readonly PropertyKey[],
+    const TPath extends Segments,
   >(
     object: TObject,
     path: TPath,
@@ -280,10 +280,10 @@ export namespace FieldPath {
     modifier(target[key]);
   }
 
-  export function deleteValue<
-    TObject extends object,
-    TPath extends readonly PropertyKey[],
-  >(object: TObject, path: TPath) {
+  export function deleteValue<TObject extends object, TPath extends Segments>(
+    object: TObject,
+    path: TPath,
+  ) {
     const { target, key } = walkPath(object, path, {
       returnOnEmptyBranch: true,
     });
