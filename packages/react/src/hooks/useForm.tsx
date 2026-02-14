@@ -1,6 +1,5 @@
 import { FormController } from "@goodie-forms/core";
-import { useEffect, useState } from "react";
-import { useRenderControl } from "../hooks/useRenderControl";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import { composeFns } from "../utils/composeFns";
 
 export function useForm<TOutput extends object>(
@@ -14,33 +13,51 @@ export function useForm<TOutput extends object>(
 ) {
   const [controller] = useState(() => new FormController(formConfigs));
 
-  const renderControl = useRenderControl();
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      const noop = () => {};
 
-  useEffect(() => {
-    const noop = () => {};
+      return composeFns(
+        controller.events.on("submissionStatusChange", onStoreChange),
+        hookConfigs?.watchIssues
+          ? controller.events.on("fieldIssuesUpdated", onStoreChange)
+          : noop,
+        hookConfigs?.watchValues
+          ? controller.events.on("valueChanged", onStoreChange)
+          : noop,
+      );
+    },
+    [controller, hookConfigs?.watchIssues, hookConfigs?.watchValues],
+  );
 
-    return composeFns(
-      controller.events.on("submissionStatusChange", () => {
-        renderControl.forceRerender();
-      }),
-      hookConfigs?.watchIssues
-        ? controller.events.on("fieldIssuesUpdated", () =>
-            renderControl.forceRerender(),
-          )
-        : noop,
-      hookConfigs?.watchValues
-        ? controller.events.on("valueChanged", () =>
-            renderControl.forceRerender(),
-          )
-        : noop,
+  useSyncExternalStore(
+    subscribe,
+    () => controller,
+    () => controller,
+  );
+
+  const useWatchValues = () =>
+    useSyncExternalStore(
+      (onStoreChange) => controller.events.on("valueChanged", onStoreChange),
+      () => controller.data,
+      () => controller.data,
     );
-  }, [controller]);
+
+  const useWatchIssues = () =>
+    useSyncExternalStore(
+      (onStoreChange) =>
+        controller.events.on("fieldIssuesUpdated", onStoreChange),
+      () => controller.issues,
+      () => controller.issues,
+    );
 
   return {
     formConfigs,
     hookConfigs,
     controller,
     path: controller.path,
+    watchValues: useWatchValues,
+    watchIssues: useWatchIssues,
   };
 }
 

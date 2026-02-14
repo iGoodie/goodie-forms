@@ -1,9 +1,9 @@
 import { FieldPath } from "@goodie-forms/core";
 import { useCallback, useSyncExternalStore } from "react";
-import { UseForm } from "../hooks/useForm";
 import { composeFns } from "../utils/composeFns";
+import { UseForm } from "./useForm";
 
-export function useFieldValue<
+export function useFieldIssues<
   TOutput extends object,
   TPath extends FieldPath.Segments,
 >(form: UseForm<TOutput>, path: TPath) {
@@ -24,11 +24,8 @@ export function useFieldValue<
             onStoreChange();
           }
         }),
-        events.on("valueChanged", (changedPath) => {
-          if (
-            FieldPath.equals(changedPath, path) ||
-            FieldPath.isDescendant(changedPath, path)
-          ) {
+        events.on("fieldIssuesUpdated", (fieldPath) => {
+          if (FieldPath.equals(path, fieldPath)) {
             onStoreChange();
           }
         }),
@@ -38,7 +35,7 @@ export function useFieldValue<
   );
 
   const getSnapshot = useCallback(() => {
-    return controller.getField(path)?.value;
+    return controller.getField(path)?.issues;
   }, [controller, path]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);

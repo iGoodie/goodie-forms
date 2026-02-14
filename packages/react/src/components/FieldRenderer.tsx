@@ -55,6 +55,8 @@ export function FieldRenderer<
     defaultValue: props.defaultValue,
   })!;
 
+  console.log("Rendering", field);
+
   const renderedJsx = props.render({
     fieldProps: {
       ref: elementRef,
