@@ -59,7 +59,7 @@ export function useFormField<
             onStoreChange();
           }
         }),
-        events.on("valueChanged", (changedPath) => {
+        events.on("fieldValueChanged", (changedPath) => {
           if (
             FieldPath.equals(changedPath, path) ||
             FieldPath.isDescendant(changedPath, path)

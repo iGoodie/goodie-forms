@@ -14,7 +14,7 @@ export function FormDebug<TOutput extends object>(props: {
     return flow(
       events.on("submissionStatusChange", () => renderControl.forceRerender()),
       events.on("validationStatusChange", () => renderControl.forceRerender()),
-      events.on("valueChanged", () => renderControl.forceRerender()),
+      events.on("fieldValueChanged", () => renderControl.forceRerender()),
       events.on("fieldRegistered", () => renderControl.forceRerender()),
       events.on("fieldUnregistered", () => renderControl.forceRerender()),
       events.on("fieldTouchUpdated", () => renderControl.forceRerender()),

@@ -55,8 +55,6 @@ export function FieldRenderer<
     defaultValue: props.defaultValue,
   })!;
 
-  console.log("Rendering", field);
-
   const renderedJsx = props.render({
     fieldProps: {
       ref: elementRef,
@@ -99,7 +97,7 @@ export function FieldRenderer<
     const { events } = props.form.controller;
 
     return composeFns(
-      events.on("valueChanged", (_path) => {
+      events.on("fieldValueChanged", (_path) => {
         if (
           !FieldPath.equals(_path, props.path) &&
           !FieldPath.isDescendant(_path, props.path)

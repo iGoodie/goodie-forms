@@ -51,18 +51,32 @@ export class FormController<TOutput extends object> {
   validationSchema?: StandardSchemaV1<unknown, TOutput>;
 
   public readonly events = createNanoEvents<{
+    /** Emitted when `this.isSubmitting` changes */
     submissionStatusChange(isSubmitting: boolean): void;
+    /** Emitted when `this.isValidating` changes */
     validationStatusChange(isValidating: boolean): void;
 
+    /** Emitted when a field is registered */
     fieldRegistered(fieldPath: FieldPath.Segments): void;
+    /** Emitted when a field is unregistered */
     fieldUnregistered(fieldPath: FieldPath.Segments): void;
+    /** Emitted when a field's `isTouched` changes */
     fieldTouchUpdated(path: FieldPath.Segments): void;
+    /** Emitted when a field's `isDirty` changes */
     fieldDirtyUpdated(path: FieldPath.Segments): void;
+    /** Emitted when a field's `issues` changes */
     fieldIssuesUpdated(fieldPath: FieldPath.Segments): void;
+
+    /** Emitted when a HTMLELement is bound to a field */
     elementBound(fieldPath: FieldPath.Segments, el: HTMLElement): void;
+    /** Emitted when a HTMLELement is unbound from a field */
     elementUnbound(fieldPath: FieldPath.Segments): void;
-    validationTriggered(fieldPath: FieldPath.Segments): void;
-    valueChanged(
+
+    /** Emitted when validation is triggered on a field */
+    fieldValidationTriggered(fieldPath: FieldPath.Segments): void;
+
+    /** Emitted when a field's `value` is updated */
+    fieldValueChanged(
       fieldPath: FieldPath.Segments,
       newValue: {} | undefined,
       oldValue: {} | undefined,
@@ -175,7 +189,12 @@ export class FormController<TOutput extends object> {
     this.events.emit("fieldRegistered", field.path);
 
     if (valueChanged) {
-      this.events.emit("valueChanged", field.path, currentValue, initialValue);
+      this.events.emit(
+        "fieldValueChanged",
+        field.path,
+        currentValue,
+        initialValue,
+      );
     }
 
     return field as FormField<TOutput, FieldPath.Resolve<TOutput, TPath>>;
@@ -274,7 +293,7 @@ export class FormController<TOutput extends object> {
 
     for (const stringPath of this._fields.keys()) {
       const path = FieldPath.fromStringPath(stringPath);
-      this.events.emit("validationTriggered", path);
+      this.events.emit("fieldValidationTriggered", path);
       this.applyValidation(result, path);
     }
 
@@ -302,7 +321,7 @@ export class FormController<TOutput extends object> {
       this._data,
     );
 
-    this.events.emit("validationTriggered", path);
+    this.events.emit("fieldValidationTriggered", path);
     this.applyValidation(result, path);
 
     this.setValidating(false);

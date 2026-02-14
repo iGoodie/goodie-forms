@@ -19,7 +19,7 @@ test("registers fields", () => {
 
   let changeInvoked = 0;
 
-  formController.events.on("valueChanged", () => changeInvoked++);
+  formController.events.on("fieldValueChanged", () => changeInvoked++);
 
   const path1 = formController.path.of((data) => data.friends[0].tags[99]);
   expect(formController.getField(path1)).toBeUndefined();

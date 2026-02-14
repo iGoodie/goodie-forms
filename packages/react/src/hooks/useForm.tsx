@@ -1,5 +1,6 @@
 import { FormController } from "@goodie-forms/core";
 import { useCallback, useState, useSyncExternalStore } from "react";
+import { useSyncMutableStore } from "../hooks/useSyncMutableStore";
 import { composeFns } from "../utils/composeFns";
 
 export function useForm<TOutput extends object>(
@@ -14,42 +15,55 @@ export function useForm<TOutput extends object>(
   const [controller] = useState(() => new FormController(formConfigs));
 
   const subscribe = useCallback(
-    (onStoreChange: () => void) => {
+    (onVersionChange: () => void) => {
       const noop = () => {};
 
       return composeFns(
-        controller.events.on("submissionStatusChange", onStoreChange),
+        controller.events.on("submissionStatusChange", onVersionChange),
         hookConfigs?.watchIssues
-          ? controller.events.on("fieldIssuesUpdated", onStoreChange)
+          ? controller.events.on("fieldIssuesUpdated", onVersionChange)
           : noop,
         hookConfigs?.watchValues
-          ? controller.events.on("valueChanged", onStoreChange)
+          ? controller.events.on("fieldValueChanged", onVersionChange)
           : noop,
       );
     },
     [controller, hookConfigs?.watchIssues, hookConfigs?.watchValues],
   );
 
-  useSyncExternalStore(
-    subscribe,
-    () => controller,
-    () => controller,
-  );
+  useSyncMutableStore(subscribe, () => controller);
 
-  const useWatchValues = () =>
-    useSyncExternalStore(
-      (onStoreChange) => controller.events.on("valueChanged", onStoreChange),
+  const useWatchValues = () => {
+    return useSyncExternalStore(
+      (onStoreChange) =>
+        controller.events.on("fieldValueChanged", onStoreChange),
       () => controller.data,
       () => controller.data,
     );
+  };
 
-  const useWatchIssues = () =>
-    useSyncExternalStore(
+  const useWatchIssues = () => {
+    return useSyncExternalStore(
       (onStoreChange) =>
         controller.events.on("fieldIssuesUpdated", onStoreChange),
       () => controller.issues,
       () => controller.issues,
     );
+  };
+
+  const useWatchEvent = <E extends keyof typeof controller.events.events>(
+    eventName: E,
+    listener?: NonNullable<(typeof controller.events.events)[E]>[number],
+  ) => {
+    return useSyncMutableStore(
+      (onVersionChange) =>
+        controller.events.on(eventName, (...args: any[]) => {
+          (listener as any)?.(...args);
+          onVersionChange();
+        }),
+      () => undefined,
+    );
+  };
 
   return {
     formConfigs,
@@ -58,6 +72,7 @@ export function useForm<TOutput extends object>(
     path: controller.path,
     watchValues: useWatchValues,
     watchIssues: useWatchIssues,
+    watchEvent: useWatchEvent,
   };
 }
 

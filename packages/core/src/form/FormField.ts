@@ -164,7 +164,7 @@ export class FormField<TOutput extends object, TValue> {
       for (let i = ascendantFields.length - 1; i >= 0; i--) {
         const field = ascendantFields[i];
         this.controller.events.emit(
-          "valueChanged",
+          "fieldValueChanged",
           field.path,
           newValues[i],
           oldValues[i],
