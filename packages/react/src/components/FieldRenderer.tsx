@@ -55,6 +55,11 @@ export function FieldRenderer<
     defaultValue: props.defaultValue,
   })!;
 
+  const currentValidateMode = props.form.controller.triedSubmitting
+    ? (props.form.hookConfigs?.revalidateMode ??
+      props.form.hookConfigs?.validateMode)
+    : props.form.hookConfigs?.validateMode;
+
   const renderedJsx = props.render({
     fieldProps: {
       ref: elementRef,
@@ -82,8 +87,9 @@ export function FieldRenderer<
       },
       onBlur() {
         if (
-          props.form.hookConfigs?.validateMode === "onBlur" ||
-          props.form.hookConfigs?.validateMode === "onChange"
+          field.issues.length !== 0 ||
+          currentValidateMode === "onBlur" ||
+          currentValidateMode === "onChange"
         ) {
           props.form.controller.validateField(props.path);
         }
@@ -105,12 +111,12 @@ export function FieldRenderer<
           return;
         }
 
-        if (props.form.hookConfigs?.validateMode === "onChange") {
+        if (field.issues.length !== 0 || currentValidateMode === "onChange") {
           props.form.controller.validateField(props.path);
         }
       }),
     );
-  }, []);
+  }, [currentValidateMode]);
 
   useEffect(() => {
     field.bindElement(elementRef.current!);

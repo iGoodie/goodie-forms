@@ -130,7 +130,7 @@ function App() {
       // }),
     },
     {
-      validateMode: "onChange",
+      validateMode: "onBlur",
       revalidateMode: "onChange",
     },
   );

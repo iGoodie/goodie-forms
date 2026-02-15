@@ -347,7 +347,7 @@ export class FormController<TOutput extends object> {
 
       if (this._issues.length === 0) {
         this.setSubmitting(true);
-        await onSuccess?.(this._data as TOutput, event);
+        await onSuccess?.(this._data as any as DeepReadonly<TOutput>, event);
         this.setSubmitting(false);
         return;
       }
