@@ -1,34 +1,21 @@
 import { FormController } from "@goodie-forms/core";
 import { useCallback, useState, useSyncExternalStore } from "react";
 import { useSyncMutableStore } from "../hooks/useSyncMutableStore";
-import { composeFns } from "../utils/composeFns";
 
 export function useForm<TOutput extends object>(
   formConfigs: FormController.Configs<TOutput>,
   hookConfigs?: {
     validateMode?: "onChange" | "onBlur" | "onSubmit";
     revalidateMode?: "onChange" | "onBlur" | "onSubmit";
-    watchIssues?: boolean;
-    watchValues?: boolean;
   },
 ) {
   const [controller] = useState(() => new FormController(formConfigs));
 
   const subscribe = useCallback(
     (onVersionChange: () => void) => {
-      const noop = () => {};
-
-      return composeFns(
-        controller.events.on("submissionStatusChange", onVersionChange),
-        hookConfigs?.watchIssues
-          ? controller.events.on("fieldIssuesUpdated", onVersionChange)
-          : noop,
-        hookConfigs?.watchValues
-          ? controller.events.on("fieldValueChanged", onVersionChange)
-          : noop,
-      );
+      return controller.events.on("submissionStatusChange", onVersionChange);
     },
-    [controller, hookConfigs?.watchIssues, hookConfigs?.watchValues],
+    [controller],
   );
 
   useSyncMutableStore(subscribe, () => controller);

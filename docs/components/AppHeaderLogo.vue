@@ -142,5 +142,7 @@
         mask="url(#path-3-outside-1_2415_103)"
       />
     </svg>
+
+    <span class="opacity-30 text-[12px]">v1.2.6-alpha</span>
   </UContextMenu>
 </template>
