@@ -10,6 +10,10 @@
 }
 
 .dark {
+  --sb-track: #141524;
+  --sb-thumb: #4148a7;
+  --sb-thumb-hover: #ff9e24;
+
   --ui-bg-solid: #15152e;
   --ui-bg: linear-gradient(
     160deg,
@@ -29,6 +33,10 @@
 }
 
 .light {
+  --sb-track: #f2f3ff;
+  --sb-thumb: #6a6faf;
+  --sb-thumb-hover: #ff9e24;
+
   --ui-bg-solid: #fafafa;
   --ui-bg-inverted: #262a7c;
   /* --ui-bg-muted: #ddddff; */

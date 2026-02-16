@@ -1,6 +1,6 @@
 export default defineNuxtConfig({
   modules: ["@nuxt/ui"],
-  css: ["~/assets/css/main.css"],
+  css: ["~/assets/css/main.css", "~/assets/css/scrollbar.css"],
   content: {
     documentDriven: true,
     navigation: true,
