@@ -1,4 +1,3 @@
 - Impl FieldValue<T extends FormField> utility type
 - Expose combineForms/composeForms hook
-- FormController::reset() won't trigger "fieldValueChanged" event
 - Impl resetGracefully()

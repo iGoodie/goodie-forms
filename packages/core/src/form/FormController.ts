@@ -213,18 +213,32 @@ export class FormController<TOutput extends object> {
   }
 
   reset(newInitialData?: DeepPartial<TOutput>) {
-    this._data = this._initialData;
-    this._issues = [];
-    this._triedSubmitting = false;
+    const newData = newInitialData ?? this._initialData;
+
+    const fieldUpdates = [] as [FieldPath.Segments, any, any][];
 
     for (const field of this._fields.values()) {
+      const currentValue = FieldPath.getValue(this._data, field.path);
+      const nextValue = FieldPath.getValue(newData, field.path);
+
+      if (!Reconcile.deepEqual(currentValue, nextValue)) {
+        fieldUpdates.push([field.path, nextValue, currentValue]);
+      }
+
       field.reset();
     }
 
     if (newInitialData != null) {
-      this._initialData = newInitialData;
-      this._data = produce(this._initialData, () => {});
+      this._initialData = produce(newInitialData, () => {});
     }
+
+    this._data = produce(newData, () => {});
+    this._issues = [];
+    this._triedSubmitting = false;
+
+    fieldUpdates.forEach(([path, newValue, oldValue]) => {
+      this.events.emit("fieldValueChanged", path, newValue, oldValue);
+    });
   }
 
   // TODO: resetGracefully(newInitialData?: DeepPartial<TOutput>)
