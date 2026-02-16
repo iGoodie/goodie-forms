@@ -202,6 +202,7 @@ export class FormField<TOutput extends object, TValue> {
   reset() {
     this._setTouched(false);
     this._setDirty(false);
+    this.controller.events.emit("fieldReset", this.path);
   }
 
   touch() {

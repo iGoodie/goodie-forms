@@ -66,6 +66,8 @@ export class FormController<TOutput extends object> {
     fieldDirtyUpdated(path: FieldPath.Segments): void;
     /** Emitted when a field's `issues` changes */
     fieldIssuesUpdated(fieldPath: FieldPath.Segments): void;
+    /** Emitted when a field's `reset()` is invoked */
+    fieldReset(fieldPath: FieldPath.Segments): void;
 
     /** Emitted when a HTMLELement is bound to a field */
     elementBound(fieldPath: FieldPath.Segments, el: HTMLElement): void;

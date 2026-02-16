@@ -34,7 +34,7 @@ An unopinionated modern form state and data management library
     ---
     color: neutral
     size: xl
-    to: /core/quick-start
+    to: /react/quick-start
     trailing-icon: mdi:react
     ---
     Get started with React
@@ -44,7 +44,7 @@ An unopinionated modern form state and data management library
     ---
     color: neutral
     size: xl
-    to: /core/quick-start
+    to: /vue/quick-start
     trailing-icon: mdi:vuejs
     ---
     Get started with Vue
