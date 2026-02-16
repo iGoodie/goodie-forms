@@ -35,7 +35,7 @@ export function useFieldIssues<
   );
 
   const getSnapshot = useCallback(() => {
-    return controller.getField(path)?.issues;
+    return controller.getField(path)?.issues ?? [];
   }, [controller, path]);
 
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);

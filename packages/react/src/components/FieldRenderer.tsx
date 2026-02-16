@@ -13,6 +13,8 @@ export interface RenderParams<TOutput extends object, TValue> {
   fieldProps: {
     ref: Ref<any | null>;
 
+    name: string;
+
     value: DeepReadonly<TValue> | undefined;
 
     onChange: (event: ChangeEvent<EventTarget> | TValue) => void;
@@ -63,6 +65,7 @@ export function FieldRenderer<
   const renderedJsx = props.render({
     fieldProps: {
       ref: elementRef,
+      name: field.stringPath,
       value: field.value,
       onChange(arg) {
         let newValue: TValue;
