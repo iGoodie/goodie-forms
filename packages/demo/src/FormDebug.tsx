@@ -1,6 +1,6 @@
 import { FieldPath, type FormController } from "@goodie-forms/core";
-import { useRenderControl } from "@goodie-forms/react";
 import flow from "lodash.flow";
+import { useRenderControl } from "packages/react/dist";
 import { useEffect } from "react";
 
 export function FormDebug<TOutput extends object>(props: {
