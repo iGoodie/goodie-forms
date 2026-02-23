@@ -49,6 +49,10 @@
   --ui-text-highlighted: #262a7c;
 }
 
+.m-0\! {
+  margin: 0 !important;
+}
+
 #index-logo[data-state="closed"] {
   width: 400px !important;
   max-width: none !important;
