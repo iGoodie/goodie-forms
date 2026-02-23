@@ -95,6 +95,7 @@ export namespace FieldPath {
     }
     return true;
   }
+
   export function isDescendant(parentPath: Segments, childPath: Segments) {
     if (parentPath.length >= childPath.length) return false;
 
