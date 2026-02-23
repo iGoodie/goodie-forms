@@ -52,7 +52,7 @@ export function SimpleField<
         path={props.path}
         defaultValue={props.defaultValue!}
         overrideInitialValue={props.overrideInitialValue}
-        unbindOnUnmount={props.unbindOnUnmount}
+        unregisterOnUnmount={props.unregisterOnUnmount}
         // {...props} // TODO <-- Why won't this work?
         render={(renderParams) => {
           return (

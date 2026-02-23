@@ -38,7 +38,7 @@ export type FieldRendererProps<
   form: UseForm<TOutput>;
   path: TPath;
   overrideInitialValue?: boolean;
-  unbindOnUnmount?: boolean;
+  unregisterOnUnmount?: boolean;
   render: (
     params: RenderParams<TOutput, FieldPath.Resolve<TOutput, TPath>>,
   ) => ReactNode;
@@ -125,7 +125,7 @@ export function FieldRenderer<
     field.bindElement(elementRef.current!);
 
     return () => {
-      if (props.unbindOnUnmount) {
+      if (props.unregisterOnUnmount) {
         props.form.controller.unregisterField(props.path);
       }
     };

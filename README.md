@@ -12,7 +12,7 @@
 
   <!-- Main Badges -->
   <img src="https://raw.githubusercontent.com/iGoodie/paper-editor/master/.github/assets/main-badge.svg" height="20px"/>
-  <a href="https://www.npmjs.com/package/@igoodie/goodie-forms">
+  <a href="https://www.npmjs.com/package/@goodie-forms/core">
     <img src="https://img.shields.io/npm/v/@goodie-forms/core"/>
   </a>
   <a href="https://github.com/iGoodie/goodie-forms/tags">

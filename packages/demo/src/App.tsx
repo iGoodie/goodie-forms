@@ -367,7 +367,7 @@ function App() {
             label={`Inventory Item #${i + 1}`}
             defaultValue={() => "Sword"}
             overrideInitialValue={false}
-            unbindOnUnmount
+            unregisterOnUnmount
             render={({ fieldProps, field }) => (
               <input
                 {...fieldProps}
