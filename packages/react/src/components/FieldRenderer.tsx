@@ -27,22 +27,19 @@ export interface RenderParams<TOutput extends object, TValue> {
   form: UseForm<TOutput>;
 }
 
-type DefaultValueProps<TValue> = undefined extends TValue
-  ? { defaultValue?: Suppliable<TValue> }
-  : { defaultValue: Suppliable<TValue> };
-
-export type FieldRendererProps<
+export interface FieldRendererProps<
   TOutput extends object,
   TPath extends FieldPath.Segments,
-> = DefaultValueProps<FieldPath.Resolve<TOutput, TPath>> & {
+> {
   form: UseForm<TOutput>;
   path: TPath;
+  defaultValue?: Suppliable<FieldPath.Resolve<TOutput, TPath>>;
   overrideInitialValue?: boolean;
   unregisterOnUnmount?: boolean;
   render: (
     params: RenderParams<TOutput, FieldPath.Resolve<TOutput, TPath>>,
   ) => ReactNode;
-};
+}
 
 export function FieldRenderer<
   TOutput extends object,

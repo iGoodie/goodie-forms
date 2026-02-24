@@ -2,10 +2,10 @@
 
 import { FormController } from "@goodie-forms/core";
 import { useForm, useFormField } from "@goodie-forms/react";
-import { useRenderControl } from "packages/react/dist";
 import z from "zod";
 import { FormDebug } from "./FormDebug";
 import { SimpleField } from "./SimpleField";
+import { useRenderControl } from "./useRenderControl";
 
 import { useState, type FormEvent } from "react";
 import "./App.css";

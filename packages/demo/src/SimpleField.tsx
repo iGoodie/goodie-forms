@@ -48,12 +48,7 @@ export function SimpleField<
       </label>
 
       <FieldRenderer
-        form={props.form}
-        path={props.path}
-        defaultValue={props.defaultValue!}
-        overrideInitialValue={props.overrideInitialValue}
-        unregisterOnUnmount={props.unregisterOnUnmount}
-        // {...props} // TODO <-- Why won't this work?
+        {...props}
         render={(renderParams) => {
           return (
             <div className="flex w-full *:w-full">

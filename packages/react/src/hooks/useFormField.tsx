@@ -1,6 +1,7 @@
 import { FieldPath, FormField } from "@goodie-forms/core";
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useState } from "react";
 import { UseForm } from "../hooks/useForm";
+import { useSyncMutableStore } from "../hooks/useSyncMutableStore";
 import { composeFns } from "../utils/composeFns";
 
 export function useFormField<
@@ -17,7 +18,7 @@ export function useFormField<
 >(
   form: UseForm<TOutput>,
   path: TPath,
-  bindingConfig: Parameters<typeof form.controller.registerField<TPath>>[1],
+  registerConfig: Parameters<typeof form.controller.registerField<TPath>>[1],
 ): FormField<TOutput, FieldPath.Resolve<TOutput, TPath>>;
 
 export function useFormField<
@@ -26,37 +27,33 @@ export function useFormField<
 >(
   form: UseForm<TOutput>,
   path: TPath,
-  bindingConfig?: Parameters<typeof form.controller.registerField<TPath>>[1],
+  registerConfig?: Parameters<typeof form.controller.registerField<TPath>>[1],
 ) {
   const { controller } = form;
-
-  const version = useRef(0);
 
   useState(() => {
     let existing = controller.getField(path);
 
-    if (!existing && bindingConfig) {
-      controller.registerField(path, bindingConfig);
+    if (!existing && registerConfig) {
+      controller.registerField(path, registerConfig);
     }
 
     return null;
   });
 
   const subscribe = useCallback(
-    (onStoreChange: () => void) => {
+    (onVersionChange: () => void) => {
       const { events } = controller;
 
       return composeFns(
         events.on("fieldRegistered", (_path) => {
           if (FieldPath.equals(_path, path)) {
-            version.current++;
-            onStoreChange();
+            onVersionChange();
           }
         }),
         events.on("fieldUnregistered", (_path) => {
           if (FieldPath.equals(_path, path)) {
-            version.current++;
-            onStoreChange();
+            onVersionChange();
           }
         }),
         events.on("fieldValueChanged", (changedPath) => {
@@ -64,26 +61,22 @@ export function useFormField<
             FieldPath.equals(changedPath, path) ||
             FieldPath.isDescendant(changedPath, path)
           ) {
-            version.current++;
-            onStoreChange();
+            onVersionChange();
           }
         }),
         events.on("fieldTouchUpdated", (_path) => {
           if (FieldPath.equals(_path, path)) {
-            version.current++;
-            onStoreChange();
+            onVersionChange();
           }
         }),
         events.on("fieldDirtyUpdated", (_path) => {
           if (FieldPath.equals(_path, path)) {
-            version.current++;
-            onStoreChange();
+            onVersionChange();
           }
         }),
         events.on("fieldIssuesUpdated", (_path) => {
           if (FieldPath.equals(_path, path)) {
-            version.current++;
-            onStoreChange();
+            onVersionChange();
           }
         }),
       );
@@ -91,9 +84,5 @@ export function useFormField<
     [controller, path],
   );
 
-  const getSnapshot = useCallback(() => version.current, [controller, path]);
-
-  useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
-  return controller.getField(path);
+  return useSyncMutableStore(subscribe, () => controller.getField(path));
 }
