@@ -1,0 +1,1 @@
+import{bR as c,e as o,o as t,x as s}from"./mZROFHiU.js";const n={},a={class:"doc-ref-section"};function r(e,_){return t(),o("div",a,[s(e.$slots,"default",{},void 0,!0)])}const f=Object.assign(c(n,[["render",r],["__scopeId","data-v-5be77c21"]]),{__name:"DocRefSection"});export{f as default};
