@@ -260,7 +260,7 @@ However, accessing an array at any index is considered a valid string path.
 
 </note>
 
-![IntelliSense Preview of StringPaths<>](/doc/string-paths.intellisense.png)
+![IntelliSense Preview of StringPaths<>](doc/string-paths.intellisense.png)
 
 </tabs-item>
 </tabs>

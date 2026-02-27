@@ -1,1 +1,0 @@
-import{bR as o,e as s,o as t,x as c}from"./mZROFHiU.js";const r={},a={class:"doc-tree"};function n(e,_){return t(),s("ul",a,[c(e.$slots,"default",{},void 0,!0)])}const l=Object.assign(o(r,[["render",n],["__scopeId","data-v-3e9ae481"]]),{__name:"DocTree"});export{l as default};
