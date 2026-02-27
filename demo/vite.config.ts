@@ -9,8 +9,8 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      "@goodie-forms/core": path.resolve(__dirname, "../core/src"),
-      "@goodie-forms/react": path.resolve(__dirname, "../react/src"),
+      "@goodie-forms/core": path.resolve(__dirname, "../packages/core/src"),
+      "@goodie-forms/react": path.resolve(__dirname, "../packages/react/src"),
     },
   },
 

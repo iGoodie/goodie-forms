@@ -1,12 +1,4 @@
 packages:
   - docs
-  - demo/*
-  - tests/*
+  - demo
   - packages/*
-
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - better-sqlite3
-  - esbuild
-  - sharp
-  - vue-demi
