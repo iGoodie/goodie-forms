@@ -550,7 +550,7 @@ Updating a field based on another field’s value.
 
 ```tsx
 function SlugField() {
-  const title = form.watchValues((v) => v.title);
+  const title = useFieldValue(form, form.path.of("title"));
 
   return (
     <FieldRenderer
