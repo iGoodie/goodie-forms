@@ -143,6 +143,6 @@
       />
     </svg>
 
-    <span class="opacity-30 text-[12px]">v1.2.6-alpha</span>
+    <span class="opacity-30 text-[12px]">v1.3.0</span>
   </UContextMenu>
 </template>
