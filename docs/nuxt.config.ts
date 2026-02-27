@@ -1,7 +1,24 @@
 export default defineNuxtConfig({
+  app: {
+    baseURL: "/goodie-forms/",
+    buildAssetsDir: "assets",
+    head: {
+      link: [
+        {
+          rel: "icon",
+          type: "image/x-icon",
+          href: "/goodie-forms/favicon.ico",
+        },
+      ],
+    },
+  },
+  routeRules: {
+    "/**": { static: true },
+  },
   modules: ["@nuxt/ui"],
   css: ["~/assets/css/main.css", "~/assets/css/scrollbar.css"],
   content: {
+    base: "/goodie-forms/__nuxt_content",
     documentDriven: true,
     navigation: true,
     build: {

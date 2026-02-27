@@ -1,8 +1,14 @@
 {
   "name": "docs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iGoodie/goodie-forms"
+  },
   "scripts": {
     "dev": "nuxt dev --extends docus",
-    "build": "nuxt build --extends docus"
+    "build": "nuxt build --preset github_pages --extends docus",
+    "predeploy": "pnpm i && pnpm run build",
+    "deploy": "gh-pages --dotfiles -d .output/public"
   },
   "dependencies": {
     "better-sqlite3": "^12.5.0",
@@ -10,6 +16,7 @@
     "nuxt": "^4.2.2"
   },
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "prettier-plugin-mdc": "^0.2.1"
   }
 }

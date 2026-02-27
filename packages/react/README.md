@@ -12,8 +12,8 @@
 
   <!-- Main Badges -->
   <img src="https://raw.githubusercontent.com/iGoodie/paper-editor/master/.github/assets/main-badge.svg" height="20px"/>
-  <a href="https://www.npmjs.com/package/@goodie-forms/core">
-    <img src="https://img.shields.io/npm/v/@goodie-forms/core"/>
+  <a href="https://www.npmjs.com/package/@goodie-forms/react">
+    <img src="https://img.shields.io/npm/v/@goodie-forms/react"/>
   </a>
   <a href="https://github.com/iGoodie/goodie-forms/tags">
     <img src="https://img.shields.io/github/v/tag/iGoodie/goodie-forms"/>
@@ -50,19 +50,7 @@
 
 # Description
 
-Goodie Forms is an unopinionated modern form state and data management library. It provides a simple and intuitive API for managing form state, validation, and submission. It is designed to be flexible and extensible, allowing you to use it with any UI library or framework.
-
-The project consists of multiple packages, each serving a specific purpose. The core package provides the basic form state management and validation functionalities, while other packages can be used to integrate with specific UI libraries or frameworks.
-
-# Documentation
-
-For detailed documentation, please visit the [Goodie Forms Documentation](???).
-
-# Packages
-
-- [@goodie-forms/core](./packages/core): The core package that provides the headless form state management and manipulation functionalities.
-- [@goodie-forms/react](./packages/react): A package that provides React hooks for integrating Goodie Forms with React applications.
-- [@goodie-forms/vue](./packages/vue): WIP
+React package of Goodie Forms.
 
 ## License
 

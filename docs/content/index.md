@@ -8,10 +8,7 @@ seo:
 
 ::u-page-hero
 #title
-  <div class="flex flex-col items-center text-center">
-    <img id="index-logo" src="/logo.svg" height="200" class="mb-6" />
-    <span>The form library you needed</span>
-  </div>
+<IndexLogo/>
 
 #description
 An unopinionated modern form state and data management library
@@ -44,7 +41,7 @@ An unopinionated modern form state and data management library
     ---
     color: neutral
     size: xl
-    to: /vue/quick-start
+    to: /vue/introduction
     trailing-icon: mdi:vuejs
     ---
     Get started with Vue

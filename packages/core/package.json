@@ -1,6 +1,16 @@
 {
   "name": "@goodie-forms/core",
   "version": "1.2.6-alpha",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/iGoodie/goodie-forms"
+  },
+  "author": {
+    "name": "Taha Anılcan Metinyurt",
+    "email": "igoodie@programmer.net",
+    "url": "https://github.com/iGoodie"
+  },
+  "license": "CC BY-SA 4.0",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
