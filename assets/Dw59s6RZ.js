@@ -1,1 +1,0 @@
-import{$ as c,e as n,o as l,x as p,a5 as m,c as u,a8 as s}from"./B6Nax01B.js";const i={base:""},_={__name:"ProseEm",props:{class:{type:String,required:!1}},setup(e){const a=e,o=c(),t=u(()=>s({extend:s(i),...o.ui?.prose?.em||{}}));return(r,f)=>(l(),n("em",{class:m(t.value({class:a.class}))},[p(r.$slots,"default")],2))}};export{_ as default};
