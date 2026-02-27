@@ -1,0 +1,86 @@
+# useFieldIssues()
+
+> Reference for the useFieldIssues() hook
+
+## Overview
+
+```ts
+export function useFieldIssues<
+  TOutput extends object,
+  TPath extends FieldPath.Segments,
+>(form: UseForm<TOutput>, path: TPath): StandardSchemaV1.Issue[];
+```
+
+<doc-tree>
+<doc-tree-item title="TOutput">
+
+represents the final validated shape of your form data. It defines the full object structure that the form is expected to produce after successful validation and submission.
+
+</doc-tree-item>
+
+<doc-tree-item title="TPath">
+
+represents the strongly-typed path (as segment tuples) pointing to a specific leaf inside `TOutput`.
+
+</doc-tree-item>
+</doc-tree>
+
+`useFieldIssues()` is a **React hook** that allows you to access the **validation issues** associated with a **specific form field** within **your components**.
+
+It will only **re-render** the component when the **specific field's issues** change, making it an **efficient** way to bind to form field issues **without** causing **unnecessary re-renders** from other parts of the form.
+
+## Configurations
+
+<field-group>
+<field name="form!" type="UseForm<TOutput>">
+
+The form controller instance returned by `useForm()`. This is required to access the form's internal state and methods for the specified field.
+
+</field>
+
+<field name="path!" type="FieldPath.Segments">
+
+The field path to the specific field within the form's data structure.
+
+</field>
+</field-group>
+
+## Type Reference
+
+Returns an array of validation issues associated with the specified field, or an empty array if there are no issues or if the field is **not found** in the form controller.
+
+```ts
+StandardSchemaV1.Issue[];
+```
+
+## Examples
+
+### 📚 Basic Usage
+
+<doc-ref-section>
+
+```tsx
+interface FormData {
+  user: {
+    email: string;
+  };
+}
+
+function EmailIssues(props: { form: UseForm<FormData> }) {
+  const fieldPath = props.form.path.of("user.email");
+
+  const emailIssues = useFieldIssues(props.form, fieldPath);
+
+  return (
+    <div className="email-field">
+      {emailIssues.map((issue, index) => (
+        <div key={index} className="field-issue">
+          {issue.message}
+        </div>
+      ))}
+    </div>
+  );
+}
+```
+
+</doc-ref-section>
