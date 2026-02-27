@@ -116,8 +116,7 @@ export class FormController<TOutput extends object> {
   }
 
   get isValid() {
-    // TODO: Does it still count valid while validating?
-    return this._issues.length === 0;
+    return this.isValidating || this._issues.length === 0;
   }
 
   get isValidating() {

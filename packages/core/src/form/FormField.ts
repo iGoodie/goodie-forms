@@ -182,6 +182,9 @@ export class FormField<TOutput extends object, TValue> {
     }
   }
 
+  // TODO: impl
+  // private modifyInitialData() {}
+
   setValue(value: TValue, opts?: Parameters<typeof this.modifyData>[1]) {
     return this.modifyData((data) => {
       FieldPath.setValue(data as TOutput, this.path, value as never);
