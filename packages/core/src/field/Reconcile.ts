@@ -73,24 +73,29 @@ export namespace Reconcile {
   export function arrayDiff<T>(
     prev: readonly T[],
     next: readonly T[],
-    equals: (a: T, b: T) => boolean,
-    filter?: (a: T) => boolean,
+    opts?: {
+      equals?: (a: T, b: T) => boolean;
+      include?: (a: T) => boolean;
+    },
   ) {
     const added: T[] = [];
     const removed: T[] = [];
     const unchanged: T[] = [];
 
+    const equals = (a: T, b: T) => (opts?.equals ? opts.equals(a, b) : a === b);
+    const include = (a: T) => (opts?.include ? opts.include(a) : true);
+
     for (const n of next) {
       if (prev.some((p) => equals(p, n))) {
-        if (filter?.(n) ?? true) unchanged.push(n);
+        if (include(n)) unchanged.push(n);
       } else {
-        if (filter?.(n) ?? true) added.push(n);
+        if (include(n)) added.push(n);
       }
     }
 
     for (const p of prev) {
       if (!next.some((n) => equals(p, n))) {
-        if (filter?.(p) ?? true) removed.push(p);
+        if (include(p)) removed.push(p);
       }
     }
 

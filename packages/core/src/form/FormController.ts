@@ -273,11 +273,9 @@ export class FormController<TOutput extends object> {
     _result: StandardSchemaV1.Result<TOutput>,
     path: TPath,
   ) {
-    const diff = Reconcile.arrayDiff(
-      this._issues,
-      _result.issues ?? [],
-      Reconcile.deepEqual,
-      (issue) => {
+    const diff = Reconcile.arrayDiff(this._issues, _result.issues ?? [], {
+      equals: Reconcile.deepEqual,
+      include: (issue) => {
         if (issue.path == null) return false;
         const issuePath = FieldPath.normalize(issue.path);
         return (
@@ -285,7 +283,7 @@ export class FormController<TOutput extends object> {
           FieldPath.isDescendant(path, issuePath)
         );
       },
-    );
+    });
 
     removeBy(this._issues, (issue) => diff.removed.includes(issue));
 
@@ -314,11 +312,9 @@ export class FormController<TOutput extends object> {
     }
 
     // Append non-registered issues too
-    const diff = Reconcile.arrayDiff(
-      this._issues,
-      result.issues ?? [],
-      Reconcile.deepEqual,
-    );
+    const diff = Reconcile.arrayDiff(this._issues, result.issues ?? [], {
+      equals: Reconcile.deepEqual,
+    });
     diff.added.forEach((issue) => this._issues.push(issue));
 
     this.setValidating(false);
