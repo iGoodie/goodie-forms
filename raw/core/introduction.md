@@ -12,7 +12,7 @@ It is built from ground up, with a concern of DX (Developer Experience) in mind.
 It is enriched and generified using these:
 
 <card-group>
-<card icon="goodie:brand-standardschema" target="\_blank" title="Standard Schema V1" to="https://standardschema.dev/">
+<card icon="goodie:brand-standardschema" target="\_blank" title="Standard Schema" to="https://standardschema.dev/">
 
 A common interface for TypeScript validation libraries. Makes Goodie Forms validation library agnostic.
 
@@ -50,6 +50,12 @@ Simple and tiny event emitter library for JavaScript. Gives Goodie Forms power t
 <card icon="mdi:github" target="\_blank" title="Goodie Forms - GitHub Monorepo" to="https://github.com/iGoodie/goodie-forms">
 
 GitHub repository that hosts the source code of Goodie Forms and its subpackages.
+
+</card>
+
+<card icon="material-symbols:heart-plus" target="\_blank" title="Support the Author" to="https://github.com/sponsors/iGoodie">
+
+If you find Goodie Forms useful, consider supporting its development through GitHub Sponsors.
 
 </card>
 

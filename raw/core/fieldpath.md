@@ -1034,5 +1034,3 @@ FieldPath.deleteValue(data, ["user", "age"]);
 ```
 
 </doc-ref-section>
-
-::
