@@ -52,6 +52,57 @@
 
 Core package of Goodie Forms.
 
+# Quick Example
+
+```ts
+import { FormController } from "@goodie-forms/core";
+import z from "zod";
+
+// 1. Define a schema for your form data
+const userRegisterSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+// 2. Create a form controller with the schema
+const formController = new FormController({
+  validationSchema: userRegisterSchema,
+});
+
+// 3. Register form fields
+const nameEl = document.getElementById("name") as HTMLInputElement;
+const emailEl = document.getElementById("email") as HTMLInputElement;
+const passwordEl = document.getElementById("password") as HTMLInputElement;
+
+formController
+  .registerField(formController.path.of("name"))
+  .bindElement(nameEl);
+formController
+  .registerField(formController.path.of("email"))
+  .bindElement(emailEl);
+formController
+  .registerField(formController.path.of("password"))
+  .bindElement(passwordEl);
+
+// 4. Handle issues
+formController.events.on("fieldIssuesUpdated", (path) => {
+  const field = formController.getField(path)!;
+  if (field.issues.length !== 0) {
+    field.boundElement?.classList.add("has-issues");
+  } else {
+    field.boundElement?.classList.remove("has-issues");
+  }
+});
+
+// 5. Handle form submission
+const formEl = document.getElementById("form") as HTMLFormElement);
+const submitHandler = formController.createSubmitHandler(async (data) => {
+  console.log("Form submitted successfully with data:", data);
+});
+formEl.onsubmit = submitHandler;
+```
+
 ## License
 
 &copy; 2026 Taha Anılcan Metinyurt (iGoodie)

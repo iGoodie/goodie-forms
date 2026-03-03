@@ -52,6 +52,114 @@
 
 React package of Goodie Forms.
 
+# Quick Example
+
+```tsx
+import { useForm } from "@goodie-forms/react";
+import z from "zod";
+
+// 1. Define a schema for your form data
+const userRegisterSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export function App() {
+  // 2. Create a form with the schema
+  const form = useForm(
+    {
+      validationSchema: userRegisterSchema,
+    },
+    {
+      validationMode: "onBlur",
+      revalidationMode: "onChange",
+    },
+  );
+
+  // 3. Create a submit handler
+  const handleSubmit = form.createSubmitHandler(async (data) => {
+    console.log("Form submitted successfully with data:", data);
+  });
+
+  return (
+    // 4. Bind submit handler to the form element
+    <form onClick={handleSubmit}>
+      {/* 5. Render fields */}
+      <FieldRenderer
+        form={form}
+        path={form.path.of("name")}
+        defaultValue=""
+        render={({ fieldProps, field, form }) => (
+          <div>
+            <input
+              {...fieldProps}
+              type="text"
+              disabled={form.controller.isSubmitting}
+            />
+            {field.issues.length > 0 && (
+              <div className="issues">
+                {field.issues.map((issue) => (
+                  <p key={issue.id}>{issue.message}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      />
+
+      {/* 5. Render fields */}
+      <FieldRenderer
+        form={form}
+        path={form.path.of("email")}
+        defaultValue=""
+        render={({ fieldProps, field }) => (
+          <div>
+            <input
+              {...fieldProps}
+              type="email"
+              disabled={form.controller.isSubmitting}
+            />
+            {field.issues.length > 0 && (
+              <div className="issues">
+                {field.issues.map((issue) => (
+                  <p key={issue.id}>{issue.message}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      />
+
+      {/* 5. Render fields */}
+      <FieldRenderer
+        form={form}
+        path={form.path.of("password")}
+        defaultValue=""
+        render={({ fieldProps, field }) => (
+          <div>
+            <input
+              {...fieldProps}
+              type="password"
+              disabled={form.controller.isSubmitting}
+            />
+            {field.issues.length > 0 && (
+              <div className="issues">
+                {field.issues.map((issue) => (
+                  <p key={issue.id}>{issue.message}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      />
+
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
 ## License
 
 &copy; 2026 Taha Anılcan Metinyurt (iGoodie)

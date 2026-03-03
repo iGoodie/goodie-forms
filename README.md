@@ -64,6 +64,167 @@ For detailed documentation, please visit the [Goodie Forms Documentation](https:
 - [@goodie-forms/react](./packages/react): A package that provides React hooks for integrating Goodie Forms with React applications.
 - [@goodie-forms/vue](./packages/vue): WIP
 
+# Quick Examples
+
+## Gist of the Core Package
+
+```ts
+import { FormController } from "@goodie-forms/core";
+import z from "zod";
+
+// 1. Define a schema for your form data
+const userRegisterSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+// 2. Create a form controller with the schema
+const formController = new FormController({
+  validationSchema: userRegisterSchema,
+});
+
+// 3. Register form fields
+const nameEl = document.getElementById("name") as HTMLInputElement;
+const emailEl = document.getElementById("email") as HTMLInputElement;
+const passwordEl = document.getElementById("password") as HTMLInputElement;
+
+formController
+  .registerField(formController.path.of("name"))
+  .bindElement(nameEl);
+formController
+  .registerField(formController.path.of("email"))
+  .bindElement(emailEl);
+formController
+  .registerField(formController.path.of("password"))
+  .bindElement(passwordEl);
+
+// 4. Handle issues
+formController.events.on("fieldIssuesUpdated", (path) => {
+  const field = formController.getField(path)!;
+  if (field.issues.length !== 0) {
+    field.boundElement?.classList.add("has-issues");
+  } else {
+    field.boundElement?.classList.remove("has-issues");
+  }
+});
+
+// 5. Handle form submission
+const formEl = document.getElementById("form") as HTMLFormElement);
+const submitHandler = formController.createSubmitHandler(async (data) => {
+  console.log("Form submitted successfully with data:", data);
+});
+formEl.onsubmit = submitHandler;
+```
+
+## Gist of the React Package
+
+```tsx
+import { useForm } from "@goodie-forms/react";
+import z from "zod";
+
+// 1. Define a schema for your form data
+const userRegisterSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export function App() {
+  // 2. Create a form with the schema
+  const form = useForm(
+    {
+      validationSchema: userRegisterSchema,
+    },
+    {
+      validationMode: "onBlur",
+      revalidationMode: "onChange",
+    },
+  );
+
+  // 3. Create a submit handler
+  const handleSubmit = form.createSubmitHandler(async (data) => {
+    console.log("Form submitted successfully with data:", data);
+  });
+
+  return (
+    // 4. Bind submit handler to the form element
+    <form onClick={handleSubmit}>
+      {/* 5. Render fields */}
+      <FieldRenderer
+        form={form}
+        path={form.path.of("name")}
+        defaultValue=""
+        render={({ fieldProps, field, form }) => (
+          <div>
+            <input
+              {...fieldProps}
+              type="text"
+              disabled={form.controller.isSubmitting}
+            />
+            {field.issues.length > 0 && (
+              <div className="issues">
+                {field.issues.map((issue) => (
+                  <p key={issue.id}>{issue.message}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      />
+
+      {/* 5. Render fields */}
+      <FieldRenderer
+        form={form}
+        path={form.path.of("email")}
+        defaultValue=""
+        render={({ fieldProps, field }) => (
+          <div>
+            <input
+              {...fieldProps}
+              type="email"
+              disabled={form.controller.isSubmitting}
+            />
+            {field.issues.length > 0 && (
+              <div className="issues">
+                {field.issues.map((issue) => (
+                  <p key={issue.id}>{issue.message}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      />
+
+      {/* 5. Render fields */}
+      <FieldRenderer
+        form={form}
+        path={form.path.of("password")}
+        defaultValue=""
+        render={({ fieldProps, field }) => (
+          <div>
+            <input
+              {...fieldProps}
+              type="password"
+              disabled={form.controller.isSubmitting}
+            />
+            {field.issues.length > 0 && (
+              <div className="issues">
+                {field.issues.map((issue) => (
+                  <p key={issue.id}>{issue.message}</p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      />
+
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
 ## License
 
 &copy; 2026 Taha Anılcan Metinyurt (iGoodie)
@@ -71,3 +232,7 @@ For detailed documentation, please visit the [Goodie Forms Documentation](https:
 For any part of this work for which the license is applicable, this work is licensed under the [Attribution-ShareAlike 4.0 International](http://creativecommons.org/licenses/by-sa/4.0/) license. (See LICENSE).
 
 <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a>
+
+```
+
+```
