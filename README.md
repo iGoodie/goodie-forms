@@ -225,7 +225,7 @@ export function App() {
 }
 ```
 
-## License
+# License
 
 &copy; 2026 Taha Anılcan Metinyurt (iGoodie)
 
