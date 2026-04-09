@@ -1,3 +1,5 @@
+import { StandardSchemaV1 } from "@standard-schema/spec";
+
 export namespace FieldPath {
   export type Segments = readonly PropertyKey[];
   export type StringPath = string;
@@ -71,18 +73,31 @@ export namespace FieldPath {
     return result as FieldPath.ParseStringPath<TStrPath>;
   }
 
+  function isPropetyKey(value: unknown): value is PropertyKey {
+    return (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "symbol"
+    );
+  }
+
+  function isStandardSchemaPathSegment(
+    path: unknown,
+  ): path is StandardSchemaV1.PathSegment {
+    return (
+      typeof path === "object" &&
+      path !== null &&
+      "key" in path &&
+      isPropetyKey((path as any).key)
+    );
+  }
+
   export function normalize<T extends readonly any[] | undefined>(path: T) {
     return path?.map((segment) => {
-      if (typeof segment === "string") return segment;
-      if (typeof segment === "number") return segment;
-      if (typeof segment === "symbol") return segment;
-      if (typeof segment === "object" && "key" in segment) {
-        if (typeof segment === "string") return segment;
-        if (typeof segment === "number") return segment;
-        if (typeof segment === "symbol") return segment;
-        return segment.key;
-      }
-    }) as Segments;
+      if (isPropetyKey(segment)) return segment;
+      if (isStandardSchemaPathSegment(segment)) return segment.key;
+      return segment.toString();
+    }) as T extends undefined ? undefined : Segments;
   }
 
   export function equals(path1?: Segments, path2?: Segments) {
