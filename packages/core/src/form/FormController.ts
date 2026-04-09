@@ -245,8 +245,43 @@ export class FormController<TOutput extends object> {
     });
   }
 
-  // TODO: resetGracefully(newInitialData?: DeepPartial<TOutput>)
-  // TODO: ^ Keeps dirty/touched fields as they are
+  /** @experimental this API and its namings may be subject to change */
+  resetGracefully(
+    newInitialData?: DeepPartial<TOutput>,
+    opts?: {
+      keepUntouchedFields?: boolean;
+      keepNonDirtyFields?: boolean;
+    },
+  ) {
+    const newData = newInitialData ?? this._initialData;
+
+    const fieldUpdates = [] as [FieldPath.Segments, any, any][];
+
+    for (const field of this._fields.values()) {
+      const currentValue = FieldPath.getValue(this._data, field.path);
+      const nextValue = FieldPath.getValue(newData, field.path);
+
+      if (!Reconcile.deepEqual(currentValue, nextValue)) {
+        fieldUpdates.push([field.path, nextValue, currentValue]);
+      }
+
+      const shouldReset =
+        (!opts?.keepUntouchedFields && !field.isTouched) ||
+        (!opts?.keepNonDirtyFields && !field.isDirty);
+
+      if (shouldReset) {
+        field.reset();
+        field.setValue(nextValue, {
+          shouldMarkDirty: false,
+          shouldTouch: false,
+        });
+      }
+    }
+
+    if (newInitialData != null) {
+      this._initialData = produce(newInitialData, () => {});
+    }
+  }
 
   getAscendantFields<TPath extends FieldPath.Segments>(path: TPath) {
     const paths = path.map((_, i) => {

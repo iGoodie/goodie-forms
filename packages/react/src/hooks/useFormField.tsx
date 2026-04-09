@@ -37,8 +37,6 @@ export function useFormField<
     if (!existing && registerConfig) {
       controller.registerField(path, registerConfig);
     }
-
-    return null;
   });
 
   const subscribe = useCallback(
@@ -61,6 +59,11 @@ export function useFormField<
             FieldPath.equals(changedPath, path) ||
             FieldPath.isDescendant(changedPath, path)
           ) {
+            onVersionChange();
+          }
+        }),
+        events.on("elementBound", (_path) => {
+          if (FieldPath.equals(_path, path)) {
             onVersionChange();
           }
         }),

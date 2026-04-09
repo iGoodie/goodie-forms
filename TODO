@@ -1,6 +1,3 @@
-- Impl FieldValue<T extends FormField> utility type
 - Expose combineForms/composeForms hook
-- Impl resetGracefully()
-- Impl field.pushIssue ??
+- Impl FormField.modifyInitialValue and FormField.setInitialValue ??
 - Fix ogImages of docs
-- Docus caches content, but won't invalidate on update
