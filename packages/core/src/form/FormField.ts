@@ -1,3 +1,4 @@
+import { StandardSchemaV1 } from "@standard-schema/spec";
 import { Draft, produce } from "immer";
 import { FieldPath } from "../field/FieldPath";
 import { Reconcile } from "../field/Reconcile";
@@ -7,7 +8,23 @@ import { Suppliable, supply } from "../types/Suppliable";
 import { ensureImmerability } from "../utils/ensureImmerability";
 import { getId } from "../utils/getId";
 
+const genericTypesMarker: unique symbol = Symbol();
+
+export namespace FormField {
+  export type Output<TField extends FormField<object, unknown>> =
+    TField[typeof genericTypesMarker]["output"];
+
+  export type Value<TField extends FormField<object, unknown>> =
+    TField[typeof genericTypesMarker]["value"];
+}
+
 export class FormField<TOutput extends object, TValue> {
+  /** @internal type-system holder for the generics */
+  readonly [genericTypesMarker]!: {
+    output: TOutput;
+    value: TValue;
+  };
+
   public readonly id = getId();
 
   protected target?: HTMLElement;
@@ -117,10 +134,6 @@ export class FormField<TOutput extends object, TValue> {
     }
   }
 
-  clearIssues() {
-    return this.controller.clearFieldIssues(this.path);
-  }
-
   private modifyData(
     draftConsumer: (draft: Draft<typeof this.controller.data>) => void,
     opts?: {
@@ -182,8 +195,51 @@ export class FormField<TOutput extends object, TValue> {
     }
   }
 
-  // TODO: impl
-  // private modifyInitialData() {}
+  /** @experimental */
+  private _$EXPERIMENTAL_modifyInitialData(
+    draftConsumer: (draft: Draft<typeof this.controller.initialData>) => void,
+  ) {
+    const ascendantFields = this.controller.getAscendantFields(this.path);
+
+    const oldValues = ascendantFields.map((field) => field?.initialValue);
+    oldValues.forEach((v) => ensureImmerability(v));
+
+    this.controller._initialData = produce(
+      this.controller._initialData,
+      draftConsumer,
+    );
+
+    const newValues = ascendantFields.map((field) => field?.initialValue);
+    newValues.forEach((v) => ensureImmerability(v));
+
+    const compareCustom = (a: any, b: any) => {
+      if (typeof a !== "object") return;
+      if (typeof b !== "object") return;
+      const ctorA = a.constructor;
+      const ctorB = b.constructor;
+      if (ctorA !== ctorB) return;
+      return this.controller.equalityComparators?.get(ctorA)?.(a, b);
+    };
+
+    const valueChanged = !Reconcile.deepEqual(
+      oldValues[oldValues.length - 1],
+      newValues[newValues.length - 1],
+      compareCustom,
+    );
+
+    if (valueChanged) {
+      // TODO: Shall it emit any events?
+      // for (let i = ascendantFields.length - 1; i >= 0; i--) {
+      //   const field = ascendantFields[i];
+      //   this.controller.events.emit(
+      //     "fieldInitialValueChanged",
+      //     field.path,
+      //     newValues[i],
+      //     oldValues[i]
+      //   );
+      // }
+    }
+  }
 
   setValue(value: TValue, opts?: Parameters<typeof this.modifyData>[1]) {
     return this.modifyData((data) => {
@@ -200,6 +256,14 @@ export class FormField<TOutput extends object, TValue> {
         modifier(oldValue as TValue);
       });
     }, opts);
+  }
+
+  pushIssue(issue: Omit<StandardSchemaV1.Issue, "path">) {
+    return this.controller.pushFieldIssue(this.path, issue);
+  }
+
+  clearIssues() {
+    return this.controller.clearFieldIssues(this.path);
   }
 
   reset() {
