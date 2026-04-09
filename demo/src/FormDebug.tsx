@@ -19,6 +19,7 @@ export function FormDebug<TOutput extends object>(props: {
       events.on("fieldUnregistered", () => renderControl.forceRerender()),
       events.on("fieldTouchUpdated", () => renderControl.forceRerender()),
       events.on("fieldDirtyUpdated", () => renderControl.forceRerender()),
+      events.on("fieldIssuesUpdated", () => renderControl.forceRerender()),
     );
   }, []);
 
@@ -79,13 +80,16 @@ export function FormDebug<TOutput extends object>(props: {
         <hr className="my-10" />
 
         <span className="opacity-50">Errors</span>
-        {props.formController._issues.map((issue) => (
-          <p
-            key={FieldPath.toStringPath(FieldPath.normalize(issue.path))}
-            className="inline text-wrap"
-          >
-            <span className="mr-1">
-              {FieldPath.toStringPath(FieldPath.normalize(issue.path))}
+        {props.formController._issues.map((issue, index) => (
+          <p key={index} className="inline text-wrap">
+            <span
+              className={
+                "mr-1" + (issue.path ? " opacity-100" : " opacity-50 italic")
+              }
+            >
+              {issue.path
+                ? FieldPath.toStringPath(FieldPath.normalize(issue.path))
+                : "global"}
             </span>
             <span className="text-xs opacity-30">({issue.message})</span>
           </p>

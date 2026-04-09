@@ -1,6 +1,7 @@
 import {
   DeepReadonly,
   FieldPath,
+  FormController,
   FormField,
   Suppliable,
 } from "@goodie-forms/core";
@@ -30,11 +31,9 @@ export interface RenderParams<TOutput extends object, TValue> {
 export interface FieldRendererProps<
   TOutput extends object,
   TPath extends FieldPath.Segments,
-> {
+> extends FormController.RegisterConfig<TOutput, TPath> {
   form: UseForm<TOutput>;
   path: TPath;
-  defaultValue?: Suppliable<FieldPath.Resolve<TOutput, TPath>>;
-  overrideInitialValue?: boolean;
   unregisterOnUnmount?: boolean;
   render: (
     params: RenderParams<TOutput, FieldPath.Resolve<TOutput, TPath>>,

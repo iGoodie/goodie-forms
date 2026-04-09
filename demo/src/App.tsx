@@ -48,32 +48,6 @@ interface UserForm {
   inventory?: Inventory;
 }
 
-// const obj = {
-//   a: [
-//     {
-//       b: {
-//         c: [{ a: 99 }],
-//       },
-//     },
-//   ],
-//   simple: [1],
-//   foo: {
-//     bar: ["a"],
-//   },
-// };
-// console.log(Field.getValue(obj, "a"));
-// console.log(Field.getValue(obj, "a[0]"));
-// console.log(Field.getValue(obj, "a[1]"));
-// console.log(Field.getValue(obj, "a[1].b"));
-// console.log(Field.getValue(obj, "a[0].b.c"));
-// console.log(Field.getValue(obj, "a[1].b.c"));
-// console.log(Field.getValue(obj, "a[0].b.c[0]"));
-// console.log(Field.getValue(obj, "a[0].b.c[1]"));
-// console.log(Field.getValue(obj, "a[0].b.c[1].a"));
-// console.log(Field.getValue(obj, "simple[0]"));
-// console.log(Field.getValue(obj, "foo.bar[0]"));
-// console.log(Field.getValue(obj, "foo.bar[11]"));
-
 const UserSchema = z.object({
   name: z.string().nonempty(),
   surname: z.string().nonempty(),
@@ -136,30 +110,17 @@ function App() {
     },
   );
 
-  // const nameField = useFormField(form, "name");
-  // console.log({ name: nameField?.value });
+  // const formErrors = form.watchIssues();
 
-  // const inventoryField = useFormField(form, "inventory");
-  // console.log({ inventory: inventoryField?.value });
-
-  // const formErrors = useFormErrorObserver(form, {
-  //   include: ["inventory"],
-  // });
-
-  // const formValues = useFormValuesObserver(form, {
-  //   include: ["inventory"],
-  // });
+  // const formValues = form.watchValues();
 
   const inventoryField = useFormField(form, form.path.of("inventory"), {
     defaultValue: () => new Inventory(),
     overrideInitialValue: true,
   });
 
-  // const inventoryValues = useFormValuesObserver(form, {
-  //   include: ["inventory.contents"],
-  // });
-
-  // console.log(formValues, formErrors);
+  const nameField = useFormField(form, form.path.of("name"));
+  console.log(nameField?.value, nameField);
 
   const [hidden, setHidden] = useState(false);
 
@@ -183,15 +144,6 @@ function App() {
     },
   );
 
-  // useEffect(() => {
-  //   // Simulating virtual field binding
-  //   const friendsField = formController.bindField("friends");
-  //   friendsField.setValue([{ name: "iGoodie", friendshipPoints: 100 }]);
-
-  //   // Simulating arbitrary focus by field path
-  //   formController.getFieldState("name")?.focus();
-  // }, []);
-
   return (
     <main className="grid grid-cols-4 gap-x-20 gap-y-5">
       <span className="col-span-full justify-self-start opacity-60 underline">
@@ -213,7 +165,6 @@ function App() {
             />
           )}
         />
-
         <SimpleField
           form={form}
           path={form.path.of("surname")}
@@ -237,7 +188,6 @@ function App() {
             />
           )}
         />
-
         <div className="flex flex-col p-2 border rounded-xl border-gray-700 focus-within:border-gray-400">
           <button
             className="text-xs! justify-self-end self-end"
@@ -294,7 +244,6 @@ function App() {
             />
           )}
         </div>
-
         <SimpleField
           form={form}
           path={form.path.of("inventory")}
@@ -359,7 +308,6 @@ function App() {
             </div>
           )}
         />
-
         {inventoryField?.value?.contents?.map((_, i) => (
           <SimpleField
             key={i}
@@ -380,9 +328,7 @@ function App() {
             )}
           />
         ))}
-
         <hr />
-
         <button
           type="button"
           onClick={() => {
@@ -400,6 +346,16 @@ function App() {
           }}
         >
           Validate
+        </button>{" "}
+        <button
+          type="button"
+          onClick={() => {
+            form.controller.pushFieldIssue(form.path.of("name"), {
+              message: "Manually pushed issue",
+            });
+          }}
+        >
+          Push Manual Issue
         </button>
         <button type="submit" disabled={form.controller.isSubmitting}>
           {form.controller.isSubmitting ? "Submitting.." : "Submit & Persist"}

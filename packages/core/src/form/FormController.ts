@@ -17,6 +17,22 @@ export namespace FormController {
     equalityComparators?: Map<any, (a: any, b: any) => boolean>;
   };
 
+  export interface RegisterConfig<
+    TOutput extends object,
+    TPath extends FieldPath.Segments,
+  > {
+    /**
+     * Used to set value at **path** in **data**, if it's missing.
+     */
+    defaultValue?: Suppliable<FieldPath.Resolve<TOutput, TPath>>;
+    /**
+     * Whether value in **initialData** should also be changed, if **defaultValue** is used or not
+     *
+     * If this is set to `true` and **defaultValue** is used; **initialData** will be modified
+     */
+    overrideInitialValue?: boolean;
+  }
+
   export interface PreventableEvent {
     preventDefault(): void;
   }
@@ -145,18 +161,7 @@ export class FormController<TOutput extends object> {
 
   registerField<TPath extends FieldPath.Segments>(
     path: TPath,
-    config?: {
-      /**
-       * Used to set value at **path** in **data**, if it's missing.
-       */
-      defaultValue?: Suppliable<FieldPath.Resolve<TOutput, TPath>>;
-      /**
-       * Whether value in **initialData** should also be changed, if **defaultValue** is used or not
-       *
-       * If this is set to `true` and **defaultValue** is used; **initialData** will be modified
-       */
-      overrideInitialValue?: boolean;
-    },
+    config?: FormController.RegisterConfig<TOutput, TPath>,
   ) {
     let currentValue = FieldPath.getValue(this._data as TOutput, path);
 
@@ -262,17 +267,11 @@ export class FormController<TOutput extends object> {
     return this._fields.values();
   }
 
-  clearFieldIssues<TPath extends FieldPath.Segments>(path: TPath) {
-    this._issues = this._issues.filter((issue) => {
-      return !FieldPath.equals(FieldPath.normalize(issue.path), path);
-    });
-  }
-
-  private async applyValidation<TPath extends FieldPath.Segments>(
-    _result: StandardSchemaV1.Result<TOutput>,
+  private async applyIssues<TPath extends FieldPath.Segments>(
+    issues: readonly StandardSchemaV1.Issue[] | undefined,
     path: TPath,
   ) {
-    const diff = Reconcile.arrayDiff(this._issues, _result.issues ?? [], {
+    const diff = Reconcile.arrayDiff(this._issues, issues ?? [], {
       equals: Reconcile.deepEqual,
       include: (issue) => {
         if (issue.path == null) return false;
@@ -307,7 +306,7 @@ export class FormController<TOutput extends object> {
     for (const stringPath of this._fields.keys()) {
       const path = FieldPath.fromStringPath(stringPath);
       this.events.emit("fieldValidationTriggered", path);
-      this.applyValidation(result, path);
+      this.applyIssues(result.issues, path);
     }
 
     // Append non-registered issues too
@@ -333,9 +332,29 @@ export class FormController<TOutput extends object> {
     );
 
     this.events.emit("fieldValidationTriggered", path);
-    this.applyValidation(result, path);
+    this.applyIssues(result.issues, path);
 
     this.setValidating(false);
+  }
+
+  clearFieldIssues<TPath extends FieldPath.Segments>(path: TPath) {
+    this._issues = this._issues.filter((issue) => {
+      return !FieldPath.equals(FieldPath.normalize(issue.path), path);
+    });
+  }
+
+  pushFieldIssue<TPath extends FieldPath.Segments>(
+    path: TPath,
+    issue: Omit<StandardSchemaV1.Issue, "path">,
+  ) {
+    const issuePath = FieldPath.normalize(path);
+    const field = this.getField(issuePath);
+    if (field == null) return;
+
+    this.applyIssues(
+      [...field.issues, { path: issuePath, ...issue }],
+      issuePath,
+    );
   }
 
   createSubmitHandler<
