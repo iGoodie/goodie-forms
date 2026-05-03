@@ -1,16 +1,21 @@
-import { describe, expect, it, test } from "vitest";
-import { render, screen } from "@testing-library/react";
+import {
+  FieldRenderer,
+  UseForm,
+  useForm,
+  useFormField,
+} from "@goodie-forms/react";
+import { render, renderHook, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useForm, useFormField, FieldRenderer } from "@goodie-forms/react";
 import { useRef } from "react";
+import { describe, expect, it } from "vitest";
 
-function TestComponent() {
-  type FormData = {
-    name: string;
-    email: string;
-  };
+interface FormData {
+  name: string;
+  email: string;
+}
 
-  const form = useForm<FormData>({});
+function TestComponent(props: { form: UseForm<FormData> }) {
+  const { form } = props;
 
   const renderRef = useRef(0);
 
@@ -32,11 +37,13 @@ function TestComponent() {
   );
 }
 
-describe("useFormField", () => {
+describe("useFormField() hook", () => {
   it("should re-render when the field value changes with user input", async () => {
     const user = userEvent.setup();
 
-    render(<TestComponent />);
+    const { result: form } = renderHook(() => useForm<FormData>({}));
+
+    render(<TestComponent form={form.current} />);
     // ^ Render 0; mounted with value undefined
     // ^ Render 1; defaultValue applied, value changed to "John
 
