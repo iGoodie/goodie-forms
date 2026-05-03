@@ -25,6 +25,9 @@
   ],
   "scripts": {
     "build": "vite build",
+    "coverage": "vitest run --coverage",
+    "test": "tsc --noEmit && vitest run",
+    "test:watch": "vitest",
     "prepare": "npm run build"
   },
   "publishConfig": {
@@ -38,11 +41,15 @@
     "@goodie-forms/core": "workspace:*"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
+    "jsdom": "^29.1.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vite-plugin-dts": "^4.5.4"
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.18"
   }
 }

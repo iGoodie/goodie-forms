@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import dts from "vite-plugin-dts";
@@ -19,5 +21,15 @@ export default defineConfig({
       ],
     },
     sourcemap: true,
+  },
+  test: {
+    name: "@goodie-forms/react",
+    environment: "jsdom",
+    typecheck: {
+      enabled: true,
+    },
+    coverage: {
+      provider: "v8",
+    },
   },
 });
