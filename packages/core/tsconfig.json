@@ -1,8 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "."
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist"
   },
   "include": ["src", "vite.config.ts"],
   "exclude": ["**/*.spec.ts", "**/*.test.ts"]

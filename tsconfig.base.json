@@ -10,10 +10,9 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
 
-    "baseUrl": ".",
     "paths": {
-      "@goodie-forms/core": ["packages/core/src"],
-      "@goodie-forms/react": ["packages/react/src"]
+      "@goodie-forms/core": ["./packages/core/src"],
+      "@goodie-forms/react": ["./packages/react/src"]
     }
   }
 }
