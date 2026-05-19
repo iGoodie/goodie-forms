@@ -6,11 +6,16 @@ import { FormController } from "../form/FormController";
 import { DeepReadonly } from "../types/DeepHelpers";
 import { Suppliable, supply } from "../types/Suppliable";
 import { ensureImmerability } from "../utils/ensureImmerability";
-import { getId } from "../utils/getId";
+import { generateId } from "../utils/generateId";
 
 const genericTypesMarker: unique symbol = Symbol();
 
 export namespace FormField {
+  export interface ModificationOptions {
+    shouldTouch?: boolean;
+    shouldMarkDirty?: boolean;
+  }
+
   export type Output<TField extends FormField<object, unknown>> =
     TField[typeof genericTypesMarker]["output"];
 
@@ -25,7 +30,7 @@ export class FormField<TOutput extends object, TValue> {
     value: TValue;
   };
 
-  public readonly id = getId();
+  public readonly id = generateId();
 
   protected target?: HTMLElement;
 
@@ -80,13 +85,22 @@ export class FormField<TOutput extends object, TValue> {
     return this.issues.length === 0;
   }
 
-  ensureDefault(opts?: Parameters<typeof this.modifyData>[1]) {
-    if (this.value == null && this.defaultValue != null) {
-      const defaultValue = supply(this.defaultValue);
+  applyDefaultValue(
+    opts?: FormField.ModificationOptions & { overrideInitialValue?: boolean },
+  ) {
+    if (this.defaultValue == null) return;
 
-      if (defaultValue != null) {
-        this.setValue(defaultValue, opts);
-      }
+    const defaultValue = supply(this.defaultValue);
+    if (defaultValue === undefined) return;
+
+    ensureImmerability(defaultValue);
+
+    if (this.value == null) {
+      this.setValue(defaultValue, opts);
+    }
+
+    if (opts?.overrideInitialValue === true) {
+      this.setInitialValue(defaultValue, opts);
     }
   }
 
@@ -136,10 +150,7 @@ export class FormField<TOutput extends object, TValue> {
 
   private modifyData(
     draftConsumer: (draft: Draft<typeof this.controller.data>) => void,
-    opts?: {
-      shouldTouch?: boolean;
-      shouldMarkDirty?: boolean;
-    },
+    opts?: FormField.ModificationOptions,
   ) {
     if (opts?.shouldTouch == null || opts?.shouldTouch === true) {
       this.touch();
@@ -150,8 +161,8 @@ export class FormField<TOutput extends object, TValue> {
     const initialValues = ascendantFields.map((field) => field?.initialValue);
     initialValues.forEach((v) => ensureImmerability(v));
 
-    const oldValues = ascendantFields.map((field) => field?.value);
-    oldValues.forEach((v) => ensureImmerability(v));
+    const prevValues = ascendantFields.map((field) => field?.value);
+    prevValues.forEach((v) => ensureImmerability(v));
 
     this.controller._data = produce(this.controller._data, draftConsumer);
 
@@ -168,7 +179,7 @@ export class FormField<TOutput extends object, TValue> {
     };
 
     const valueChanged = !Reconcile.deepEqual(
-      oldValues[oldValues.length - 1],
+      prevValues[prevValues.length - 1],
       newValues[newValues.length - 1],
       compareCustom,
     );
@@ -180,7 +191,7 @@ export class FormField<TOutput extends object, TValue> {
           "fieldValueChanged",
           field.path,
           newValues[i],
-          oldValues[i],
+          prevValues[i],
         );
       }
     }
@@ -195,22 +206,50 @@ export class FormField<TOutput extends object, TValue> {
     }
   }
 
-  /** @experimental */
-  private _$EXPERIMENTAL_modifyInitialData(
+  setValue(value: TValue, opts?: FormField.ModificationOptions) {
+    return this.modifyData((data) => {
+      FieldPath.setValue(data as TOutput, this.path, value as never);
+    }, opts);
+  }
+
+  modifyValue(
+    modifier: (currentValue: TValue) => undefined,
+    opts?: FormField.ModificationOptions,
+  ): void {
+    return this.modifyData((data) => {
+      FieldPath.modifyValue(data as TOutput, this.path, (oldValue) => {
+        modifier(oldValue as TValue);
+      });
+    }, opts);
+  }
+
+  private modifyInitialData(
     draftConsumer: (draft: Draft<typeof this.controller.initialData>) => void,
+    opts?: FormField.ModificationOptions,
   ) {
+    if (opts?.shouldTouch == null || opts?.shouldTouch === true) {
+      this.touch();
+    }
+
     const ascendantFields = this.controller.getAscendantFields(this.path);
 
-    const oldValues = ascendantFields.map((field) => field?.initialValue);
-    oldValues.forEach((v) => ensureImmerability(v));
+    const values = ascendantFields.map((field) => field?.value);
+    values.forEach((v) => ensureImmerability(v));
+
+    const prevInitialValues = ascendantFields.map(
+      (field) => field?.initialValue,
+    );
+    prevInitialValues.forEach((v) => ensureImmerability(v));
 
     this.controller._initialData = produce(
       this.controller._initialData,
       draftConsumer,
     );
 
-    const newValues = ascendantFields.map((field) => field?.initialValue);
-    newValues.forEach((v) => ensureImmerability(v));
+    const newInitialValues = ascendantFields.map(
+      (field) => field?.initialValue,
+    );
+    newInitialValues.forEach((v) => ensureImmerability(v));
 
     const compareCustom = (a: any, b: any) => {
       if (typeof a !== "object") return;
@@ -221,38 +260,46 @@ export class FormField<TOutput extends object, TValue> {
       return this.controller.equalityComparators?.get(ctorA)?.(a, b);
     };
 
-    const valueChanged = !Reconcile.deepEqual(
-      oldValues[oldValues.length - 1],
-      newValues[newValues.length - 1],
+    const initialValueChanged = !Reconcile.deepEqual(
+      prevInitialValues[prevInitialValues.length - 1],
+      newInitialValues[newInitialValues.length - 1],
       compareCustom,
     );
 
-    if (valueChanged) {
-      // TODO: Shall it emit any events?
-      // for (let i = ascendantFields.length - 1; i >= 0; i--) {
-      //   const field = ascendantFields[i];
-      //   this.controller.events.emit(
-      //     "fieldInitialValueChanged",
-      //     field.path,
-      //     newValues[i],
-      //     oldValues[i]
-      //   );
-      // }
+    if (initialValueChanged) {
+      for (let i = ascendantFields.length - 1; i >= 0; i--) {
+        const field = ascendantFields[i];
+        this.controller.events.emit(
+          "fieldInitialValueChanged",
+          field.path,
+          newInitialValues[i],
+          prevInitialValues[i],
+        );
+      }
+    }
+
+    if (opts?.shouldMarkDirty == null || opts?.shouldMarkDirty) {
+      const gotDirty = !Reconcile.deepEqual(
+        values[values.length - 1],
+        newInitialValues[newInitialValues.length - 1],
+        compareCustom,
+      );
+      this._setDirty(gotDirty);
     }
   }
 
-  setValue(value: TValue, opts?: Parameters<typeof this.modifyData>[1]) {
-    return this.modifyData((data) => {
-      FieldPath.setValue(data as TOutput, this.path, value as never);
+  setInitialValue(value: TValue, opts?: FormField.ModificationOptions) {
+    return this.modifyInitialData((initialData) => {
+      FieldPath.setValue(initialData as TOutput, this.path, value as never);
     }, opts);
   }
 
-  modifyValue(
+  modifyInitialValue(
     modifier: (currentValue: TValue) => undefined,
-    opts?: Parameters<typeof this.modifyData>[1],
+    opts?: FormField.ModificationOptions,
   ): void {
-    return this.modifyData((data) => {
-      FieldPath.modifyValue(data as TOutput, this.path, (oldValue) => {
+    return this.modifyInitialData((initialData) => {
+      FieldPath.modifyValue(initialData as TOutput, this.path, (oldValue) => {
         modifier(oldValue as TValue);
       });
     }, opts);
