@@ -3,6 +3,7 @@
 import { defineConfig } from "vite";
 
 import dts from "vite-plugin-dts";
+import path from "node:path";
 
 export default defineConfig({
   plugins: [dts({ tsconfigPath: "tsconfig.build.json" })],
@@ -24,6 +25,9 @@ export default defineConfig({
     },
     coverage: {
       provider: "v8",
+    },
+    alias: {
+      "@goodie-forms/core": path.resolve(__dirname, "../core/src"),
     },
   },
 });

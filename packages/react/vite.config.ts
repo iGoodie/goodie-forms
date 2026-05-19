@@ -3,6 +3,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import dts from "vite-plugin-dts";
+import path from "node:path";
 
 export default defineConfig({
   plugins: [react(), dts({ tsconfigPath: "tsconfig.build.json" })],
@@ -27,9 +28,14 @@ export default defineConfig({
     environment: "jsdom",
     typecheck: {
       enabled: true,
+      tsconfig: "tsconfig.test.json",
     },
     coverage: {
       provider: "v8",
+    },
+    alias: {
+      "@goodie-forms/core": path.resolve(__dirname, "../core/src"),
+      "@goodie-forms/react": path.resolve(__dirname, "src"),
     },
   },
 });
