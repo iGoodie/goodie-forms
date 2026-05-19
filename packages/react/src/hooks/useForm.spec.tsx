@@ -1,8 +1,8 @@
 import { customValidation } from "@goodie-forms/core";
 import { FieldRenderer, useForm, UseForm } from "@goodie-forms/react";
-import { render, renderHook, screen } from "@testing-library/react";
+import { render, renderHook, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 import { createPortal } from "react-dom";
 import { describe, expect, it } from "vitest";
 
@@ -27,18 +27,16 @@ function TestComponent(props: { form: UseForm<FormData> }) {
 
   const formValues = form.watchValues();
 
-  // console.log(formValues);
-
   document.documentElement.dataset.formValues = JSON.stringify(formValues);
-
-  useEffect(() => {
-    const id = setTimeout(() => setOpen(true), 0);
-    return () => clearTimeout(id);
-  }, []);
 
   return (
     <main>
       <h1>Main App</h1>
+
+      <button data-testid="show-modal-button" onClick={() => setOpen(true)}>
+        Show Modal
+      </button>
+
       {open && (
         <TestModal
           renderContent={() => (
@@ -116,7 +114,7 @@ function TestComponent(props: { form: UseForm<FormData> }) {
 }
 
 describe("useForm() hook", () => {
-  it("should trigger re-render on watchValues once a field is registered with defaultValue via FieldRenderer", () => {
+  it("should trigger re-render on watchValues once a field is registered with defaultValue via FieldRenderer", async () => {
     const user = userEvent.setup();
 
     const { result: form } = renderHook(() =>
@@ -134,23 +132,36 @@ describe("useForm() hook", () => {
         document.documentElement.dataset.formValues as string,
       ) as Partial<FormData>;
 
-    const getInput = (testId: string) =>
-      screen.getByTestId(testId) as HTMLInputElement | HTMLSelectElement;
-
     render(<TestComponent form={form.current} />);
     // ^ Render 0; mounted with value {}
+
+    expect(rehydrateValues()).toEqual({});
+
+    user.click(screen.getByTestId<HTMLButtonElement>("show-modal-button"));
     // ^ Render 1; "connectionType" field registered with defaultValue "WIFI", value changed to { connectionType: "WIFI" }
     // ^ Render 2; "connectionType" made the fragment render, causing 3 more fields to be registered with their defaultValues
 
-    // expect(getInput("connection-type-input")).toBeDefined();
-    // expect(getInput("connection-type-input").value).toBe("WIFI");
-    // expect(getInput("wifi-ssid-input").disabled).toBeTruthy();
-    // expect(getInput("wifi-password-input").disabled).toBeTruthy();
-    // expect(rehydrateValues()).toEqual({
-    //   connectionType: "WIFI",
-    //   requiresAuthentication: false,
-    //   wifiSsid: "",
-    //   wifiPassword: "",
-    // });
+    await waitFor(() => {
+      expect(screen.getByTestId("connection-type-input")).toBeDefined();
+    });
+
+    const connectionTypeSelect = screen.getByTestId<HTMLSelectElement>(
+      "connection-type-input",
+    );
+    const wifiSsidInput =
+      screen.getByTestId<HTMLInputElement>("wifi-ssid-input");
+    const wifiPasswordInput = screen.getByTestId<HTMLInputElement>(
+      "wifi-password-input",
+    );
+
+    expect(connectionTypeSelect.value).toBe("WIFI");
+    expect(wifiSsidInput.disabled).toBe(true);
+    expect(wifiPasswordInput.disabled).toBe(true);
+    expect(rehydrateValues()).toEqual({
+      connectionType: "WIFI",
+      requiresAuthentication: false,
+      wifiSsid: "",
+      wifiPassword: "",
+    });
   });
 });
