@@ -27,7 +27,7 @@
   "scripts": {
     "build": "vite build",
     "coverage": "vitest run --coverage",
-    "test": "tsc --noEmit && vitest run",
+    "test": "tsc --noEmit -p tsconfig.test.json && vitest run",
     "test:watch": "vitest",
     "prepare": "npm run build"
   },

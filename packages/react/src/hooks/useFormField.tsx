@@ -34,7 +34,7 @@ export function useFormField<
   useState(() => {
     let existing = controller.getField(path);
 
-    if (!existing && registerConfig) {
+    if (existing == null && registerConfig) {
       controller.registerField(path, registerConfig);
     }
   });

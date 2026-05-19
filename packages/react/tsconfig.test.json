@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    
+    "paths": {
+      "@goodie-forms/core": ["./packages/core/src"],
+      "@goodie-forms/react": ["./packages/react/src"]
+    }
+  }
+}

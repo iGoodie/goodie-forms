@@ -63,6 +63,8 @@ For detailed documentation, please visit the [Goodie Forms Documentation](https:
 - [@goodie-forms/core](./packages/core): The core package that provides the headless form state management and manipulation functionalities.
 - [@goodie-forms/react](./packages/react): A package that provides React hooks for integrating Goodie Forms with React applications.
 - [@goodie-forms/vue](./packages/vue): WIP
+- _... want to contribute a package for your favorite UI library or framework? 
+[Draft a PR](https://github.com/iGoodie/goodie-forms/pulls) or [open an issue](https://github.com/iGoodie/goodie-forms/issues) to discuss your idea!_
 
 # Quick Examples
 

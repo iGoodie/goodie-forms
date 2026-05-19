@@ -51,7 +51,7 @@ export function FieldRenderer<
   const field = useFormField(props.form, props.path, {
     overrideInitialValue: props.overrideInitialValue ?? true,
     defaultValue: props.defaultValue,
-  })!;
+  });
 
   const currentValidateMode = props.form.controller.triedSubmitting
     ? (props.form.hookConfigs?.revalidateMode ??

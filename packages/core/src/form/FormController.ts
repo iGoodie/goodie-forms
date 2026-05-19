@@ -26,7 +26,7 @@ export namespace FormController {
      */
     defaultValue?: Suppliable<FieldPath.Resolve<TOutput, TPath>>;
     /**
-     * Whether value in **initialData** should also be changed, if **defaultValue** is used or not
+     * Whether value in **initialData** should also be changed, if **defaultValue** is used
      *
      * If this is set to `true` and **defaultValue** is used; **initialData** will be modified
      */
@@ -92,6 +92,13 @@ export class FormController<TOutput extends object> {
 
     /** Emitted when validation is triggered on a field */
     fieldValidationTriggered(fieldPath: FieldPath.Segments): void;
+
+    /** Emitted when a field's `initialValue` is updated */
+    fieldInitialValueChanged(
+      fieldPath: FieldPath.Segments,
+      newInitialValue: {} | undefined,
+      oldInitialValue: {} | undefined,
+    ): void;
 
     /** Emitted when a field's `value` is updated */
     fieldValueChanged(
@@ -163,47 +170,23 @@ export class FormController<TOutput extends object> {
     path: TPath,
     config?: FormController.RegisterConfig<TOutput, TPath>,
   ) {
-    let currentValue = FieldPath.getValue(this._data as TOutput, path);
+    let field = this.getField(path);
 
-    if (currentValue == null && config?.defaultValue != null) {
-      const defaultValue = supply(config.defaultValue);
-
-      ensureImmerability(defaultValue);
-
-      if (config?.overrideInitialValue === true) {
-        this._initialData = produce(this._initialData, (draft) => {
-          FieldPath.setValue(draft as TOutput, path, defaultValue);
-        });
-      }
-
-      this._data = produce(this._data, (draft) => {
-        FieldPath.setValue(draft as TOutput, path, defaultValue);
+    if (field == null) {
+      field = new FormField(this, path, config?.defaultValue, {
+        isDirty: false,
       });
-
-      currentValue = FieldPath.getValue(this._data as TOutput, path);
+      this._fields.set(field.stringPath, field);
+      this.events.emit("fieldRegistered", field.path);
     }
 
-    const initialValue = FieldPath.getValue(this._initialData as TOutput, path);
-
-    const valueChanged = !Reconcile.deepEqual(currentValue, initialValue);
-
-    const field = new FormField(this, path, config?.defaultValue, {
-      isDirty: valueChanged,
+    field.applyDefaultValue({
+      shouldMarkDirty: true,
+      shouldTouch: false,
+      overrideInitialValue: config?.overrideInitialValue,
     });
 
-    this._fields.set(field.stringPath, field);
-    this.events.emit("fieldRegistered", field.path);
-
-    if (valueChanged) {
-      this.events.emit(
-        "fieldValueChanged",
-        field.path,
-        currentValue,
-        initialValue,
-      );
-    }
-
-    return field as FormField<TOutput, FieldPath.Resolve<TOutput, TPath>>;
+    return field;
   }
 
   unregisterField(path: FieldPath.Segments) {
