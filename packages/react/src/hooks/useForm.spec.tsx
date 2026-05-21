@@ -127,6 +127,18 @@ describe("useForm() hook", () => {
       ),
     );
 
+    let fieldsRegistered = 0;
+    let valuesChanged = 0;
+
+    form.current.controller.events.on(
+      "fieldRegistered",
+      () => fieldsRegistered++,
+    );
+    form.current.controller.events.on(
+      "fieldValueChanged",
+      () => valuesChanged++,
+    );
+
     const rehydrateValues = () =>
       JSON.parse(
         document.documentElement.dataset.formValues as string,
@@ -136,6 +148,8 @@ describe("useForm() hook", () => {
     // ^ Render 0; mounted with value {}
 
     expect(rehydrateValues()).toEqual({});
+    expect(fieldsRegistered).toBe(0);
+    expect(valuesChanged).toBe(0);
 
     user.click(screen.getByTestId<HTMLButtonElement>("show-modal-button"));
     // ^ Render 1; "connectionType" field registered with defaultValue "WIFI", value changed to { connectionType: "WIFI" }
@@ -154,6 +168,8 @@ describe("useForm() hook", () => {
       "wifi-password-input",
     );
 
+    expect(fieldsRegistered).toBe(4);
+    expect(valuesChanged).toBe(4);
     expect(connectionTypeSelect.value).toBe("WIFI");
     expect(wifiSsidInput.disabled).toBe(true);
     expect(wifiPasswordInput.disabled).toBe(true);
