@@ -103,6 +103,9 @@ function App() {
       //   }
       //   return [{ path: "friends[99]", message: "Contents, huh?" }];
       // }),
+      initialData: {
+        name: "John",
+      },
     },
     {
       validateMode: "onBlur",
@@ -120,7 +123,7 @@ function App() {
   });
 
   const nameField = useFormField(form, form.path.of("name"));
-  console.log(nameField?.value, nameField);
+  console.log("Name field", { value: nameField?.value, field: nameField });
 
   const [hidden, setHidden] = useState(false);
 
@@ -156,6 +159,7 @@ function App() {
           path={form.path.of("name")}
           label="User Name"
           defaultValue="foo"
+          // overrideInitialValue
           render={({ fieldProps }) => (
             <input
               {...fieldProps}
@@ -259,7 +263,7 @@ function App() {
                   type="button"
                   disabled={form.controller.isSubmitting}
                   onClick={() => {
-                    field.ensureDefault();
+                    field.applyDefaultValue();
                     field.modifyValue((inventory) => {
                       const items = ["Gem", "Sword", "Bow", "Arrow"];
                       const item =

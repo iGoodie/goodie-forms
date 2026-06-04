@@ -22,14 +22,15 @@ test("registers fields", () => {
   let initialValueChangeInvoked = 0;
   let registeredFields: FieldPath.Segments[] = [];
 
-  formController.events.on("fieldRegistered", (path) =>
-    registeredFields.push(path),
-  );
-  formController.events.on("fieldValueChanged", () => valueChangeInvoked++);
-  formController.events.on(
-    "fieldInitialValueChanged",
-    () => initialValueChangeInvoked++,
-  );
+  formController.events.on("fieldRegistered", (path) => {
+    registeredFields.push(path);
+  });
+  formController.events.on("fieldValueChanged", () => {
+    valueChangeInvoked++;
+  });
+  formController.events.on("fieldInitialValueChanged", () => {
+    initialValueChangeInvoked++;
+  });
 
   const path1 = formController.path.of((data) => data.friends[0].tags[99]);
   expect(formController.getField(path1)).toBeUndefined();
@@ -61,25 +62,33 @@ test("registers fields", () => {
     overrideInitialValue: true,
   });
   expect(valueChangeInvoked).toBe(3);
-  expect(initialValueChangeInvoked).toBe(1);
+  expect(initialValueChangeInvoked).toBe(0);
   expect(registeredFields).toContain(path3);
   expect(field3.value).toEqual([undefined, 200]);
-  expect(field3.initialValue).toBeDefined();
+  expect(field3.initialValue).toBeUndefined();
 
   field3.modifyValue((val) => {
     val[0] = 101;
     val[1]++;
   });
   expect(valueChangeInvoked).toBe(4);
-  expect(initialValueChangeInvoked).toBe(1);
+  expect(initialValueChangeInvoked).toBe(0);
 
   expect(field3.value).toStrictEqual([101, 201]);
 
-  expect(formController.data.coords).toEqual([101, 201]);
+  const path4 = formController.path.of("name");
+  const field4 = formController.registerField(path4, {
+    defaultValue: "John",
+    overrideInitialValue: true,
+  });
+  expect(valueChangeInvoked).toBe(5);
+  expect(initialValueChangeInvoked).toBe(1);
 
   expect(formController.initialData).toEqual({
-    coords: [100, 200],
+    name: "John",
   });
+  expect(formController.data.coords).toEqual([101, 201]);
+  expect(formController.data.friends?.[0]?.tags?.[99]).toEqual("Tag100");
 
   expect(formController.isDirty).toBe(true);
 });

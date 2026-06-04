@@ -97,10 +97,10 @@ export class FormField<TOutput extends object, TValue> {
 
     if (this.value == null) {
       this.setValue(defaultValue, opts);
-    }
 
-    if (opts?.overrideInitialValue === true) {
-      this.setInitialValue(defaultValue, opts);
+      if (opts?.overrideInitialValue === true) {
+        this.setInitialValue(defaultValue, opts);
+      }
     }
   }
 
