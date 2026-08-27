@@ -50,6 +50,8 @@ export namespace FormController {
 export class FormController<TOutput extends object> {
   private _isValidating = false;
   private _isSubmitting = false;
+  private _isSubmitFailed = false;
+  private _submissionFailCause?: unknown;
   private _triedSubmitting = false;
 
   private pathBuilder = new FieldPathBuilder<TOutput>();
@@ -71,6 +73,8 @@ export class FormController<TOutput extends object> {
     submissionStatusChange(isSubmitting: boolean): void;
     /** Emitted when `this.isValidating` changes */
     validationStatusChange(isValidating: boolean): void;
+    /** Emitted when `this.isSubmitFailed` changes */
+    submissionFailStatusChange(isSubmitFailed: boolean): void;
 
     /** Emitted when a field is registered */
     fieldRegistered(fieldPath: FieldPath.Segments): void;
@@ -150,6 +154,14 @@ export class FormController<TOutput extends object> {
     return this._isSubmitting;
   }
 
+  get isSubmitFailed() {
+    return this._isSubmitFailed;
+  }
+
+  get submissionFailCause() {
+    return this._submissionFailCause;
+  }
+
   get triedSubmitting() {
     return this._triedSubmitting;
   }
@@ -164,6 +176,12 @@ export class FormController<TOutput extends object> {
     if (this._isSubmitting === newStatus) return;
     this._isSubmitting = newStatus;
     this.events.emit("submissionStatusChange", newStatus);
+  }
+
+  protected setSubmitFailed(newStatus: boolean) {
+    if (this._isSubmitFailed === newStatus) return;
+    this._isSubmitFailed = newStatus;
+    this.events.emit("submissionFailStatusChange", newStatus);
   }
 
   registerField<TPath extends FieldPath.Segments>(
@@ -391,26 +409,34 @@ export class FormController<TOutput extends object> {
 
       this._triedSubmitting = true;
 
-      await this.validateForm();
+      this.setSubmitFailed(false);
 
-      if (this._issues.length === 0) {
-        this.setSubmitting(true);
-        await onSuccess?.(this._data as any as DeepReadonly<TOutput>, event);
+      try {
+        await this.validateForm();
+
+        if (this._issues.length === 0) {
+          this.setSubmitting(true);
+          await onSuccess?.(this._data as any as DeepReadonly<TOutput>, event);
+          this.setSubmitting(false);
+          return;
+        }
+
+        for (const issue of this._issues) {
+          if (issue.path == null) continue;
+          const issuePath = FieldPath.normalize(issue.path);
+          const field = this.getField(issuePath);
+          if (field == null) continue;
+          if (field.boundElement == null) continue;
+          field.focus();
+          break;
+        }
+        await onError?.(this._issues, event);
         this.setSubmitting(false);
-        return;
+      } catch (err) {
+        this.setSubmitting(false);
+        this.setSubmitFailed(true);
+        this._submissionFailCause = err;
       }
-
-      for (const issue of this._issues) {
-        if (issue.path == null) continue;
-        const issuePath = FieldPath.normalize(issue.path);
-        const field = this.getField(issuePath);
-        if (field == null) continue;
-        if (field.boundElement == null) continue;
-        field.focus();
-        break;
-      }
-      await onError?.(this._issues, event);
-      this.setSubmitting(false);
     };
   }
 }

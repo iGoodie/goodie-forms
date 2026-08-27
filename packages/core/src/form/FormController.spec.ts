@@ -92,3 +92,29 @@ test("registers fields", () => {
 
   expect(formController.isDirty).toBe(true);
 });
+
+test("reflects submission failures", async () => {
+  const formController = new FormController<User>({});
+
+  const handler = formController.createSubmitHandler<null>(
+    (data) => {
+      throw new Error("First");
+    },
+    (issues) => {
+      throw new Error("Second");
+    },
+  );
+
+  let error;
+
+  try {
+    await handler(null);
+  } catch (err) {
+    error = err;
+  }
+
+  expect(error).toBeNullable();
+  expect(formController.isSubmitting).toBe(false);
+  expect(formController.isSubmitFailed).toBe(true);
+  expect(formController.submissionFailCause).toBeInstanceOf(Error);
+});
